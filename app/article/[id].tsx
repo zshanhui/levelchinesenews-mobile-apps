@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -10,7 +11,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { ArticleContent } from '../../lib/components/ArticleContent';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  ArticleContent,
+  SentenceStudyPanel,
+} from '../../lib/components/ArticleContent';
 import { useFont } from '../../lib/FontContext';
 import { theme } from '../../lib/theme';
 import { useArticle } from '../../lib/useArticle';
@@ -33,6 +38,27 @@ export default function ArticleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { article, loading, error, refetch } = useArticle(id);
   const { chineseFontStyle } = useFont();
+  const insets = useSafeAreaInsets();
+  const [selectedWord, setSelectedWord] = useState<{ word: string; pinyin: string | null } | null>(null);
+  const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
+  const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
+
+  const onWordPress = useCallback(
+    (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
+      setSelectedWord({ word, pinyin });
+      setHighlightedWordKey(wordKey);
+      setHighlightedSentenceKey(sentenceKey);
+    },
+    []
+  );
+
+  const onClosePanel = useCallback(() => {
+    setSelectedWord(null);
+    setHighlightedWordKey(null);
+    setHighlightedSentenceKey(null);
+  }, []);
 
   return (
     <>
@@ -58,54 +84,76 @@ export default function ArticleDetailScreen() {
           </Pressable>
         </View>
       ) : article ? (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <Text style={[styles.title, chineseFontStyle]}>{article.title}</Text>
-            {(article.source || article.published_date) && (
-              <View style={styles.meta}>
-                {article.source && (
-                  <View style={styles.metaSource}>
-                    <Text style={styles.metaText}>{article.source}</Text>
-                    {article.source_url ? (
-                      <Pressable
-                        onPress={() => Linking.openURL(article.source_url!)}
-                        hitSlop={8}
-                        accessibilityRole="link"
-                        accessibilityLabel="open source article"
-                      >
-                        <Ionicons name="open-outline" size={16} color={theme.accent} />
-                      </Pressable>
-                    ) : null}
-                  </View>
-                )}
-                {article.published_date && (
-                  <Text style={styles.metaText}>
-                    {formatDate(article.published_date)}
-                  </Text>
-                )}
-              </View>
-            )}
-            {article.main_image ? (
-              <Image
-                source={{ uri: article.main_image }}
-                style={styles.image}
-                resizeMode="cover"
-                accessibilityIgnoresInvertColors
+        <View style={styles.articleContainer}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View ref={contentRef} style={styles.content} collapsable={false}>
+              <Text style={[styles.title, chineseFontStyle]}>{article.title}</Text>
+              {(article.source || article.published_date) && (
+                <View style={styles.meta}>
+                  {article.source && (
+                    <View style={styles.metaSource}>
+                      <Text style={styles.metaText}>{article.source}</Text>
+                      {article.source_url ? (
+                        <Pressable
+                          onPress={() => Linking.openURL(article.source_url!)}
+                          hitSlop={8}
+                          accessibilityRole="link"
+                          accessibilityLabel="open source article"
+                        >
+                          <Ionicons name="open-outline" size={16} color={theme.accent} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  )}
+                  {article.published_date && (
+                    <Text style={styles.metaText}>
+                      {formatDate(article.published_date)}
+                    </Text>
+                  )}
+                </View>
+              )}
+              {article.main_image ? (
+                <Image
+                  source={{ uri: article.main_image }}
+                  style={styles.image}
+                  resizeMode="cover"
+                  accessibilityIgnoresInvertColors
+                />
+              ) : null}
+              {article.parsed_content?.length ? (
+                <ArticleContent
+                  parsedContent={article.parsed_content}
+                  selectedWord={selectedWord}
+                  highlightedWordKey={highlightedWordKey}
+                  highlightedSentenceKey={highlightedSentenceKey}
+                  onWordPress={onWordPress}
+                  onClosePanel={onClosePanel}
+                  scrollViewRef={scrollViewRef}
+                  contentRef={contentRef}
+                />
+              ) : (
+                <Text style={[styles.emptyContent, chineseFontStyle]}>
+                  no content available
+                </Text>
+              )}
+            </View>
+          </ScrollView>
+          {selectedWord ? (
+            <View style={styles.studyPanelOverlay} pointerEvents="box-none">
+              <SentenceStudyPanel
+                word={selectedWord.word}
+                pinyin={selectedWord.pinyin}
+                bottomInset={insets.bottom}
+                onClose={onClosePanel}
               />
-            ) : null}
-            {article.parsed_content?.length ? (
-              <ArticleContent parsedContent={article.parsed_content} />
-            ) : (
-              <Text style={[styles.emptyContent, chineseFontStyle]}>
-                no content available
-              </Text>
-            )}
-          </View>
-        </ScrollView>
+            </View>
+          ) : null}
+        </View>
       ) : null}
     </>
   );
@@ -141,6 +189,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  articleContainer: {
+    flex: 1,
   },
   scroll: {
     flex: 1,
@@ -185,5 +236,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.textMuted,
     fontStyle: 'italic',
+  },
+  studyPanelOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });
