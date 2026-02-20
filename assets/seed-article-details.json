@@ -1,0 +1,307 @@
+{
+  "2985fed2-3119-4162-9f97-f403f1bdcf0d": {
+    "id": "2985fed2-3119-4162-9f97-f403f1bdcf0d",
+    "title": "王兴兴：宇树今年可出货一两万部人形机器人",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/news/china/story20260218-8550617",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_small_crop/public/articles/2026/02/17/E5B18FE5B995E688AAE59BBE202026-02-1720110046_2.jpg?2952376",
+    "published_date": "2026-02-18T21:04:00",
+    "tags": ["机器人", "春晚"],
+    "title_translated_en": "Wang Xingxing: Unitree Could Ship 10,000 to 20,000 Humanoid Robots This Year",
+    "summary_generated_en": "Chinese humanoid robotics company Unitree expects to ship 10,000 to 20,000 units this year, according to its founder Wang Xingxing.",
+    "created_at": "2026-02-18T14:42:23",
+    "updated_at": "2026-02-18T14:48:06",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "宇树科技创始人王兴兴表示，公司今年可出货一万至两万台人形机器人。",
+            "w": [
+              {"t": "宇树", "p": "yǔ shù"},
+              {"t": "科技", "p": "kē jì"},
+              {"t": "创始人", "p": "chuàng shǐ rén"},
+              {"t": "王兴兴", "p": "wáng xīng xīng"},
+              {"t": "表示", "p": "biǎo shì"},
+              {"t": "，", "p": ""},
+              {"t": "公司", "p": "gōng sī"},
+              {"t": "今年", "p": "jīn nián"},
+              {"t": "可", "p": "kě"},
+              {"t": "出货", "p": "chū huò"},
+              {"t": "一万", "p": "yī wàn"},
+              {"t": "至", "p": "zhì"},
+              {"t": "两万", "p": "liǎng wàn"},
+              {"t": "台", "p": "tái"},
+              {"t": "人形", "p": "rén xíng"},
+              {"t": "机器人", "p": "jī qì rén"},
+              {"t": "。", "p": ""}
+            ]
+          },
+          {
+            "f": "该公司在春晚上的表演引起广泛关注，全球人形机器人市场仍处热潮。",
+            "w": [
+              {"t": "该", "p": "gāi"},
+              {"t": "公司", "p": "gōng sī"},
+              {"t": "在", "p": "zài"},
+              {"t": "春晚", "p": "chūn wǎn"},
+              {"t": "上", "p": "shàng"},
+              {"t": "的", "p": "de"},
+              {"t": "表演", "p": "biǎo yǎn"},
+              {"t": "引起", "p": "yǐn qǐ"},
+              {"t": "广泛", "p": "guǎng fàn"},
+              {"t": "关注", "p": "guān zhù"},
+              {"t": "，", "p": ""},
+              {"t": "全球", "p": "quán qiú"},
+              {"t": "人形", "p": "rén xíng"},
+              {"t": "机器人", "p": "jī qì rén"},
+              {"t": "市场", "p": "shì chǎng"},
+              {"t": "仍", "p": "réng"},
+              {"t": "处", "p": "chù"},
+              {"t": "热潮", "p": "rè cháo"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "a5fd27a4-a0c6-4d14-81cf-3abd9bdf1894": {
+    "id": "a5fd27a4-a0c6-4d14-81cf-3abd9bdf1894",
+    "title": "特朗普称与习近平讨论对台军售 学者：等于推翻对台湾六项保证",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/news/china/story20260218-8550991",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_small_crop/public/articles/2026/02/08/COMBO-US-CHINA-POLITICS-DIPLOMACY-TRUMP-XI-141011.jpg?2952375",
+    "published_date": "2026-02-18T20:31:00",
+    "tags": ["中美关系", "对台军售", "特朗普", "习近平"],
+    "title_translated_en": null,
+    "summary_generated_en": null,
+    "created_at": "2026-02-18T14:35:35",
+    "updated_at": "2026-02-18T14:35:35",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "美国前总统特朗普表示，他与习近平讨论了美国对台湾的军售问题。",
+            "w": [
+              {"t": "美国", "p": "měi guó"},
+              {"t": "前", "p": "qián"},
+              {"t": "总统", "p": "zǒng tǒng"},
+              {"t": "特朗普", "p": "tè lǎng pǔ"},
+              {"t": "表示", "p": "biǎo shì"},
+              {"t": "，", "p": ""},
+              {"t": "他", "p": "tā"},
+              {"t": "与", "p": "yǔ"},
+              {"t": "习近平", "p": "xí jìn píng"},
+              {"t": "讨论", "p": "tǎo lùn"},
+              {"t": "了", "p": "le"},
+              {"t": "美国", "p": "měi guó"},
+              {"t": "对", "p": "duì"},
+              {"t": "台湾", "p": "tái wān"},
+              {"t": "的", "p": "de"},
+              {"t": "军售", "p": "jūn shòu"},
+              {"t": "问题", "p": "wèn tí"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "fd361f78-7e53-4601-9065-69c6d4d293ae": {
+    "id": "fd361f78-7e53-4601-9065-69c6d4d293ae",
+    "title": "机器人成春晚主角  网友吐槽\u201c年味儿人味儿都没了\u201d",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/news/china/story20260217-8546780",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_small_crop/public/articles/2026/02/15/CHINA-TECHNOLOGY-ROBOT-102609_3.jpg?2952378",
+    "published_date": "2026-02-17T08:09:00",
+    "tags": [],
+    "title_translated_en": "Robots Steal the Show at Spring Festival Gala, Netizens Lament Loss of Traditional and Human Touch",
+    "summary_generated_en": "The 2026 China Central Television Spring Festival Gala featured an increased number of performances with humanoid robots from four tech companies.",
+    "created_at": "2026-02-18T15:12:29",
+    "updated_at": "2026-02-18T15:12:35",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "2026年央视春晚中，四家人形机器人企业的表演数量显著增加。",
+            "w": [
+              {"t": "2026", "p": ""},
+              {"t": "年", "p": "nián"},
+              {"t": "央视", "p": "yāng shì"},
+              {"t": "春晚", "p": "chūn wǎn"},
+              {"t": "中", "p": "zhōng"},
+              {"t": "，", "p": ""},
+              {"t": "四家", "p": "sì jiā"},
+              {"t": "人形", "p": "rén xíng"},
+              {"t": "机器人", "p": "jī qì rén"},
+              {"t": "企业", "p": "qǐ yè"},
+              {"t": "的", "p": "de"},
+              {"t": "表演", "p": "biǎo yǎn"},
+              {"t": "数量", "p": "shù liàng"},
+              {"t": "显著", "p": "xiǎn zhù"},
+              {"t": "增加", "p": "zēng jiā"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "9a27ebc0-fe0a-4fa6-b6da-e79e4be772c5": {
+    "id": "9a27ebc0-fe0a-4fa6-b6da-e79e4be772c5",
+    "title": "消息人士：字节跳动自研晶片团队已超千人 将规模化招聘",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/finance/china/story20260215-8503556",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_small_crop/public/articles/2026/02/10/2025-12-10T111156Z1045718879RC2VQCACWPR9RTRMADP3NVIDIA-CHINA_1.JPG?2952092",
+    "published_date": "2026-02-15T19:13:00",
+    "tags": ["字节跳动", "晶片", "财经看点", "中国", "中国科技企业", "中国科技公司"],
+    "title_translated_en": "Sources: ByteDance's In-House Chip Team Exceeds 1,000, Plans Large-Scale Hiring.",
+    "summary_generated_en": "ByteDance has expanded its in-house semiconductor development team to over 1,000 employees.",
+    "created_at": "2026-02-16T15:26:08",
+    "updated_at": "2026-02-18T06:09:33",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "消息人士透露，字节跳动自研晶片团队已超过一千人，计划大规模招聘。",
+            "w": [
+              {"t": "消息", "p": "xiāo xī"},
+              {"t": "人士", "p": "rén shì"},
+              {"t": "透露", "p": "tòu lù"},
+              {"t": "，", "p": ""},
+              {"t": "字节跳动", "p": "zì jié tiào dòng"},
+              {"t": "自研", "p": "zì yán"},
+              {"t": "晶片", "p": "jīng piàn"},
+              {"t": "团队", "p": "tuán duì"},
+              {"t": "已", "p": "yǐ"},
+              {"t": "超过", "p": "chāo guò"},
+              {"t": "一千", "p": "yī qiān"},
+              {"t": "人", "p": "rén"},
+              {"t": "，", "p": ""},
+              {"t": "计划", "p": "jì huà"},
+              {"t": "大规模", "p": "dà guī mó"},
+              {"t": "招聘", "p": "zhāo pìn"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "a3438ef2-6954-4d0a-bfeb-a1992792e226": {
+    "id": "a3438ef2-6954-4d0a-bfeb-a1992792e226",
+    "title": "北京市监部门约谈12家第三方火车票销售平台",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/news/china/story20260212-8450090",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_small_crop/public/articles/2026/02/10/6-02-1020083041_2.jpg?2952088",
+    "published_date": "2026-02-12T11:04:00",
+    "tags": ["火车", "中国", "旅游"],
+    "title_translated_en": null,
+    "summary_generated_en": null,
+    "created_at": "2026-02-16T14:41:30",
+    "updated_at": "2026-02-16T14:41:30",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "北京市市场监管部门对12家第三方火车票销售平台进行了约谈。",
+            "w": [
+              {"t": "北京", "p": "běi jīng"},
+              {"t": "市", "p": "shì"},
+              {"t": "市场", "p": "shì chǎng"},
+              {"t": "监管", "p": "jiān guǎn"},
+              {"t": "部门", "p": "bù mén"},
+              {"t": "对", "p": "duì"},
+              {"t": "12", "p": ""},
+              {"t": "家", "p": "jiā"},
+              {"t": "第三方", "p": "dì sān fāng"},
+              {"t": "火车票", "p": "huǒ chē piào"},
+              {"t": "销售", "p": "xiāo shòu"},
+              {"t": "平台", "p": "píng tái"},
+              {"t": "进行", "p": "jìn xíng"},
+              {"t": "了", "p": "le"},
+              {"t": "约谈", "p": "yuē tán"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "56af6abc-76a4-41b8-ba46-1b8ac213fde6": {
+    "id": "56af6abc-76a4-41b8-ba46-1b8ac213fde6",
+    "title": "日本失智老人将达700万 专家呼吁重视老人理财",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/news/world/story20260104-8045208",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_large_full/public/articles/2026/01/04/JAPAN-STOCKS-CLOSING-073901_0.jpg?2952096",
+    "published_date": "2026-01-04T20:39:00",
+    "tags": ["日本", "老人", "失智症", "诈骗", "遗产", "认知障碍", "老龄化", "理财"],
+    "title_translated_en": null,
+    "summary_generated_en": null,
+    "created_at": "2026-02-16T16:04:46",
+    "updated_at": "2026-02-16T16:04:46",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "日本失智老人人数将达700万，专家呼吁重视老人理财问题。",
+            "w": [
+              {"t": "日本", "p": "rì běn"},
+              {"t": "失智", "p": "shī zhì"},
+              {"t": "老人", "p": "lǎo rén"},
+              {"t": "人数", "p": "rén shù"},
+              {"t": "将", "p": "jiāng"},
+              {"t": "达", "p": "dá"},
+              {"t": "700", "p": ""},
+              {"t": "万", "p": "wàn"},
+              {"t": "，", "p": ""},
+              {"t": "专家", "p": "zhuān jiā"},
+              {"t": "呼吁", "p": "hū yù"},
+              {"t": "重视", "p": "zhòng shì"},
+              {"t": "老人", "p": "lǎo rén"},
+              {"t": "理财", "p": "lǐ cái"},
+              {"t": "问题", "p": "wèn tí"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "c336eabc-0bd2-4abb-aca5-c5bf08183120": {
+    "id": "c336eabc-0bd2-4abb-aca5-c5bf08183120",
+    "title": "清盘聆讯在即 碧桂园传年底前完成境外债务重组",
+    "source": "zaobao",
+    "source_url": "https://www.zaobao.com/finance/china/story20250725-7223585",
+    "main_image": "https://dss0.zbstatic5.com/s3fs-public/styles/article_small_crop/public/articles/2024/07/30/file7wbekf1n3g5k62v8f7g.jpg?2952093",
+    "published_date": "2025-07-26T07:43:00",
+    "tags": ["碧桂园", "清盘", "债务重组", "财经看点"],
+    "title_translated_en": "Sunac Faces Liquidation Hearing as Country Garden Nears Offshore Debt Restructuring by Year-End",
+    "summary_generated_en": "Chinese property giant Country Garden has reportedly agreed to key terms with its bank creditors.",
+    "created_at": "2026-02-16T15:30:51",
+    "updated_at": "2026-02-18T06:13:53",
+    "parsed_content": [
+      {
+        "s": [
+          {
+            "f": "碧桂园清盘聆讯在即，传年底前完成境外债务重组。",
+            "w": [
+              {"t": "碧桂园", "p": "bì guì yuán"},
+              {"t": "清盘", "p": "qīng pán"},
+              {"t": "聆讯", "p": "líng xùn"},
+              {"t": "在即", "p": "zài jí"},
+              {"t": "，", "p": ""},
+              {"t": "传", "p": "chuán"},
+              {"t": "年底", "p": "nián dǐ"},
+              {"t": "前", "p": "qián"},
+              {"t": "完成", "p": "wán chéng"},
+              {"t": "境外", "p": "jìng wài"},
+              {"t": "债务", "p": "zhài wù"},
+              {"t": "重组", "p": "chóng zǔ"},
+              {"t": "。", "p": ""}
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
