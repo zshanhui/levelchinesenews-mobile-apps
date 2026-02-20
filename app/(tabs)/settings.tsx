@@ -1,21 +1,39 @@
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import type { LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
 import { theme } from '../../lib/theme';
 
+const LINE_SPACING_OPTIONS: {
+  value: LineSpacingLevel;
+  label: string;
+  numbers: string;
+}[] = [
+  { value: 'compact', label: 'compact', numbers: '0px, 8px' },
+  { value: 'normal', label: 'normal', numbers: '6px, 24px' },
+  { value: 'relaxed', label: 'relaxed', numbers: '14px, 40px' },
+];
+
 export default function SettingsScreen() {
-  const { useNotoSansSC, setUseNotoSansSC, showPinyin, setShowPinyin, chineseFontStyle } =
-    useFont();
+  const {
+    useNotoSansSC,
+    setUseNotoSansSC,
+    showPinyin,
+    setShowPinyin,
+    lineSpacing,
+    setLineSpacing,
+    chineseFontStyle,
+  } = useFont();
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, chineseFontStyle]}>Settings</Text>
+      <Text style={[styles.title, chineseFontStyle]}>settings</Text>
       <Text style={[styles.subtitle, chineseFontStyle]}>
-        Configure your preferences
+        configure your preferences
       </Text>
 
       <View style={styles.settingRow}>
         <Text style={[styles.settingLabel, chineseFontStyle]}>
-          Use Noto Sans SC for Chinese
+          use noto sans sc for chinese
         </Text>
         <Switch
           value={useNotoSansSC}
@@ -24,14 +42,10 @@ export default function SettingsScreen() {
           thumbColor={useNotoSansSC ? theme.accent : theme.textMuted}
         />
       </View>
-      <Text style={[styles.settingHint, chineseFontStyle]}>
-        Noto Sans SC is an optimized font for Simplified Chinese. Turn off to use
-        system default.
-      </Text>
 
       <View style={[styles.settingRow, styles.settingRowSpaced]}>
         <Text style={[styles.settingLabel, chineseFontStyle]}>
-          Show Pinyin in articles
+          show pinyin in articles
         </Text>
         <Switch
           value={showPinyin}
@@ -40,10 +54,44 @@ export default function SettingsScreen() {
           thumbColor={showPinyin ? theme.accent : theme.textMuted}
         />
       </View>
-      <Text style={[styles.settingHint, chineseFontStyle]}>
-        Display Pinyin romanization above Chinese characters when reading
-        articles.
-      </Text>
+
+      <View style={[styles.settingRow, styles.settingRowSpaced]}>
+        <Text style={[styles.settingLabel, chineseFontStyle]}>
+          adjust line spacing in article content view
+        </Text>
+      </View>
+      <View style={styles.segmentedRow}>
+        {LINE_SPACING_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            onPress={() => setLineSpacing(opt.value)}
+            style={[
+              styles.segmentButton,
+              opt.value === 'relaxed' && styles.segmentButtonLast,
+              lineSpacing === opt.value && styles.segmentButtonSelected,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentLabel,
+                chineseFontStyle,
+                lineSpacing === opt.value && styles.segmentLabelSelected,
+              ]}
+            >
+              {opt.label}
+            </Text>
+            <Text
+              style={[
+                styles.segmentNumbers,
+                chineseFontStyle,
+                lineSpacing === opt.value && styles.segmentNumbersSelected,
+              ]}
+            >
+              {opt.numbers}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -54,6 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.background,
     padding: 24,
     paddingTop: 48,
+    paddingBottom: 48,
   },
   title: {
     fontSize: 32,
@@ -85,10 +134,43 @@ const styles = StyleSheet.create({
     color: theme.text,
     flex: 1,
   },
-  settingHint: {
-    fontSize: 13,
+  segmentedRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    borderRightWidth: 1,
+    borderRightColor: theme.border,
+  },
+  segmentButtonLast: {
+    borderRightWidth: 0,
+  },
+  segmentButtonSelected: {
+    backgroundColor: theme.accent + '22',
+  },
+  segmentLabel: {
+    fontSize: 15,
+    color: theme.textSecondary,
+  },
+  segmentLabelSelected: {
+    color: theme.accent,
+    fontWeight: '600',
+  },
+  segmentNumbers: {
+    fontSize: 11,
     color: theme.textMuted,
-    marginTop: 12,
-    marginHorizontal: 4,
+  },
+  segmentNumbersSelected: {
+    color: theme.accent,
   },
 });

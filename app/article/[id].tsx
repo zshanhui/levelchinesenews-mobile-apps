@@ -38,8 +38,8 @@ export default function ArticleDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          title: article?.title ?? 'Article',
-          headerBackTitle: 'Back',
+          title: article?.title ?? 'article',
+          headerBackTitle: 'back',
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.text,
         }}
@@ -47,14 +47,14 @@ export default function ArticleDetailScreen() {
       {loading && !article ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>Loading…</Text>
+          <Text style={styles.loadingText}>loading…</Text>
         </View>
       ) : error && !article ? (
         <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryButton} onPress={refetch}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>retry</Text>
           </Pressable>
         </View>
       ) : article ? (
@@ -75,7 +75,7 @@ export default function ArticleDetailScreen() {
                         onPress={() => Linking.openURL(article.source_url!)}
                         hitSlop={8}
                         accessibilityRole="link"
-                        accessibilityLabel="Open source article"
+                        accessibilityLabel="open source article"
                       >
                         <Ionicons name="open-outline" size={16} color={theme.accent} />
                       </Pressable>
@@ -101,7 +101,7 @@ export default function ArticleDetailScreen() {
               <ArticleContent parsedContent={article.parsed_content} />
             ) : (
               <Text style={[styles.emptyContent, chineseFontStyle]}>
-                No content available
+                no content available
               </Text>
             )}
           </View>

@@ -14,6 +14,9 @@ import {
 
 const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';
 const STORAGE_KEY_PINYIN = '@lcn/showPinyin';
+const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
+
+export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
 
 type FontContextValue = {
   /** Whether to use Noto Sans SC for Chinese text */
@@ -22,6 +25,9 @@ type FontContextValue = {
   /** Whether to show Pinyin above Chinese words in article view */
   showPinyin: boolean;
   setShowPinyin: (value: boolean) => void;
+  /** Line spacing level for article content */
+  lineSpacing: LineSpacingLevel;
+  setLineSpacing: (value: LineSpacingLevel) => void;
   /** Style to apply to Text for Chinese content */
   chineseFontStyle: { fontFamily?: string };
   /** Bold variant for headings */
@@ -35,6 +41,7 @@ const FontContext = createContext<FontContextValue | null>(null);
 export function FontProvider({ children }: { children: React.ReactNode }) {
   const [useNotoSansSC, setUseNotoSansSCState] = useState(true);
   const [showPinyin, setShowPinyinState] = useState(true);
+  const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('normal');
 
   const [fontsLoaded] = useFonts({
     NotoSansSC_400Regular,
@@ -57,6 +64,14 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_LINE_SPACING).then((stored) => {
+      if (stored === 'compact' || stored === 'normal' || stored === 'relaxed') {
+        setLineSpacingState(stored);
+      }
+    });
+  }, []);
+
   const setUseNotoSansSC = useCallback((value: boolean) => {
     setUseNotoSansSCState(value);
     AsyncStorage.setItem(STORAGE_KEY_FONT, String(value));
@@ -65,6 +80,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
   const setShowPinyin = useCallback((value: boolean) => {
     setShowPinyinState(value);
     AsyncStorage.setItem(STORAGE_KEY_PINYIN, String(value));
+  }, []);
+
+  const setLineSpacing = useCallback((value: LineSpacingLevel) => {
+    setLineSpacingState(value);
+    AsyncStorage.setItem(STORAGE_KEY_LINE_SPACING, value);
   }, []);
 
   const chineseFontStyle =
@@ -82,6 +102,8 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     setUseNotoSansSC,
     showPinyin,
     setShowPinyin,
+    lineSpacing,
+    setLineSpacing,
     chineseFontStyle,
     chineseFontBoldStyle,
     fontsReady: !useNotoSansSC || fontsLoaded,

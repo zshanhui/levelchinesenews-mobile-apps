@@ -7,14 +7,14 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Oops! Not Found',
+          title: 'oops! not found',
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.text,
         }}
       />
       <View style={styles.container}>
         <Link href="/" style={styles.link}>
-          Go back to Home
+          go back to home
         </Link>
       </View>
     </>

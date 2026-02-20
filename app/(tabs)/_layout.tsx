@@ -1,6 +1,40 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Text, View } from 'react-native';
 import { theme } from '../../lib/theme';
+
+const logoColors = [theme.accent, '#8a8278', theme.text];
+
+function LogoIcon() {
+  const barWidth = 4;
+  const heights = [10, 16, 22];
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 24 }}>
+      {heights.map((h, i) => (
+        <View
+          key={i}
+          style={{
+            width: barWidth,
+            height: h,
+            backgroundColor: logoColors[i],
+            borderRadius: 2,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+function AppHeader() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <LogoIcon />
+      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.text }}>
+        LevelChineseNews
+      </Text>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -15,6 +49,7 @@ export default function TabLayout() {
         },
         headerTintColor: theme.text,
         headerShadowVisible: false,
+        headerTitle: () => <AppHeader />,
         tabBarStyle: {
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
@@ -25,8 +60,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Articles',
-          headerTitle: 'Articles',
+          title: 'articles',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'newspaper' : 'newspaper-outline'} color={color} size={24} />
           ),
@@ -35,8 +69,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Create',
-          headerTitle: 'Create',
+          title: 'create',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} color={color} size={24} />
           ),
@@ -45,8 +78,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          headerTitle: 'Settings',
+          title: 'settings',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'settings' : 'settings-outline'} color={color} size={24} />
           ),

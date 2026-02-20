@@ -46,3 +46,36 @@ export async function fetchWithTimeout<T>(
     throw err;
   }
 }
+
+const POST_TIMEOUT_MS = 5_000;
+
+/** POST JSON with timeout. Parses error detail from response body when possible. */
+export async function postWithTimeout<T>(
+  url: string,
+  body: Record<string, unknown>,
+  timeoutMs: number = POST_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      let detail: string | undefined;
+      try {
+        const json = await res.json();
+        detail = json.detail;
+      } catch { }
+      throw new Error(detail ?? `API error: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
