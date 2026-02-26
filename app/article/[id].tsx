@@ -88,7 +88,10 @@ export default function ArticleDetailScreen() {
           <ScrollView
             ref={scrollViewRef}
             style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              selectedWord ? { paddingBottom: 32 + STUDY_PANEL_HEIGHT } : null,
+            ]}
             showsVerticalScrollIndicator={false}
           >
             <View ref={contentRef} style={styles.content} collapsable={false}>
@@ -158,6 +161,8 @@ export default function ArticleDetailScreen() {
     </>
   );
 }
+
+const STUDY_PANEL_HEIGHT = 150;
 
 const styles = StyleSheet.create({
   center: {
