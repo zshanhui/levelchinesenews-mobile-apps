@@ -1,7 +1,7 @@
 /** API base URL. Override with EXPO_PUBLIC_API_URL for different environments. */
 export const API_BASE_URL =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-  (__DEV__ ? 'http://localhost:8000' : 'https://api.example.com');
+  (__DEV__ ? 'http://localhost:8000' : process.env.EXPO_PUBLIC_API_URL);
 
 const API_PREFIX = '/api/v1';
 const REQUEST_TIMEOUT_MS = 3000;

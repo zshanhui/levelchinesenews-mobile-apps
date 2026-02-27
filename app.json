@@ -22,13 +22,19 @@
         "backgroundColor": "#f5f0e8"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.wuweilabs.levelchinesenews"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "61ffeceb-893a-4a01-8a8e-5756a78b39fe"
+      }
+    }
   }
 }
