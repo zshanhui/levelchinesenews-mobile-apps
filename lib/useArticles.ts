@@ -1,5 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiUrl, fetchWithTimeout } from './api';
+import {
+  dedupeById,
+  loadCachedList,
+  saveCachedList,
+} from './articleListCache';
 import type { ArticleListItem, ArticleListResponse } from './types';
 
 const PAGE_SIZE = 15;
@@ -28,6 +33,13 @@ export function useArticles() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usingSeed, setUsingSeed] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+
+  const itemsRef = useRef<ArticleListItem[]>([]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   const hasMore = items.length < total;
 
@@ -45,17 +57,37 @@ export function useArticles() {
           REQUEST_TIMEOUT_MS,
         );
         setUsingSeed(false);
-        if (append) {
-          setItems((prev) => [...prev, ...data.items]);
-        } else {
-          setItems(data.items);
-        }
+        setUsingCache(false);
+        setCachedAt(null);
+        const newItems = append
+          ? [...itemsRef.current, ...data.items]
+          : data.items;
+        const deduped = dedupeById(newItems);
+        setItems(append ? deduped : data.items);
         setTotal(data.total);
         setPage(data.page);
+        saveCachedList(deduped, data.total, PAGE_SIZE).catch(() => {});
         return data;
       } catch {
+        const cached = await loadCachedList();
+        if (cached && cached.items.length > 0) {
+          setUsingCache(true);
+          setCachedAt(cached.cachedAt);
+          setUsingSeed(false);
+          setItems(cached.items);
+          setTotal(cached.total);
+          setPage(Math.ceil(cached.items.length / PAGE_SIZE) || 1);
+          return {
+            items: cached.items,
+            total: cached.total,
+            page: 1,
+            page_size: PAGE_SIZE,
+          } as ArticleListResponse;
+        }
         const data = getSeedPage(pageNum);
         setUsingSeed(true);
+        setUsingCache(false);
+        setCachedAt(null);
         if (append) {
           setItems((prev) => [...prev, ...data.items]);
         } else {
@@ -116,6 +148,8 @@ export function useArticles() {
     error,
     hasMore,
     usingSeed,
+    usingCache,
+    cachedAt,
     loadInitial,
     refresh,
     loadMore,

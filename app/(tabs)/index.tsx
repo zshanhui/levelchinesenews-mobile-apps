@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { router, useFocusEffect, useNavigation } from 'expo-router';
+import { useCallback, useLayoutEffect } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,11 +10,14 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useArticles } from '../../lib/useArticles';
+import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
+import { SeedIndicator } from '../../lib/components/SeedIndicator';
+import { useArticles } from '../../lib/useArticles';
 import { theme } from '../../lib/theme';
 
 export default function ArticlesScreen() {
+  const navigation = useNavigation();
   const {
     items,
     loading,
@@ -22,10 +25,24 @@ export default function ArticlesScreen() {
     loadingMore,
     error,
     hasMore,
+    usingCache,
+    cachedAt,
+    usingSeed,
     loadInitial,
     refresh,
     loadMore,
   } = useArticles();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () =>
+        usingCache && cachedAt ? (
+          <CacheIndicator cachedAt={cachedAt} />
+        ) : usingSeed ? (
+          <SeedIndicator />
+        ) : null,
+    });
+  }, [navigation, usingCache, cachedAt, usingSeed]);
 
   useFocusEffect(
     useCallback(() => {
