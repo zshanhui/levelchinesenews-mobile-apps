@@ -4,13 +4,13 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArticleContent,
@@ -37,8 +37,26 @@ function formatDate(iso: string | null): string {
 
 export default function ArticleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { article, loading, error, refetch } = useArticle(id);
+  const {
+    article,
+    loading,
+    error,
+    usingCache,
+    usingSeed,
+    refetch,
+  } = useArticle(id);
+
   const { chineseFontStyle } = useFont();
+
+  const SourceLabel = () => {
+    if (usingCache) {
+      return <Text style={styles.metaText}>cached</Text>;
+    }
+    if (usingSeed) {
+      return <Text style={styles.metaText}>seed</Text>;
+    }
+    return null;
+  };
   const insets = useSafeAreaInsets();
   const [selectedWord, setSelectedWord] = useState<{ word: string; pinyin: string | null } | null>(null);
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
@@ -97,37 +115,40 @@ export default function ArticleDetailScreen() {
           >
             <View ref={contentRef} style={styles.content} collapsable={false}>
               <Text style={[styles.title, chineseFontStyle]}>{article.title}</Text>
-              {(article.source || article.published_date) && (
-                <View style={styles.meta}>
-                  {article.source && (
-                    <View style={styles.metaSource}>
-                      <Text style={styles.metaText}>{article.source}</Text>
-                      {article.source_url ? (
-                        <Pressable
-                          onPress={() => Linking.openURL(article.source_url!)}
-                          hitSlop={8}
-                          accessibilityRole="link"
-                          accessibilityLabel="open source article"
-                        >
-                          <Ionicons name="open-outline" size={16} color={theme.accent} />
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  )}
-                  {article.published_date && (
+              <View style={styles.meta}>
+                {article.source && (
+                  <View style={styles.metaSource}>
+                    <Text style={styles.metaText}>{article.source}</Text>
+                    {article.source_url ? (
+                      <Pressable
+                        onPress={() => Linking.openURL(article.source_url!)}
+                        hitSlop={8}
+                        accessibilityRole="link"
+                        accessibilityLabel="open source article"
+                      >
+                        <Ionicons name="open-outline" size={16} color={theme.accent} />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                )}
+                {article.published_date ? (
+                  <View style={styles.metaDateRow}>
                     <Text style={styles.metaText}>
                       {formatDate(article.published_date)}
                     </Text>
-                  )}
-                </View>
-              )}
+                    {SourceLabel()}
+                  </View>
+                ) : (
+                  SourceLabel()
+                )}
+              </View>
               {((): React.ReactNode => {
                 const imageUri = resolveImageUrl(article.main_image);
                 return imageUri ? (
                   <Image
                     source={{ uri: imageUri }}
                     style={styles.image}
-                    resizeMode="cover"
+                    contentFit="cover"
                     accessibilityIgnoresInvertColors
                   />
                 ) : null;
@@ -229,6 +250,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  metaDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   metaText: {
     fontSize: 13,

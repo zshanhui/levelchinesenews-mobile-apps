@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { resolveImageUrl } from '../api';
 import { useFont } from '../FontContext';
 import type { ArticleListItem } from '../types';
@@ -62,7 +63,7 @@ export function ArticleCard({
           <Image
             source={{ uri: imageUri }}
             style={styles.thumbnail}
-            resizeMode="cover"
+            contentFit="cover"
             accessibilityIgnoresInvertColors
           />
         ) : (

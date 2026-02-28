@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
 import { theme } from '../theme';
 
@@ -32,7 +31,6 @@ export function CacheIndicator({ cachedAt }: { cachedAt: string }) {
   if (!label) return null;
   return (
     <View style={styles.container}>
-      <Ionicons name="cloud-done-outline" size={16} color={theme.textMuted} />
       <Text style={styles.text}>Cached {label}</Text>
     </View>
   );
@@ -44,6 +42,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginRight: 8,
+    marginLeft: 8,
   },
   text: {
     fontSize: 12,
