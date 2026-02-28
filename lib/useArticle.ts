@@ -20,7 +20,7 @@ export function useArticle(id: string | undefined) {
     setError(null);
     try {
       const url = apiUrl(`/articles/${id}`);
-      const data = await fetchWithTimeout<ArticleDetail>(url, 3000);
+      const data = await fetchWithTimeout<ArticleDetail>(url, 8000);
       setArticle(data);
     } catch {
       // Fall back to seed data for local dev when no network

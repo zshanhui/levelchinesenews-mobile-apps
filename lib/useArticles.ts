@@ -3,7 +3,7 @@ import { apiUrl, fetchWithTimeout } from './api';
 import type { ArticleListItem, ArticleListResponse } from './types';
 
 const PAGE_SIZE = 15;
-const REQUEST_TIMEOUT_MS = 3000;
+const REQUEST_TIMEOUT_MS = 8000;
 
 // Seed data for local dev when API is unavailable
 const seedData: ArticleListResponse = require('../assets/seed-articles.json');

@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useFont } from '../../lib/FontContext';
 import { theme } from '../../lib/theme';
-import { apiUrl, postWithTimeout } from '../../lib/api';
+import { ADMIN_ACCESS_KEY, apiUrl, postWithTimeout } from '../../lib/api';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import type { ArticleListItem } from '../../lib/types';
 
@@ -91,6 +91,8 @@ export default function CreateScreen() {
       const result = await postWithTimeout<ArticleListItem>(
         apiUrl('/scrape'),
         { url: trimmed },
+        undefined,
+        ADMIN_ACCESS_KEY ? { 'X-Admin-Key': ADMIN_ACCESS_KEY } : undefined,
       );
       const newCount = await incrementDailyCount();
       setDailyCount(newCount);

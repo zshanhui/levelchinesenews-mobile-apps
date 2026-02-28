@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { resolveImageUrl } from '../api';
 import { useFont } from '../FontContext';
 import type { ArticleListItem } from '../types';
 import { theme } from '../theme';
@@ -45,51 +46,53 @@ export function ArticleCard({
       : truncate(fullSummary, 100)
     : null;
 
+  const imageUri = resolveImageUrl(item.main_image);
   return (
     <View style={styles.card}>
-      {item.main_image ? (
-        <Image
-          source={{ uri: item.main_image }}
-          style={styles.thumbnail}
-          resizeMode="cover"
-          accessibilityIgnoresInvertColors
-        />
-      ) : (
-        <View style={styles.thumbnailPlaceholder}>
-          <Ionicons name="newspaper-outline" size={32} color={theme.textMuted} />
-        </View>
-      )}
-      <View style={styles.cardContent}>
-        {item.title_translated_en ? (
-          <Pressable
-            onPress={() => setShowTranslated((prev) => !prev)}
-            style={styles.titlePressable}
-          >
-            <Text
-              style={[
-                styles.cardTitle,
-                chineseFontBoldStyle,
-                showTranslated && styles.cardTitleTranslated,
-              ]}
-              numberOfLines={showTranslated ? undefined : 2}
-            >
-              {displayTitle}
-            </Text>
-          </Pressable>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          imageUri ? styles.thumbnailWrapper : styles.thumbnailPlaceholder,
+          pressed && styles.thumbnailPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={`open article: ${displayTitle}`}
+      >
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
+          />
         ) : (
-          <Text
-            style={[styles.cardTitle, chineseFontBoldStyle]}
-            numberOfLines={2}
-          >
-            {displayTitle}
-          </Text>
+          <Ionicons name="newspaper-outline" size={32} color={theme.textMuted} />
         )}
+      </Pressable>
+      <Pressable
+        style={styles.cardContent}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`open article: ${displayTitle}`}
+      >
+        <Text
+          style={[
+            styles.cardTitle,
+            chineseFontBoldStyle,
+            showTranslated && styles.cardTitleTranslated,
+          ]}
+          numberOfLines={showTranslated ? undefined : 2}
+        >
+          {displayTitle}
+        </Text>
         {(item.source || item.published_date) && (
           <View style={styles.cardMeta}>
             {item.source && (
-              <Text style={[styles.cardSource, chineseFontStyle]}>
-                {item.source}
-              </Text>
+              <View style={styles.cardSourceWrapper}>
+                <Text style={[styles.cardSource, chineseFontStyle]}>
+                  {item.source}
+                </Text>
+              </View>
             )}
             {item.published_date && (
               <Text style={styles.cardDate}>
@@ -119,27 +122,26 @@ export function ArticleCard({
               {displaySubtitle}
             </Text>
           )
-        ) : (
-          <Text style={[styles.cardSummaryEmpty, chineseFontStyle]}>
-            no summary has been generated for this article yet…
-          </Text>
-        )}
-      </View>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.arrowButton,
-          pressed && styles.arrowButtonPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`open article: ${displayTitle}`}
-      >
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={theme.textMuted}
-        />
+        ) : null}
       </Pressable>
+      {item.title_translated_en ? (
+        <Pressable
+          onPress={() => setShowTranslated((prev) => !prev)}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.translateButton,
+            pressed && styles.translateButtonPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={showTranslated ? 'Show Chinese title' : 'Show English translation'}
+        >
+          <Ionicons
+            name="language-outline"
+            size={18}
+            color={showTranslated ? theme.accent : theme.textMuted}
+          />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -155,14 +157,14 @@ const styles = StyleSheet.create({
     minHeight: 96,
     borderWidth: 1,
     borderColor: theme.border,
+    position: 'relative',
   },
-  arrowButton: {
-    padding: 12,
-    justifyContent: 'center',
-    alignSelf: 'stretch',
-  },
-  arrowButtonPressed: {
-    opacity: 0.7,
+  thumbnailWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: theme.border,
   },
   thumbnail: {
     width: 80,
@@ -178,15 +180,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  thumbnailPressed: {
+    opacity: 0.7,
+  },
   cardContent: {
     flex: 1,
     marginLeft: 12,
-    marginRight: 8,
+    marginRight: 12,
+    paddingRight: '10%',
     justifyContent: 'center',
     minWidth: 0,
   },
-  titlePressable: {
-    alignSelf: 'flex-start',
+  translateButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    padding: 4,
+  },
+  translateButtonPressed: {
+    opacity: 0.7,
   },
   summaryPressable: {
     alignSelf: 'flex-start',
@@ -205,9 +217,16 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
+  cardSourceWrapper: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
   cardSource: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '600',
     color: theme.textSecondary,
+    letterSpacing: 0.5,
   },
   cardDate: {
     fontSize: 12,
@@ -216,12 +235,6 @@ const styles = StyleSheet.create({
   cardSummary: {
     fontSize: 13,
     color: theme.textSecondary,
-    marginTop: 4,
-  },
-  cardSummaryEmpty: {
-    fontSize: 13,
-    color: theme.textMuted,
-    fontStyle: 'italic',
     marginTop: 4,
   },
 });

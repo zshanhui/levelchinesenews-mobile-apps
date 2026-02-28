@@ -17,6 +17,7 @@ import {
   SentenceStudyPanel,
 } from '../../lib/components/ArticleContent';
 import { useFont } from '../../lib/FontContext';
+import { resolveImageUrl } from '../../lib/api';
 import { theme } from '../../lib/theme';
 import { useArticle } from '../../lib/useArticle';
 
@@ -120,14 +121,17 @@ export default function ArticleDetailScreen() {
                   )}
                 </View>
               )}
-              {article.main_image ? (
-                <Image
-                  source={{ uri: article.main_image }}
-                  style={styles.image}
-                  resizeMode="cover"
-                  accessibilityIgnoresInvertColors
-                />
-              ) : null}
+              {((): React.ReactNode => {
+                const imageUri = resolveImageUrl(article.main_image);
+                return imageUri ? (
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.image}
+                    resizeMode="cover"
+                    accessibilityIgnoresInvertColors
+                  />
+                ) : null;
+              })()}
               {article.parsed_content?.length ? (
                 <ArticleContent
                   parsedContent={article.parsed_content}

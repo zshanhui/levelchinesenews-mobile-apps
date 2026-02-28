@@ -3,6 +3,10 @@ export const API_BASE_URL =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
   (__DEV__ ? 'http://localhost:8000' : process.env.EXPO_PUBLIC_API_URL);
 
+/** Admin key for protected endpoints (e.g. scrape). Set EXPO_PUBLIC_ADMIN_ACCESS_KEY to match server ADMIN_ACCESS_KEY. */
+export const ADMIN_ACCESS_KEY =
+  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_ADMIN_ACCESS_KEY) || '';
+
 const API_PREFIX = '/api/v1';
 const REQUEST_TIMEOUT_MS = 3000;
 
@@ -12,6 +16,15 @@ export function apiUrl(path: string, params?: Record<string, string | number | b
   const search = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => search.set(k, String(v)));
   return `${url}?${search.toString()}`;
+}
+
+/** Resolve main_image to an absolute URL. When backend uses local storage, it returns paths like /api/v1/images/foo.jpg. */
+export function resolveImageUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  const base = API_BASE_URL?.replace(/\/$/, '') ?? '';
+  return base ? `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}` : trimmed;
 }
 
 export async function fetchApi<T>(url: string): Promise<T> {
@@ -54,13 +67,19 @@ export async function postWithTimeout<T>(
   url: string,
   body: Record<string, unknown>,
   timeoutMs: number = POST_TIMEOUT_MS,
+  extraHeaders?: Record<string, string>,
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...extraHeaders,
+  };
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers,
       body: JSON.stringify(body),
       signal: controller.signal,
     });
