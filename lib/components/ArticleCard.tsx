@@ -33,9 +33,11 @@ const THUMB_MAX_HEIGHT = 120;
 export function ArticleCard({
   item,
   onPress,
+  index = 0,
 }: {
   item: ArticleListItem;
   onPress: () => void;
+  index?: number;
 }) {
   const { chineseFontStyle, chineseFontBoldStyle } = useFont();
   const [showTranslated, setShowTranslated] = useState(false);
@@ -104,6 +106,7 @@ export function ArticleCard({
             styles.cardTitle,
             chineseFontBoldStyle,
             showTranslated && styles.cardTitleTranslated,
+            index % 2 === 1 && styles.cardTitleAlt,
           ]}
           numberOfLines={showTranslated ? undefined : 2}
         >
@@ -231,6 +234,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.accentPressed,
+  },
+  cardTitleAlt: {
+    color: theme.cardTitleAlt,
   },
   cardTitleTranslated: {
     fontSize: 14,

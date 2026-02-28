@@ -76,9 +76,10 @@ export default function ArticlesScreen() {
       style={styles.list}
       data={items}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
         <ArticleCard
           item={item}
+          index={index}
           onPress={() => router.push(`/article/${item.id}`)}
         />
       )}

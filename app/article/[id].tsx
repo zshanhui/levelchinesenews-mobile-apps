@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    aspectRatio: 16 / 9,
+    aspectRatio: 16 / 10, // 10% taller than 16:9
     borderRadius: 8,
     backgroundColor: theme.border,
     marginBottom: 16,

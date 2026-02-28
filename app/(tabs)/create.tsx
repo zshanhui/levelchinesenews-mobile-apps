@@ -151,9 +151,10 @@ export default function CreateScreen() {
             contentContainerStyle={styles.listContent}
             data={myArticles}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <ArticleCard
                 item={item}
+                index={index}
                 onPress={() => router.push(`/article/${item.id}`)}
               />
             )}

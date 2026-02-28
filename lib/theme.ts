@@ -19,4 +19,7 @@ export const theme = {
 
   // Semantic
   error: '#991b1b',
+
+  // Alternating accent for list items
+  cardTitleAlt: '#1a1a1a', // obsidian black
 } as const;
