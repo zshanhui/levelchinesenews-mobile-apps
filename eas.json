@@ -9,16 +9,25 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://lcn-read-service.onrender.com"
+      },
+      "android": {
+        "image": "ubuntu-24.04-jdk-17-ndk-r27b"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://lcn-read-service.onrender.com"
+      },
+      "android": {
+        "image": "ubuntu-24.04-jdk-17-ndk-r27b"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "image": "ubuntu-24.04-jdk-17-ndk-r27b"
+      }
     }
   },
   "submit": {
