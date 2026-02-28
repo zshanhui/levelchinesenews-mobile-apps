@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { resolveImageUrl } from '../api';
 import { useFont } from '../FontContext';
@@ -26,6 +26,10 @@ function truncate(str: string, maxLen: number): string {
   return str.slice(0, maxLen).trim() + '…';
 }
 
+const THUMB_WIDTH = 80;
+const THUMB_MIN_HEIGHT = 50;
+const THUMB_MAX_HEIGHT = 120;
+
 export function ArticleCard({
   item,
   onPress,
@@ -36,6 +40,7 @@ export function ArticleCard({
   const { chineseFontStyle, chineseFontBoldStyle } = useFont();
   const [showTranslated, setShowTranslated] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const displayTitle =
     showTranslated && item.title_translated_en
       ? item.title_translated_en
@@ -48,12 +53,26 @@ export function ArticleCard({
     : null;
 
   const imageUri = resolveImageUrl(item.main_image);
+
+  useEffect(() => {
+    setAspectRatio(null);
+  }, [imageUri]);
+
+  const thumbHeight =
+    aspectRatio != null
+      ? Math.min(
+          THUMB_MAX_HEIGHT,
+          Math.max(THUMB_MIN_HEIGHT, THUMB_WIDTH / aspectRatio),
+        )
+      : THUMB_WIDTH;
+
   return (
     <View style={styles.card}>
       <Pressable
         onPress={onPress}
         style={({ pressed }) => [
           imageUri ? styles.thumbnailWrapper : styles.thumbnailPlaceholder,
+          { width: THUMB_WIDTH, height: thumbHeight },
           pressed && styles.thumbnailPressed,
         ]}
         accessibilityRole="button"
@@ -62,8 +81,12 @@ export function ArticleCard({
         {imageUri ? (
           <Image
             source={{ uri: imageUri }}
-            style={styles.thumbnail}
+            style={[styles.thumbnail, { width: THUMB_WIDTH, height: thumbHeight }]}
             contentFit="cover"
+            onLoad={(e) => {
+              const { width, height } = e.source;
+              if (width && height) setAspectRatio(width / height);
+            }}
             accessibilityIgnoresInvertColors
           />
         ) : (
