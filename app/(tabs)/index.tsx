@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
-import { useCallback, useLayoutEffect } from 'react';
+import { useCallback, useLayoutEffect, useMemo } from 'react';
 import { generateArticleSummary } from '../../lib/api';
 import type { ArticleListItem } from '../../lib/types';
 import {
@@ -16,11 +16,14 @@ import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import { SeedIndicator } from '../../lib/components/SeedIndicator';
 import { useArticles } from '../../lib/useArticles';
-import { theme } from '../../lib/theme';
+import type { Theme } from '../../lib/theme';
+import { useTheme } from '../../lib/ThemeContext';
 
 const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
 export default function ArticlesScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
   const {
     items,
@@ -144,7 +147,8 @@ export default function ArticlesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   centerContainer: {
     flex: 1,
     backgroundColor: theme.background,
@@ -213,4 +217,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+  });
+}

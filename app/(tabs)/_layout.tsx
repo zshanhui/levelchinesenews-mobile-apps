@@ -1,11 +1,10 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text, View } from 'react-native';
-import { theme } from '../../lib/theme';
+import { useTheme } from '../../lib/ThemeContext';
 
-const logoColors = [theme.accent, '#8a8278', theme.text];
-
-function LogoIcon() {
+function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
+  const logoColors = [theme.accent, '#8a8278', theme.text];
   const barWidth = 4;
   const heights = [10, 16, 22];
   return (
@@ -25,10 +24,10 @@ function LogoIcon() {
   );
 }
 
-function AppHeader() {
+function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <LogoIcon />
+      <LogoIcon theme={theme} />
       <Text style={{ fontSize: 18, fontWeight: '600', color: theme.text }}>
         LevelChineseNews
       </Text>
@@ -37,6 +36,7 @@ function AppHeader() {
 }
 
 export default function TabLayout() {
+  const { theme } = useTheme();
   return (
     <Tabs
       screenOptions={{
@@ -49,12 +49,13 @@ export default function TabLayout() {
         },
         headerTintColor: theme.text,
         headerShadowVisible: false,
-        headerTitle: () => <AppHeader />,
+        headerTitle: () => <AppHeader theme={theme} />,
         tabBarStyle: {
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
           borderTopWidth: 1,
         },
+        sceneStyle: { backgroundColor: theme.background },
       }}
     >
       <Tabs.Screen

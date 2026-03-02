@@ -2,6 +2,7 @@ import {
   NotoSansSC_400Regular,
   NotoSansSC_600SemiBold,
 } from '@expo-google-fonts/noto-sans-sc';
+import { Platform } from 'react-native';
 import { useFonts } from '@expo-google-fonts/noto-sans-sc/useFonts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -13,11 +14,21 @@ import {
 } from 'react';
 import {
   STORAGE_KEY_FONT,
+  STORAGE_KEY_FONT_SIZE,
   STORAGE_KEY_LINE_SPACING,
   STORAGE_KEY_PINYIN,
 } from './constants';
 
 export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
+export type FontSizeLevel = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
+  xs: 14,
+  sm: 16,
+  md: 18,
+  lg: 20,
+  xl: 22,
+};
 
 type FontContextValue = {
   /** Whether to use Noto Sans SC for Chinese text */
@@ -29,10 +40,15 @@ type FontContextValue = {
   /** Line spacing level for article content */
   lineSpacing: LineSpacingLevel;
   setLineSpacing: (value: LineSpacingLevel) => void;
+  /** Font size level for article content */
+  fontSize: FontSizeLevel;
+  setFontSize: (value: FontSizeLevel) => void;
   /** Style to apply to Text for Chinese content */
   chineseFontStyle: { fontFamily?: string };
   /** Bold variant for headings */
   chineseFontBoldStyle: { fontFamily?: string };
+  /** Resolved numeric font size for article content */
+  articleFontSize: number;
   /** Whether fonts are ready (when useNotoSansSC is true) */
   fontsReady: boolean;
 };
@@ -40,9 +56,12 @@ type FontContextValue = {
 const FontContext = createContext<FontContextValue | null>(null);
 
 export function FontProvider({ children }: { children: React.ReactNode }) {
-  const [useNotoSansSC, setUseNotoSansSCState] = useState(true);
+  const [useNotoSansSC, setUseNotoSansSCState] = useState(
+    Platform.OS === 'android' ? false : true,
+  );
   const [showPinyin, setShowPinyinState] = useState(true);
   const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('normal');
+  const [fontSize, setFontSizeState] = useState<FontSizeLevel>('md');
 
   const [fontsLoaded] = useFonts({
     NotoSansSC_400Regular,
@@ -73,6 +92,14 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_FONT_SIZE).then((stored) => {
+      if (stored === 'xs' || stored === 'sm' || stored === 'md' || stored === 'lg' || stored === 'xl') {
+        setFontSizeState(stored);
+      }
+    });
+  }, []);
+
   const setUseNotoSansSC = useCallback((value: boolean) => {
     setUseNotoSansSCState(value);
     AsyncStorage.setItem(STORAGE_KEY_FONT, String(value));
@@ -88,6 +115,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY_LINE_SPACING, value);
   }, []);
 
+  const setFontSize = useCallback((value: FontSizeLevel) => {
+    setFontSizeState(value);
+    AsyncStorage.setItem(STORAGE_KEY_FONT_SIZE, value);
+  }, []);
+
   const chineseFontStyle =
     useNotoSansSC && fontsLoaded
       ? { fontFamily: 'NotoSansSC_400Regular' as const }
@@ -98,6 +130,8 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
       ? { fontFamily: 'NotoSansSC_600SemiBold' as const }
       : {};
 
+  const articleFontSize = FONT_SIZE_MAP[fontSize];
+
   const value: FontContextValue = {
     useNotoSansSC,
     setUseNotoSansSC,
@@ -105,8 +139,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     setShowPinyin,
     lineSpacing,
     setLineSpacing,
+    fontSize,
+    setFontSize,
     chineseFontStyle,
     chineseFontBoldStyle,
+    articleFontSize,
     fontsReady: !useNotoSansSC || fontsLoaded,
   };
 

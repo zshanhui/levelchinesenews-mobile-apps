@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,7 +19,8 @@ import {
 import { useFont } from '../../lib/FontContext';
 import { resolveImageUrl } from '../../lib/api';
 import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
-import { theme } from '../../lib/theme';
+import type { Theme } from '../../lib/theme';
+import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
 
 function formatDateTime(iso: string | null): string {
@@ -51,7 +52,9 @@ export default function ArticleDetailScreen() {
     refetch,
   } = useArticle(id);
 
+  const { theme } = useTheme();
   const { chineseFontStyle } = useFont();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const SourceLabel = () => {
     if (usingCache) {
@@ -134,6 +137,17 @@ export default function ArticleDetailScreen() {
           headerBackTitle: 'back',
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.text,
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push('/settings')}
+              hitSlop={12}
+              style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Open settings"
+            >
+              <Ionicons name="settings-outline" size={24} color={theme.textMuted} />
+            </Pressable>
+          ),
         }}
       />
       {loading && !article ? (
@@ -241,7 +255,8 @@ export default function ArticleDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   center: {
     flex: 1,
     backgroundColor: theme.background,
@@ -324,6 +339,12 @@ const styles = StyleSheet.create({
     color: theme.textMuted,
     fontStyle: 'italic',
   },
+  headerButton: {
+    padding: 8,
+  },
+  headerButtonPressed: {
+    opacity: 0.6,
+  },
   studyPanelOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -332,4 +353,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
-});
+  });
+}

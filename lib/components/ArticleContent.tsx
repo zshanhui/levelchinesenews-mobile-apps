@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   Animated,
@@ -12,9 +12,9 @@ import {
   View,
 } from 'react-native';
 import type { ScrollView } from 'react-native';
-import type { LineSpacingLevel } from '../FontContext';
 import { useFont } from '../FontContext';
-import { theme } from '../theme';
+import type { Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 import type { ParsedParagraph, WordSegment } from '../types';
 
 const isWebLocalhost =
@@ -41,31 +41,36 @@ export interface ArticleContentProps {
   contentRef?: RefObject<View | null>;
 }
 
-function WordBlock({
+const WordBlock = memo(function WordBlock({
   segment,
   showPinyin,
   highlighted,
+  fontSize,
+  chineseFontStyle,
+  wordStyles,
 }: {
   segment: WordSegment;
   showPinyin: boolean;
   highlighted: boolean;
+  fontSize: number;
+  chineseFontStyle: { fontFamily?: string };
+  wordStyles: { wordBlock: object; wordBlockHighlightBg: object; pinyin: object; word: object };
 }) {
-  const { chineseFontStyle } = useFont();
   const text = segment.t;
   const pinyin = segment.p ?? '';
 
   return (
-    <View style={styles.wordBlock}>
+    <View style={wordStyles.wordBlock}>
       {highlighted ? (
-        <View style={styles.wordBlockHighlightBg} pointerEvents="none" />
+        <View style={wordStyles.wordBlockHighlightBg} pointerEvents="none" />
       ) : null}
       {showPinyin && pinyin ? (
-        <Text style={[styles.pinyin, chineseFontStyle]}>{pinyin}</Text>
+        <Text style={[wordStyles.pinyin, chineseFontStyle]}>{pinyin}</Text>
       ) : null}
-      <Text style={[styles.word, chineseFontStyle]}>{text}</Text>
+      <Text style={[wordStyles.word, chineseFontStyle, { fontSize }]}>{text}</Text>
     </View>
   );
-}
+});
 
 function buildPlecoUrl(
   word: string,
@@ -108,6 +113,8 @@ export function SentenceStudyPanel({
   highlightedSentenceKey: string;
   bottomInset: number;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle } = useFont();
 
   const openInPleco = useCallback(() => {
@@ -147,7 +154,11 @@ export function SentenceStudyPanel({
   );
 }
 
-function SentenceHighlightOverlay() {
+function SentenceHighlightOverlay({
+  overlayStyle,
+}: {
+  overlayStyle: object;
+}) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(opacity, {
@@ -158,7 +169,7 @@ function SentenceHighlightOverlay() {
   }, [opacity]);
   return (
     <Animated.View
-      style={[styles.sentenceHighlightOverlay, { opacity }]}
+      style={[overlayStyle, { opacity }]}
       pointerEvents="none"
     />
   );
@@ -170,10 +181,7 @@ function isNumberOrPunctuation(text: string): boolean {
   return /^[\d０-９\s\p{P}\p{S}]+$/u.test(text);
 }
 
-const LINE_SPACING: Record<
-  LineSpacingLevel,
-  { sentenceMarginBottom: number; paragraphMarginBottom: number }
-> = {
+const LINE_SPACING = {
   compact: { sentenceMarginBottom: 0, paragraphMarginBottom: 8 },
   normal: { sentenceMarginBottom: 6, paragraphMarginBottom: 24 },
   relaxed: { sentenceMarginBottom: 14, paragraphMarginBottom: 40 },
@@ -189,7 +197,10 @@ export function ArticleContent({
   scrollViewRef,
   contentRef,
 }: ArticleContentProps) {
-  const { showPinyin, lineSpacing } = useFont();
+  const { theme } = useTheme();
+  const { showPinyin, lineSpacing, articleFontSize, chineseFontStyle } = useFont();
+  const deferredFontSize = useDeferredValue(articleFontSize);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const spacing = LINE_SPACING[lineSpacing];
   const selectedSentenceRef = useRef<View | null>(null);
 
@@ -251,7 +262,7 @@ export function ArticleContent({
                 ]}
               >
                 {isSelected ? (
-                  <SentenceHighlightOverlay />
+                  <SentenceHighlightOverlay overlayStyle={styles.sentenceHighlightOverlay} />
                 ) : null}
                 <View
                   style={[
@@ -275,6 +286,14 @@ export function ArticleContent({
                         segment={word}
                         showPinyin={showPinyin}
                         highlighted={highlightedWordKey === wordKey}
+                        fontSize={deferredFontSize}
+                        chineseFontStyle={chineseFontStyle}
+                        wordStyles={{
+                          wordBlock: styles.wordBlock,
+                          wordBlockHighlightBg: styles.wordBlockHighlightBg,
+                          pinyin: styles.pinyin,
+                          word: styles.word,
+                        }}
                       />
                     </Pressable>
                   ) : (
@@ -283,6 +302,14 @@ export function ArticleContent({
                         segment={word}
                         showPinyin={showPinyin}
                         highlighted={false}
+                        fontSize={deferredFontSize}
+                        chineseFontStyle={chineseFontStyle}
+                        wordStyles={{
+                          wordBlock: styles.wordBlock,
+                          wordBlockHighlightBg: styles.wordBlockHighlightBg,
+                          pinyin: styles.pinyin,
+                          word: styles.word,
+                        }}
                       />
                     </View>
                   );
@@ -297,7 +324,8 @@ export function ArticleContent({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   container: {
     paddingVertical: 16,
   },
@@ -314,7 +342,7 @@ const styles = StyleSheet.create({
     left: -10,
     right: -10,
     bottom: -5,
-    backgroundColor: 'rgba(139, 26, 26, 0.06)',
+    backgroundColor: theme.highlightOverlay,
     borderRadius: 8,
   },
   sentence: {
@@ -334,7 +362,7 @@ const styles = StyleSheet.create({
   },
   wordBlockHighlightBg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(139, 26, 26, 0.12)',
+    backgroundColor: theme.highlightBg,
     borderRadius: 4,
     top: -1,
     bottom: -1,
@@ -410,4 +438,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '400',
   },
-});
+  });
+}

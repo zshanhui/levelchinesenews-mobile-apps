@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,7 +18,8 @@ import {
 } from '../constants';
 import { useFont } from '../FontContext';
 import type { ArticleListItem } from '../types';
-import { theme } from '../theme';
+import type { Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '';
@@ -55,6 +56,8 @@ export function ArticleCard({
   onRequestTranslation?: (articleId: string) => Promise<ArticleListItem | null>;
   index?: number;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle, chineseFontBoldStyle } = useFont();
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -258,7 +261,8 @@ export function ArticleCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -362,4 +366,5 @@ const styles = StyleSheet.create({
     color: theme.textSecondary,
     marginTop: 4,
   },
-});
+  });
+}

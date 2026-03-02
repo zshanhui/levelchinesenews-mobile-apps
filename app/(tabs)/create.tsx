@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,7 +15,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useFont } from '../../lib/FontContext';
-import { theme } from '../../lib/theme';
+import type { Theme } from '../../lib/theme';
+import { useTheme } from '../../lib/ThemeContext';
 import {
   ADMIN_ACCESS_KEY,
   apiUrl,
@@ -61,6 +62,8 @@ async function incrementDailyCount(): Promise<number> {
 type TabKey = 'parse' | 'my-articles';
 
 export default function CreateScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle } = useFont();
   const [activeTab, setActiveTab] = useState<TabKey>('parse');
   const [url, setUrl] = useState('');
@@ -182,7 +185,7 @@ export default function CreateScreen() {
         </Pressable>
       ))}
     </View>
-  ), [activeTab, myArticles.length]);
+  ), [activeTab, myArticles.length, styles]);
 
   if (activeTab === 'my-articles') {
     return (
@@ -336,7 +339,8 @@ export default function CreateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background,
@@ -529,4 +533,5 @@ const styles = StyleSheet.create({
     color: theme.textMuted,
     textAlign: 'center',
   },
-});
+  });
+}

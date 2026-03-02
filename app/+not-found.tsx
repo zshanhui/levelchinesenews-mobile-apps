@@ -1,8 +1,12 @@
+import { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Link, Stack } from 'expo-router';
-import { theme } from '../lib/theme';
+import type { Theme } from '../lib/theme';
+import { useTheme } from '../lib/ThemeContext';
 
 export default function NotFoundScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   return (
     <>
       <Stack.Screen
@@ -21,7 +25,8 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background,
@@ -34,4 +39,5 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     fontWeight: '600',
   },
-});
+  });
+}

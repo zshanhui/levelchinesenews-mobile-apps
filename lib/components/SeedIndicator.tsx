@@ -1,7 +1,11 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { theme } from '../theme';
+import type { Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export function SeedIndicator() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Seed data</Text>
@@ -9,7 +13,8 @@ export function SeedIndicator() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -20,4 +25,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.textMuted,
   },
-});
+  });
+}

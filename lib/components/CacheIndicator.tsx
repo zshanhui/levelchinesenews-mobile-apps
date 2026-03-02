@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { theme } from '../theme';
+import type { Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 function formatCachedAt(iso: string): string {
   try {
@@ -27,6 +29,8 @@ function formatCachedAt(iso: string): string {
 }
 
 export function CacheIndicator({ cachedAt }: { cachedAt: string }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const label = formatCachedAt(cachedAt);
   if (!label) return null;
   return (
@@ -36,7 +40,8 @@ export function CacheIndicator({ cachedAt }: { cachedAt: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -48,4 +53,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.textMuted,
   },
-});
+  });
+}

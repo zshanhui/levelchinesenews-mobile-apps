@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import type { LineSpacingLevel } from '../../lib/FontContext';
+import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
-import { theme } from '../../lib/theme';
+import type { Theme } from '../../lib/theme';
+import { useTheme } from '../../lib/ThemeContext';
 
 const LINE_SPACING_OPTIONS: {
   value: LineSpacingLevel;
@@ -13,7 +15,19 @@ const LINE_SPACING_OPTIONS: {
   { value: 'relaxed', label: 'relaxed', numbers: '14px, 40px' },
 ];
 
+const FONT_SIZE_OPTIONS: {
+  value: FontSizeLevel;
+  label: string;
+}[] = [
+  { value: 'xs', label: '14' },
+  { value: 'sm', label: '16' },
+  { value: 'md', label: '18' },
+  { value: 'lg', label: '20' },
+  { value: 'xl', label: '22' },
+];
+
 export default function SettingsScreen() {
+  const { theme, isDark, setDark } = useTheme();
   const {
     useNotoSansSC,
     setUseNotoSansSC,
@@ -22,7 +36,11 @@ export default function SettingsScreen() {
     lineSpacing,
     setLineSpacing,
     chineseFontStyle,
+    fontSize,
+    setFontSize,
   } = useFont();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <View style={styles.container}>
@@ -32,6 +50,18 @@ export default function SettingsScreen() {
       </Text>
 
       <View style={styles.settingRow}>
+        <Text style={[styles.settingLabel, chineseFontStyle]}>
+          dark mode (cyberpunk)
+        </Text>
+        <Switch
+          value={isDark}
+          onValueChange={setDark}
+          trackColor={{ false: theme.border, true: theme.accent + '66' }}
+          thumbColor={isDark ? theme.accent : theme.textMuted}
+        />
+      </View>
+
+      <View style={[styles.settingRow, styles.settingRowSpaced]}>
         <Text style={[styles.settingLabel, chineseFontStyle]}>
           use noto sans sc for chinese
         </Text>
@@ -55,12 +85,11 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <View style={[styles.settingRow, styles.settingRowSpaced]}>
-        <Text style={[styles.settingLabel, chineseFontStyle]}>
+      <View style={styles.etchedSection}>
+        <Text style={[styles.sectionLabel, chineseFontStyle]}>
           adjust line spacing in article content view
         </Text>
-      </View>
-      <View style={styles.segmentedRow}>
+        <View style={styles.segmentedRow}>
         {LINE_SPACING_OPTIONS.map((opt) => (
           <Pressable
             key={opt.value}
@@ -91,53 +120,99 @@ export default function SettingsScreen() {
             </Text>
           </Pressable>
         ))}
+        </View>
+      </View>
+
+      <View style={styles.etchedSection}>
+        <Text style={[styles.sectionLabel, chineseFontStyle]}>
+          adjust article font size
+        </Text>
+        <View style={styles.segmentedRow}>
+        {FONT_SIZE_OPTIONS.map((opt, index) => (
+          <Pressable
+            key={opt.value}
+            onPress={() => setFontSize(opt.value)}
+            style={[
+              styles.segmentButton,
+              index === FONT_SIZE_OPTIONS.length - 1 && styles.segmentButtonLast,
+              fontSize === opt.value && styles.segmentButtonSelected,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentLabel,
+                chineseFontStyle,
+                fontSize === opt.value && styles.segmentLabelSelected,
+              ]}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        ))}
+        </View>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background,
-    padding: 24,
-    paddingTop: 48,
-    paddingBottom: 48,
+    padding: 16,
+    paddingTop: 20,
+    paddingBottom: 24,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     color: theme.text,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 13,
     color: theme.textSecondary,
-    marginBottom: 32,
+    marginBottom: 16,
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     backgroundColor: theme.surface,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.border,
   },
   settingRowSpaced: {
-    marginTop: 24,
+    marginTop: 10,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    color: theme.text,
+  },
+  etchedSection: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: theme.etchedBg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderTopColor: theme.etchedBorderLight,
+    borderLeftColor: theme.etchedBorderLight,
+    borderBottomColor: theme.etchedBorderDark,
+    borderRightColor: theme.etchedBorderDark,
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: theme.text,
     flex: 1,
   },
   segmentedRow: {
     flexDirection: 'row',
-    marginTop: 8,
-    borderRadius: 12,
+    marginTop: 6,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: theme.border,
@@ -145,7 +220,7 @@ const styles = StyleSheet.create({
   },
   segmentButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
@@ -159,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.accent + '22',
   },
   segmentLabel: {
-    fontSize: 15,
+    fontSize: 14,
     color: theme.textSecondary,
   },
   segmentLabelSelected: {
@@ -167,10 +242,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   segmentNumbers: {
-    fontSize: 11,
+    fontSize: 10,
     color: theme.textMuted,
   },
   segmentNumbersSelected: {
     color: theme.accent,
   },
-});
+  });
+}
