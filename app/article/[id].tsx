@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -21,14 +21,16 @@ import { resolveImageUrl } from '../../lib/api';
 import { theme } from '../../lib/theme';
 import { useArticle } from '../../lib/useArticle';
 
-function formatDate(iso: string | null): string {
+function formatDateTime(iso: string | null): string {
   if (!iso) return '';
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
     });
   } catch {
     return '';
@@ -36,7 +38,9 @@ function formatDate(iso: string | null): string {
 }
 
 export default function ArticleDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, word: urlWord, wordKey: urlWordKey, sentenceKey: urlSentenceKey } = useLocalSearchParams<
+    { id: string; word?: string; wordKey?: string; sentenceKey?: string }
+  >();
   const {
     article,
     loading,
@@ -79,6 +83,48 @@ export default function ArticleDetailScreen() {
     setHighlightedSentenceKey(null);
   }, []);
 
+  const restoreSelectionFromParams = useCallback(
+    (params: { word?: string; wordKey?: string; sentenceKey?: string }) => {
+      const { word, wordKey, sentenceKey } = params;
+      if (word && wordKey && sentenceKey) {
+        setSelectedWord({ word, pinyin: null });
+        setHighlightedWordKey(wordKey);
+        setHighlightedSentenceKey(sentenceKey);
+      }
+    },
+    []
+  );
+
+  // Restore selection when app opens with return-from-Pleco deep link (e.g. app was killed)
+  useEffect(() => {
+    restoreSelectionFromParams({
+      word: urlWord,
+      wordKey: urlWordKey,
+      sentenceKey: urlSentenceKey,
+    });
+  }, [urlWord, urlWordKey, urlSentenceKey, restoreSelectionFromParams]);
+
+  // Restore selection when app returns from background via Pleco x-success URL
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', (event) => {
+      try {
+        const url = event.url;
+        const parsed = Linking.parse(url);
+        const path = parsed.path;
+        const articleMatch = path?.match(/^\/?article\/([^/]+)/);
+        if (articleMatch && articleMatch[1] === id) {
+          const query = parsed.queryParams as Record<string, string> | undefined;
+          if (query?.word && query?.wordKey && query?.sentenceKey) {
+            restoreSelectionFromParams(query);
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
+    });
+    return () => subscription.remove();
+  }, [id, restoreSelectionFromParams]);
+
   return (
     <>
       <Stack.Screen
@@ -113,7 +159,12 @@ export default function ArticleDetailScreen() {
             ]}
             showsVerticalScrollIndicator={false}
           >
-            <View ref={contentRef} style={styles.content} collapsable={false}>
+            <Pressable
+              ref={contentRef}
+              style={styles.content}
+              collapsable={false}
+              onPress={selectedWord ? onClosePanel : undefined}
+            >
               <Text style={[styles.title, chineseFontStyle]}>{article.title}</Text>
               <View style={styles.meta}>
                 {article.source && (
@@ -134,7 +185,7 @@ export default function ArticleDetailScreen() {
                 {article.published_date ? (
                   <View style={styles.metaDateRow}>
                     <Text style={styles.metaText}>
-                      {formatDate(article.published_date)}
+                      {formatDateTime(article.published_date)}
                     </Text>
                     {SourceLabel()}
                   </View>
@@ -169,15 +220,17 @@ export default function ArticleDetailScreen() {
                   no content available
                 </Text>
               )}
-            </View>
+            </Pressable>
           </ScrollView>
           {selectedWord ? (
             <View style={styles.studyPanelOverlay} pointerEvents="box-none">
               <SentenceStudyPanel
                 word={selectedWord.word}
                 pinyin={selectedWord.pinyin}
+                articleId={id ?? ''}
+                highlightedWordKey={highlightedWordKey ?? ''}
+                highlightedSentenceKey={highlightedSentenceKey ?? ''}
                 bottomInset={insets.bottom}
-                onClose={onClosePanel}
               />
             </View>
           ) : null}
@@ -277,5 +330,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
 });

@@ -1,20 +1,29 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { resolveImageUrl } from '../api';
 import { useFont } from '../FontContext';
 import type { ArticleListItem } from '../types';
 import { theme } from '../theme';
 
-function formatDate(iso: string | null): string {
+function formatDateTime(iso: string | null): string {
   if (!iso) return '';
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
     });
   } catch {
     return '';
@@ -30,18 +39,41 @@ const THUMB_WIDTH = 80;
 const THUMB_MIN_HEIGHT = 50;
 const THUMB_MAX_HEIGHT = 120;
 
+const hasTranslation = (item: ArticleListItem) =>
+  Boolean(item.title_translated_en && item.summary_generated_en);
+
 export function ArticleCard({
   item,
   onPress,
+  onRequestTranslation,
   index = 0,
 }: {
   item: ArticleListItem;
   onPress: () => void;
+  onRequestTranslation?: (articleId: string) => Promise<ArticleListItem | null>;
   index?: number;
 }) {
   const { chineseFontStyle, chineseFontBoldStyle } = useFont();
   const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const translatingRef = useRef(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!translating) {
+      setCountdown(null);
+      return;
+    }
+    setCountdown(10);
+    const id = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [translating]);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const displayTitle =
     showTranslated && item.title_translated_en
@@ -123,7 +155,7 @@ export function ArticleCard({
             )}
             {item.published_date && (
               <Text style={styles.cardDate}>
-                {formatDate(item.published_date)}
+                {formatDateTime(item.published_date)}
               </Text>
             )}
           </View>
@@ -151,24 +183,75 @@ export function ArticleCard({
           )
         ) : null}
       </Pressable>
-      {item.title_translated_en ? (
-        <Pressable
-          onPress={() => setShowTranslated((prev) => !prev)}
-          hitSlop={8}
-          style={({ pressed }) => [
-            styles.translateButton,
-            pressed && styles.translateButtonPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={showTranslated ? 'Show Chinese title' : 'Show English translation'}
-        >
+      <Pressable
+        onPress={
+          hasTranslation(item)
+            ? () => setShowTranslated((prev) => !prev)
+            : onRequestTranslation && !translating
+              ? async () => {
+                  if (translatingRef.current) return;
+                  translatingRef.current = true;
+                  setTranslating(true);
+                  setCountdown(10);
+                  try {
+                    const updated = await onRequestTranslation(item.id);
+                    if (updated) {
+                      setShowTranslated(true);
+                    } else {
+                      Alert.alert(
+                        'Translation failed',
+                        'Could not generate translation. Please try again.',
+                      );
+                    }
+                  } catch {
+                    Alert.alert(
+                      'Translation failed',
+                      'Could not generate translation. Please try again.',
+                    );
+                  } finally {
+                    translatingRef.current = false;
+                    setTranslating(false);
+                  }
+                }
+              : undefined
+        }
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.translateButton,
+          hasTranslation(item) && pressed && styles.translateButtonPressed,
+        ]}
+        accessibilityRole={hasTranslation(item) || (onRequestTranslation && !translating) ? 'button' : 'image'}
+        accessibilityLabel={
+          translating
+            ? 'Generating translation…'
+            : hasTranslation(item)
+              ? showTranslated
+                ? 'Show Chinese title'
+                : 'Show English translation'
+              : 'Request translation'
+        }
+      >
+        {translating ? (
+          countdown !== null && countdown > 0 ? (
+            <Text style={styles.countdownText}>{countdown}</Text>
+          ) : (
+            <ActivityIndicator size="small" color={theme.accent} />
+          )
+        ) : (
           <Ionicons
             name="language-outline"
             size={18}
-            color={showTranslated ? theme.accent : theme.textMuted}
+            color={
+              hasTranslation(item)
+                ? showTranslated
+                  ? theme.accent
+                  : theme.textMuted
+                : theme.textMuted
+            }
+            style={!hasTranslation(item) && styles.translateIconUnavailable}
           />
-        </Pressable>
-      ) : null}
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -226,6 +309,16 @@ const styles = StyleSheet.create({
   },
   translateButtonPressed: {
     opacity: 0.7,
+  },
+  translateIconUnavailable: {
+    opacity: 0.5,
+  },
+  countdownText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.accent,
+    minWidth: 18,
+    textAlign: 'center',
   },
   summaryPressable: {
     alignSelf: 'flex-start',

@@ -1,3 +1,5 @@
+import type { ArticleListItem } from './types';
+
 /** API base URL. Override with EXPO_PUBLIC_API_URL for different environments. */
 export const API_BASE_URL =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
@@ -61,6 +63,7 @@ export async function fetchWithTimeout<T>(
 }
 
 const POST_TIMEOUT_MS = 5_000;
+const GENERATE_SUMMARY_TIMEOUT_MS = 60_000;
 
 /** POST JSON with timeout. Parses error detail from response body when possible. */
 export async function postWithTimeout<T>(
@@ -97,4 +100,19 @@ export async function postWithTimeout<T>(
     clearTimeout(timeoutId);
     throw err;
   }
+}
+
+/** Generate translated title and summary for an article via LLM. Returns updated article. */
+export async function generateArticleSummary(articleId: string): Promise<ArticleListItem> {
+  const url = apiUrl(`/articles/${articleId}/generate_summary`);
+  const headers: Record<string, string> = {};
+  if (ADMIN_ACCESS_KEY) {
+    headers['X-Admin-Key'] = ADMIN_ACCESS_KEY;
+  }
+  return postWithTimeout<ArticleListItem>(
+    url,
+    {},
+    GENERATE_SUMMARY_TIMEOUT_MS,
+    Object.keys(headers).length ? headers : undefined,
+  );
 }

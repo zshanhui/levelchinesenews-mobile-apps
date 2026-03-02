@@ -48,3 +48,16 @@ export async function saveCachedList(
   };
   await AsyncStorage.setItem(ARTICLE_LIST_CACHE_KEY, JSON.stringify(payload));
 }
+
+/** Update a single article in the cache. Merges patch into the matching item. */
+export async function updateCachedArticle(
+  id: string,
+  patch: Partial<ArticleListItem>,
+): Promise<void> {
+  const cached = await loadCachedList();
+  if (!cached?.items?.length) return;
+  const idx = cached.items.findIndex((a) => a.id === id);
+  if (idx < 0) return;
+  cached.items[idx] = { ...cached.items[idx], ...patch };
+  await saveCachedList(cached.items, cached.total, cached.page_size);
+}

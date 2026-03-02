@@ -1,7 +1,11 @@
+import * as Linking from 'expo-linking';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
+  Animated,
   InteractionManager,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +16,13 @@ import type { LineSpacingLevel } from '../FontContext';
 import { useFont } from '../FontContext';
 import { theme } from '../theme';
 import type { ParsedParagraph, WordSegment } from '../types';
+
+const isWebLocalhost =
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const showPlecoButton = Platform.OS !== 'web' || isWebLocalhost;
 
 export interface StudyPanelState {
   word: string;
@@ -56,42 +67,100 @@ function WordBlock({
   );
 }
 
+function buildPlecoUrl(
+  word: string,
+  pinyin: string | null,
+  articleId: string,
+  wordKey: string,
+  sentenceKey: string
+): string {
+  const returnParams = new URLSearchParams({ word, wordKey, sentenceKey });
+  const xSuccess = `lcn://article/${articleId}?${returnParams.toString()}`;
+
+  const useSearch = word.length >= 3;
+  const baseParams: Record<string, string> = {
+    'x-source': 'Level Chinese News',
+    'x-success': xSuccess,
+  };
+
+  if (useSearch) {
+    baseParams.q = word;
+    return `plecoapi://x-callback-url/s?${new URLSearchParams(baseParams).toString()}`;
+  }
+
+  const dfParams = new URLSearchParams({ hw: word, ...baseParams });
+  if (pinyin) dfParams.set('py', pinyin);
+  return `plecoapi://x-callback-url/df?${dfParams.toString()}`;
+}
+
 export function SentenceStudyPanel({
   word,
   pinyin,
+  articleId,
+  highlightedWordKey,
+  highlightedSentenceKey,
   bottomInset,
-  onClose,
 }: {
   word: string;
   pinyin: string | null;
+  articleId: string;
+  highlightedWordKey: string;
+  highlightedSentenceKey: string;
   bottomInset: number;
-  onClose: () => void;
 }) {
   const { chineseFontStyle } = useFont();
+
+  const openInPleco = useCallback(() => {
+    const url = buildPlecoUrl(word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey);
+    Linking.openURL(url);
+  }, [word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey]);
 
   return (
     <View style={[styles.panel, { paddingBottom: Math.max(bottomInset, 16) }]}>
       <View style={styles.panelHeader}>
         <View style={styles.panelHeaderContent}>
+          <Text style={[styles.panelWord, chineseFontStyle]}>{word}</Text>
           {pinyin ? (
             <Text style={[styles.panelPinyin, chineseFontStyle]}>{pinyin}</Text>
           ) : null}
-          <Text style={[styles.panelWord, chineseFontStyle]}>{word}</Text>
         </View>
-        <Pressable
-          onPress={onClose}
-          hitSlop={12}
-          style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Close panel"
-        >
-          <Text style={styles.closeButtonText}>✕</Text>
-        </Pressable>
+        <View style={styles.panelHeaderRight}>
+          {showPlecoButton ? (
+            <Pressable
+              onPress={openInPleco}
+              style={({ pressed }) => [styles.plecoButton, pressed && styles.plecoButtonPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Open in Pleco dictionary"
+            >
+              <Text style={styles.plecoButtonText}>Pleco</Text>
+              <Ionicons name="search-outline" size={14} color="#fff" />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
-      <Text style={[styles.panelNotice, chineseFontStyle]}>
-        a local dictionary will be implemented soon...
-      </Text>
+      <View style={styles.panelDefinition}>
+        <Text style={[styles.panelDefinitionText, chineseFontStyle]}>
+          native language definition goes here..
+        </Text>
+      </View>
     </View>
+  );
+}
+
+function SentenceHighlightOverlay() {
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [opacity]);
+  return (
+    <Animated.View
+      style={[styles.sentenceHighlightOverlay, { opacity }]}
+      pointerEvents="none"
+    />
   );
 }
 
@@ -132,7 +201,7 @@ export function ArticleContent({
       sentenceNode.measureLayout(
         contentRef.current!,
         (_x, y, _w, height) => {
-          scrollViewRef.current?.measureInWindow((_sx, _sy, _sw, viewportHeight) => {
+          (scrollViewRef.current as unknown as View)?.measureInWindow((_sx, _sy, _sw, viewportHeight) => {
             const panelOverlayHeight = 140;
             const visibleHeight = Math.max(100, viewportHeight - panelOverlayHeight);
             const targetY = Math.max(0, y + height / 2 - visibleHeight / 2);
@@ -179,9 +248,11 @@ export function ArticleContent({
                   {
                     marginBottom: spacing.sentenceMarginBottom,
                   },
-                  isSelected && styles.sentenceWrapperSelected,
                 ]}
               >
+                {isSelected ? (
+                  <SentenceHighlightOverlay />
+                ) : null}
                 <View
                   style={[
                     styles.sentence,
@@ -235,16 +306,16 @@ const styles = StyleSheet.create({
   },
   sentenceWrapper: {
     position: 'relative',
+    overflow: 'visible',
   },
-  sentenceWrapperSelected: {
-    marginHorizontal: -4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    paddingLeft: 14,
-    borderRadius: 8,
+  sentenceHighlightOverlay: {
+    position: 'absolute',
+    top: -5,
+    left: -10,
+    right: -10,
+    bottom: -5,
     backgroundColor: 'rgba(139, 26, 26, 0.06)',
-    borderLeftWidth: 3,
-    borderLeftColor: 'rgba(139, 26, 26, 0.35)',
+    borderRadius: 8,
   },
   sentence: {
     flexDirection: 'row',
@@ -282,44 +353,61 @@ const styles = StyleSheet.create({
     backgroundColor: theme.surface,
     paddingHorizontal: 20,
     paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
   },
   panelHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   panelHeaderContent: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 10,
   },
-  closeButton: {
-    padding: 4,
-    marginTop: -4,
-    marginRight: -4,
-  },
-  closeButtonPressed: {
-    opacity: 0.7,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: theme.textMuted,
-    fontWeight: '500',
+  panelHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   panelPinyin: {
     fontSize: 14,
     color: theme.textMuted,
-    marginBottom: 4,
   },
   panelWord: {
     fontSize: 22,
     color: theme.text,
     fontWeight: '600',
   },
-  panelNotice: {
+  panelDefinition: {
+    paddingTop: 8,
+  },
+  panelDefinitionText: {
     fontSize: 14,
     color: theme.textMuted,
-    fontStyle: 'italic',
+  },
+  plecoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#0078c3',
+    borderRadius: 8,
+  },
+  plecoButtonPressed: {
+    opacity: 0.9,
+  },
+  plecoButtonText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '400',
   },
 });

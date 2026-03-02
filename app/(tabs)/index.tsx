@@ -1,6 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useLayoutEffect } from 'react';
+import { generateArticleSummary } from '../../lib/api';
+import type { ArticleListItem } from '../../lib/types';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +17,8 @@ import { ArticleCard } from '../../lib/components/ArticleCard';
 import { SeedIndicator } from '../../lib/components/SeedIndicator';
 import { useArticles } from '../../lib/useArticles';
 import { theme } from '../../lib/theme';
+
+const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
 export default function ArticlesScreen() {
   const navigation = useNavigation();
@@ -31,7 +35,31 @@ export default function ArticlesScreen() {
     loadInitial,
     refresh,
     loadMore,
+    updateArticle,
   } = useArticles();
+
+  const onRequestTranslation = useCallback(
+    async (articleId: string): Promise<ArticleListItem | null> => {
+      const existing = translationInFlight.get(articleId);
+      if (existing) return existing;
+
+      const promise = (async () => {
+        try {
+          const updated = await generateArticleSummary(articleId);
+          updateArticle(articleId, updated);
+          return updated;
+        } catch {
+          return null;
+        } finally {
+          translationInFlight.delete(articleId);
+        }
+      })();
+
+      translationInFlight.set(articleId, promise);
+      return promise;
+    },
+    [updateArticle],
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -81,6 +109,7 @@ export default function ArticlesScreen() {
           item={item}
           index={index}
           onPress={() => router.push(`/article/${item.id}`)}
+          onRequestTranslation={onRequestTranslation}
         />
       )}
       contentContainerStyle={styles.listContent}

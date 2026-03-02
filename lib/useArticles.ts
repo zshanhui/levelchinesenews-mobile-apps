@@ -4,6 +4,7 @@ import {
   dedupeById,
   loadCachedList,
   saveCachedList,
+  updateCachedArticle,
 } from './articleListCache';
 import type { ArticleListItem, ArticleListResponse } from './types';
 
@@ -139,6 +140,13 @@ export function useArticles() {
     }
   }, [fetchPage, hasMore, loading, loadingMore, page]);
 
+  const updateArticle = useCallback((id: string, patch: Partial<ArticleListItem>) => {
+    setItems((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    );
+    updateCachedArticle(id, patch).catch(() => {});
+  }, []);
+
   return {
     items,
     total,
@@ -153,5 +161,6 @@ export function useArticles() {
     loadInitial,
     refresh,
     loadMore,
+    updateArticle,
   };
 }
