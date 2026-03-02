@@ -13,6 +13,12 @@ export interface ArticleListItem {
   updated_at: string;
 }
 
+/** Scrape response: article data plus existing flag (POST /api/v1/scrape) */
+export interface ScrapeResponse extends ArticleListItem {
+  /** True if article was already in DB, false if newly created */
+  existing: boolean;
+}
+
 /** Paginated list response */
 export interface ArticleListResponse {
   items: ArticleListItem[];

@@ -11,10 +11,11 @@ import {
   useEffect,
   useState,
 } from 'react';
-
-const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';
-const STORAGE_KEY_PINYIN = '@lcn/showPinyin';
-const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
+import {
+  STORAGE_KEY_FONT,
+  STORAGE_KEY_LINE_SPACING,
+  STORAGE_KEY_PINYIN,
+} from './constants';
 
 export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
 

@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,17 +16,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useFont } from '../../lib/FontContext';
 import { theme } from '../../lib/theme';
-import { ADMIN_ACCESS_KEY, apiUrl, postWithTimeout } from '../../lib/api';
+import {
+  ADMIN_ACCESS_KEY,
+  apiUrl,
+  generateArticleSummary,
+  getUserFriendlyErrorMessage,
+  postWithTimeout,
+} from '../../lib/api';
 import { ArticleCard } from '../../lib/components/ArticleCard';
-import type { ArticleListItem } from '../../lib/types';
+import {
+  MAX_DAILY_PARSES,
+  STORAGE_KEY_ARTICLES,
+  STORAGE_KEY_DAILY,
+  SUPPORTED_URLS,
+} from '../../lib/constants';
+import type { ArticleListItem, ScrapeResponse } from '../../lib/types';
 
-const SUPPORTED_URLS = [
-  'https://www.zaobao.com',
-];
-
-const MAX_DAILY_PARSES = 10;
-const STORAGE_KEY_DAILY = 'daily_parse_count';
-const STORAGE_KEY_ARTICLES = 'my_articles';
+const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
@@ -58,8 +65,9 @@ export default function CreateScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>('parse');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showIndexing, setShowIndexing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastParsed, setLastParsed] = useState<ArticleListItem | null>(null);
+  const [lastParsed, setLastParsed] = useState<ScrapeResponse | null>(null);
   const [myArticles, setMyArticles] = useState<ArticleListItem[]>([]);
   const [dailyCount, setDailyCount] = useState(0);
 
@@ -82,27 +90,38 @@ export default function CreateScreen() {
   const remaining = MAX_DAILY_PARSES - dailyCount;
   const limitReached = remaining <= 0;
 
+  useEffect(() => {
+    if (!loading) {
+      setShowIndexing(false);
+      return;
+    }
+    const id = setTimeout(() => setShowIndexing(true), 1500);
+    return () => clearTimeout(id);
+  }, [loading]);
+
   const handleFetch = async () => {
     const trimmed = url.trim();
     if (!trimmed || limitReached) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await postWithTimeout<ArticleListItem>(
+      const result = await postWithTimeout<ScrapeResponse>(
         apiUrl('/scrape'),
         { url: trimmed },
         undefined,
         ADMIN_ACCESS_KEY ? { 'X-Admin-Key': ADMIN_ACCESS_KEY } : undefined,
       );
-      const newCount = await incrementDailyCount();
-      setDailyCount(newCount);
+      if (!result.existing) {
+        const newCount = await incrementDailyCount();
+        setDailyCount(newCount);
+      }
       setLastParsed(result);
       setMyArticles((prev) => {
         if (prev.some((a) => a.id === result.id)) return prev;
         return [result, ...prev];
       });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(getUserFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -113,6 +132,36 @@ export default function CreateScreen() {
     setUrl('');
     setError(null);
   };
+
+  const onRequestTranslation = useCallback(
+    async (articleId: string): Promise<ArticleListItem | null> => {
+      const existing = translationInFlight.get(articleId);
+      if (existing) return existing;
+
+      const promise = (async () => {
+        try {
+          const updated = await generateArticleSummary(articleId);
+          setMyArticles((prev) =>
+            prev.map((a) => (a.id === articleId ? updated : a)),
+          );
+          setLastParsed((prev) =>
+            prev && prev.id === articleId
+              ? { ...updated, existing: prev.existing }
+              : prev,
+          );
+          return updated;
+        } catch {
+          return null;
+        } finally {
+          translationInFlight.delete(articleId);
+        }
+      })();
+
+      translationInFlight.set(articleId, promise);
+      return promise;
+    },
+    [],
+  );
 
   const renderTabBar = useCallback(() => (
     <View style={styles.tabBar}>
@@ -156,6 +205,7 @@ export default function CreateScreen() {
                 item={item}
                 index={index}
                 onPress={() => router.push(`/article/${item.id}`)}
+                onRequestTranslation={onRequestTranslation}
               />
             )}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -172,7 +222,10 @@ export default function CreateScreen() {
         {renderTabBar()}
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>Scraping…</Text>
+          <Text style={styles.loadingText}>fetching…</Text>
+          {showIndexing && (
+            <Text style={styles.loadingText}>indexing…</Text>
+          )}
         </View>
       </View>
     );
@@ -184,12 +237,19 @@ export default function CreateScreen() {
         {renderTabBar()}
         <View style={styles.resultContent}>
           <Text style={[styles.successTitle, chineseFontStyle]}>
-            article created
+            {lastParsed.existing ? 'article saved' : 'new article created'}
           </Text>
+
+          {lastParsed.existing && (
+            <Text style={[styles.existingNote, chineseFontStyle]}>
+              This article was already created — no need to fetch again
+            </Text>
+          )}
 
           <ArticleCard
             item={lastParsed}
             onPress={() => router.push(`/article/${lastParsed.id}`)}
+            onRequestTranslation={onRequestTranslation}
           />
 
           <Pressable
@@ -200,7 +260,7 @@ export default function CreateScreen() {
             onPress={handleReset}
           >
             <Text style={[styles.resetButtonText, chineseFontStyle]}>
-              parse another article
+              fetch another article
             </Text>
           </Pressable>
         </View>
@@ -215,41 +275,52 @@ export default function CreateScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.centerContent}>
-          <View style={[styles.inputRow, limitReached && styles.inputRowDisabled]}>
-            <TextInput
-              style={[styles.input, chineseFontStyle]}
-              placeholder="https://zaobao.com/..."
-              placeholderTextColor={theme.textMuted}
-              value={url}
-              onChangeText={setUrl}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              editable={!limitReached}
-            />
-            <Pressable
-              style={({ pressed }) => [
-                styles.button,
-                limitReached && styles.buttonDisabled,
-                pressed && !limitReached && styles.buttonPressed,
-              ]}
-              onPress={handleFetch}
-              disabled={limitReached}
-            >
-              <Text style={[styles.buttonText, chineseFontStyle]}>🕷️ parse</Text>
-            </Pressable>
+        <View style={styles.parseContent}>
+          <View style={styles.centerContent}>
+            <Text style={[styles.parseSubtitle, chineseFontStyle]}>
+              Enter a supported url to fetch an article
+            </Text>
+
+            <View style={[styles.inputRow, limitReached && styles.inputRowDisabled]}>
+              <TextInput
+                style={[styles.input, chineseFontStyle]}
+                placeholder="https://zaobao.com/..."
+                placeholderTextColor={theme.textMuted}
+                value={url}
+                onChangeText={setUrl}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                editable={!limitReached}
+                multiline
+                numberOfLines={3}
+                blurOnSubmit
+                returnKeyType="done"
+              />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  limitReached && styles.buttonDisabled,
+                  pressed && !limitReached && styles.buttonPressed,
+                ]}
+                onPress={handleFetch}
+                disabled={limitReached}
+                accessibilityLabel="Parse article URL"
+              >
+                <Ionicons name="cloud-download-outline" size={24} color="#fff" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.dailyLimit}>
+              {limitReached
+                ? 'daily limit reached — come back tomorrow'
+                : `${remaining} of ${MAX_DAILY_PARSES} parses remaining today`}
+            </Text>
+
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
           </View>
-
-          <Text style={[styles.subtitle, chineseFontStyle]}>
-            enter a supported website url to fetch article
-          </Text>
-
-          <Text style={styles.dailyLimit}>
-            {limitReached
-              ? 'daily limit reached — come back tomorrow'
-              : `${remaining} of ${MAX_DAILY_PARSES} parses remaining today`}
-          </Text>
 
           <View style={styles.supportedList}>
             <Text style={styles.supportedLabel}>supported sites</Text>
@@ -259,10 +330,6 @@ export default function CreateScreen() {
               </Pressable>
             ))}
           </View>
-
-          {error && (
-            <Text style={styles.errorText}>{error}</Text>
-          )}
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -276,6 +343,16 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  parseContent: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  parseSubtitle: {
+    fontSize: 16,
+    color: theme.textSecondary,
+    marginBottom: 24,
   },
   tabBar: {
     flexDirection: 'row',
@@ -310,8 +387,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
-    color: theme.textSecondary,
+    fontSize: 14,
+    color: theme.textMuted,
   },
   subtitle: {
     fontSize: 16,
@@ -320,24 +397,33 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     width: '100%',
     maxWidth: 480,
-    height: 48,
+    minHeight: 48,
+    paddingRight: 10,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.border,
     backgroundColor: theme.surface,
     overflow: 'hidden',
     marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
   inputRowDisabled: {
     opacity: 0.5,
   },
   input: {
     flex: 1,
-    height: '100%',
+    minHeight: 80,
+    maxHeight: 120,
     paddingHorizontal: 16,
-    fontSize: 16,
+    paddingVertical: 12,
+    fontSize: 13,
     color: theme.text,
     backgroundColor: 'transparent',
   },
@@ -348,7 +434,8 @@ const styles = StyleSheet.create({
   },
   supportedList: {
     alignItems: 'center',
-    marginBottom: 16,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
   },
   supportedLabel: {
     fontSize: 12,
@@ -370,10 +457,14 @@ const styles = StyleSheet.create({
     maxWidth: 480,
   },
   button: {
+    height: 48,
+    minWidth: 48,
     backgroundColor: theme.accent,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
+    marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
   },
   buttonPressed: {
     backgroundColor: theme.accentPressed,
@@ -381,25 +472,28 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     backgroundColor: theme.textMuted,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
   resultContent: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 24,
-    paddingTop: 24,
+    width: '100%',
   },
   successTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: theme.text,
     marginBottom: 16,
+    textAlign: 'center',
+  },
+  existingNote: {
+    fontSize: 14,
+    color: theme.textMuted,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   resetButton: {
     marginTop: 24,
-    alignSelf: 'center',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,

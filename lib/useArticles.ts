@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { apiUrl, fetchWithTimeout } from './api';
+import { apiUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { ARTICLE_REQUEST_TIMEOUT_MS, PAGE_SIZE } from './constants';
 import {
   dedupeById,
   loadCachedList,
@@ -7,9 +8,6 @@ import {
   updateCachedArticle,
 } from './articleListCache';
 import type { ArticleListItem, ArticleListResponse } from './types';
-
-const PAGE_SIZE = 15;
-const REQUEST_TIMEOUT_MS = 8000;
 
 // Seed data for local dev when API is unavailable
 const seedData: ArticleListResponse = require('../assets/seed-articles.json');
@@ -55,7 +53,7 @@ export function useArticles() {
       try {
         const data = await fetchWithTimeout<ArticleListResponse>(
           url,
-          REQUEST_TIMEOUT_MS,
+          ARTICLE_REQUEST_TIMEOUT_MS,
         );
         setUsingSeed(false);
         setUsingCache(false);
@@ -108,7 +106,7 @@ export function useArticles() {
     try {
       await fetchPage(1, false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load articles');
+      setError(getUserFriendlyErrorMessage(err, 'Failed to load articles.'));
       setItems([]);
     } finally {
       setLoading(false);
@@ -121,7 +119,7 @@ export function useArticles() {
     try {
       await fetchPage(1, false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh');
+      setError(getUserFriendlyErrorMessage(err, 'Failed to refresh.'));
     } finally {
       setRefreshing(false);
     }
@@ -134,7 +132,7 @@ export function useArticles() {
     try {
       await fetchPage(page + 1, true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load more');
+      setError(getUserFriendlyErrorMessage(err, 'Failed to load more.'));
     } finally {
       setLoadingMore(false);
     }

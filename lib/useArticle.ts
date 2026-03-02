@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiUrl, fetchWithTimeout } from './api';
+import { apiUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
 import {
   loadArticleDetail,
   saveArticleDetail,
@@ -38,7 +39,7 @@ export function useArticle(id: string | undefined) {
       setLoading(false);
       try {
         const url = apiUrl(`/articles/${id}`);
-        const data = await fetchWithTimeout<ArticleDetail>(url, 8000);
+        const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
         setArticle(data);
         setUsingCache(false);
         setCachedAt(null);
@@ -51,13 +52,13 @@ export function useArticle(id: string | undefined) {
 
     try {
       const url = apiUrl(`/articles/${id}`);
-      const data = await fetchWithTimeout<ArticleDetail>(url, 8000);
+      const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
       setArticle(data);
       setUsingCache(false);
       setCachedAt(null);
       setUsingSeed(false);
       saveArticleDetail(id, data).catch(() => {});
-    } catch {
+    } catch (err) {
       const seed = seedArticleDetails[id];
       if (seed) {
         setArticle(seed);
@@ -65,7 +66,7 @@ export function useArticle(id: string | undefined) {
         setCachedAt(null);
         setUsingSeed(true);
       } else {
-        setError('Article not found');
+        setError(getUserFriendlyErrorMessage(err, 'Article not found'));
         setArticle(null);
         setUsingCache(false);
         setCachedAt(null);

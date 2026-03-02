@@ -18,6 +18,7 @@ import {
 } from '../../lib/components/ArticleContent';
 import { useFont } from '../../lib/FontContext';
 import { resolveImageUrl } from '../../lib/api';
+import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
 import { theme } from '../../lib/theme';
 import { useArticle } from '../../lib/useArticle';
 
@@ -239,8 +240,6 @@ export default function ArticleDetailScreen() {
     </>
   );
 }
-
-const STUDY_PANEL_HEIGHT = 150;
 
 const styles = StyleSheet.create({
   center: {

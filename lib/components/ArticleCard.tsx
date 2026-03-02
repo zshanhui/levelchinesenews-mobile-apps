@@ -10,6 +10,12 @@ import {
   View,
 } from 'react-native';
 import { resolveImageUrl } from '../api';
+import {
+  THUMB_MAX_HEIGHT,
+  THUMB_MIN_HEIGHT,
+  THUMB_WIDTH,
+  TRANSLATION_COUNTDOWN_SECONDS,
+} from '../constants';
 import { useFont } from '../FontContext';
 import type { ArticleListItem } from '../types';
 import { theme } from '../theme';
@@ -34,10 +40,6 @@ function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen).trim() + '…';
 }
-
-const THUMB_WIDTH = 80;
-const THUMB_MIN_HEIGHT = 50;
-const THUMB_MAX_HEIGHT = 120;
 
 const hasTranslation = (item: ArticleListItem) =>
   Boolean(item.title_translated_en && item.summary_generated_en);
@@ -65,7 +67,7 @@ export function ArticleCard({
       setCountdown(null);
       return;
     }
-    setCountdown(10);
+    setCountdown(TRANSLATION_COUNTDOWN_SECONDS);
     const id = setInterval(() => {
       setCountdown((prev) => {
         if (prev === null || prev <= 1) return 0;
@@ -192,7 +194,7 @@ export function ArticleCard({
                   if (translatingRef.current) return;
                   translatingRef.current = true;
                   setTranslating(true);
-                  setCountdown(10);
+                  setCountdown(TRANSLATION_COUNTDOWN_SECONDS);
                   try {
                     const updated = await onRequestTranslation(item.id);
                     if (updated) {
