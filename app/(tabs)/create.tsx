@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import {
@@ -64,7 +63,6 @@ type TabKey = 'parse' | 'my-articles';
 export default function CreateScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { chineseFontStyle } = useFont();
   const [activeTab, setActiveTab] = useState<TabKey>('parse');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -193,7 +191,7 @@ export default function CreateScreen() {
         {renderTabBar()}
         {myArticles.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, chineseFontStyle]}>
+            <Text style={styles.emptyText}>
               no articles yet — parse one first
             </Text>
           </View>
@@ -239,12 +237,12 @@ export default function CreateScreen() {
       <View style={styles.container}>
         {renderTabBar()}
         <View style={styles.resultContent}>
-          <Text style={[styles.successTitle, chineseFontStyle]}>
+          <Text style={styles.successTitle}>
             {lastParsed.existing ? 'article saved' : 'new article created'}
           </Text>
 
           {lastParsed.existing && (
-            <Text style={[styles.existingNote, chineseFontStyle]}>
+            <Text style={styles.existingNote}>
               This article was already created — no need to fetch again
             </Text>
           )}
@@ -262,7 +260,7 @@ export default function CreateScreen() {
             ]}
             onPress={handleReset}
           >
-            <Text style={[styles.resetButtonText, chineseFontStyle]}>
+            <Text style={styles.resetButtonText}>
               fetch another article
             </Text>
           </Pressable>
@@ -280,13 +278,13 @@ export default function CreateScreen() {
       >
         <View style={styles.parseContent}>
           <View style={styles.centerContent}>
-            <Text style={[styles.parseSubtitle, chineseFontStyle]}>
+            <Text style={styles.parseSubtitle}>
               Enter a supported url to fetch an article
             </Text>
 
             <View style={[styles.inputRow, limitReached && styles.inputRowDisabled]}>
               <TextInput
-                style={[styles.input, chineseFontStyle]}
+                style={styles.input}
                 placeholder="https://zaobao.com/..."
                 placeholderTextColor={theme.textMuted}
                 value={url}

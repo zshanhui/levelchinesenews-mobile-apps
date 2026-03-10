@@ -7,6 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { router } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
@@ -45,7 +47,6 @@ export default function SettingsScreen() {
     setShowPinyin,
     lineSpacing,
     setLineSpacing,
-    chineseFontStyle,
     fontSize,
     setFontSize,
   } = useFont();
@@ -59,15 +60,13 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
       >
-        <Text style={[styles.title, chineseFontStyle]}>settings</Text>
-        <Text style={[styles.subtitle, chineseFontStyle]}>
+        <Text style={styles.title}>settings</Text>
+        <Text style={styles.subtitle}>
           configure your preferences
         </Text>
 
-        {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
-
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={[styles.settingLabel, chineseFontStyle]}>
+          <Text style={styles.settingLabel}>
             dark mode (cyberpunk)
           </Text>
           <Switch
@@ -78,8 +77,42 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.navRow,
+            styles.settingRowSpaced,
+            pressed && styles.navRowPressed,
+          ]}
+          onPress={() => router.push('/settings/localdict')}
+        >
+          <View style={styles.navRowContent}>
+            <View style={styles.navRowIcon}>
+              <Ionicons name="book-outline" size={20} color={theme.accent} />
+            </View>
+            <View style={styles.navRowTextGroup}>
+              <Text style={styles.navRowLabel}>configure local dictionary</Text>
+              <Text style={styles.navRowDescription}>
+                download and reset
+              </Text>
+            </View>
+          </View>
+          <View style={styles.navRowChevron}>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={theme.textMuted}
+            />
+          </View>
+        </Pressable>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionHeaderText}>reader preferences</Text>
+        </View>
+
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={[styles.settingLabel, chineseFontStyle]}>
+          <Text style={styles.settingLabel}>
             use noto sans sc for chinese
           </Text>
           <Switch
@@ -91,7 +124,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={[styles.settingLabel, chineseFontStyle]}>
+          <Text style={styles.settingLabel}>
             show pinyin in articles
           </Text>
           <Switch
@@ -103,7 +136,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={[styles.sectionLabel, chineseFontStyle]}>
+          <Text style={styles.sectionLabel}>
             adjust line spacing in article content view
           </Text>
           <View style={styles.segmentedRow}>
@@ -120,7 +153,6 @@ export default function SettingsScreen() {
                 <Text
                   style={[
                     styles.segmentLabel,
-                    chineseFontStyle,
                     lineSpacing === opt.value && styles.segmentLabelSelected,
                   ]}
                 >
@@ -129,7 +161,6 @@ export default function SettingsScreen() {
                 <Text
                   style={[
                     styles.segmentNumbers,
-                    chineseFontStyle,
                     lineSpacing === opt.value && styles.segmentNumbersSelected,
                   ]}
                 >
@@ -141,7 +172,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={[styles.sectionLabel, chineseFontStyle]}>
+          <Text style={styles.sectionLabel}>
             adjust article font size
           </Text>
           <View style={styles.segmentedRow}>
@@ -158,7 +189,6 @@ export default function SettingsScreen() {
                 <Text
                   style={[
                     styles.segmentLabel,
-                    chineseFontStyle,
                     fontSize === opt.value && styles.segmentLabelSelected,
                   ]}
                 >
@@ -171,11 +201,11 @@ export default function SettingsScreen() {
 
         {process.env.EXPO_PUBLIC_DEBUG === '1' && (
           <View style={styles.debugSection}>
-            <Text style={[styles.debugSectionTitle, chineseFontStyle]}>
+            <Text style={styles.debugSectionTitle}>
               Debug – environment variables
             </Text>
             <Text
-              style={[styles.debugBlock, chineseFontStyle]}
+              style={styles.debugBlock}
               selectable
             >
               {[
@@ -231,8 +261,65 @@ function createStyles(theme: Theme) {
   settingRowSpaced: {
     marginTop: 10,
   },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: theme.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  navRowPressed: {
+    opacity: 0.7,
+    backgroundColor: theme.etchedBg,
+  },
+  navRowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  navRowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: theme.accent + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navRowTextGroup: {
+    flex: 1,
+  },
+  navRowLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: theme.text,
+  },
+  navRowDescription: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    marginTop: 2,
+  },
+  navRowChevron: {
+    marginLeft: 8,
+    padding: 4,
+  },
   settingRowTextGroup: {
     flex: 1,
+  },
+  sectionHeader: {
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sectionLabel: {
     fontSize: 13,

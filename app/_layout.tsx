@@ -13,6 +13,7 @@ function RootContent() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="article/[id]" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="dictionary-settings" />
           <Stack.Screen name="+not-found" />
         </Stack>
       </FontProvider>

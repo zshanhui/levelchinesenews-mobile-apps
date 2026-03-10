@@ -16,7 +16,6 @@ import {
   ArticleContent,
   SentenceStudyPanel,
 } from '../../lib/components/ArticleContent';
-import { useFont } from '../../lib/FontContext';
 import { resolveImageUrl } from '../../lib/api';
 import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
 import type { Theme } from '../../lib/theme';
@@ -53,7 +52,6 @@ export default function ArticleDetailScreen() {
   } = useArticle(id);
 
   const { theme } = useTheme();
-  const { chineseFontStyle } = useFont();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const SourceLabel = () => {
@@ -180,7 +178,7 @@ export default function ArticleDetailScreen() {
               collapsable={false}
               onPress={selectedWord ? onClosePanel : undefined}
             >
-              <Text style={[styles.title, chineseFontStyle]}>{article.title}</Text>
+              <Text style={styles.title}>{article.title}</Text>
               <View style={styles.meta}>
                 {article.source && (
                   <View style={styles.metaSource}>
@@ -231,7 +229,7 @@ export default function ArticleDetailScreen() {
                   contentRef={contentRef}
                 />
               ) : (
-                <Text style={[styles.emptyContent, chineseFontStyle]}>
+                <Text style={styles.emptyContent}>
                   no content available
                 </Text>
               )}

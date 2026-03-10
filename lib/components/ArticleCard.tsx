@@ -16,7 +16,6 @@ import {
   THUMB_WIDTH,
   TRANSLATION_COUNTDOWN_SECONDS,
 } from '../constants';
-import { useFont } from '../FontContext';
 import type { ArticleListItem } from '../types';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
@@ -58,7 +57,6 @@ export function ArticleCard({
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { chineseFontStyle, chineseFontBoldStyle } = useFont();
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
   const translatingRef = useRef(false);
@@ -141,7 +139,6 @@ export function ArticleCard({
         <Text
           style={[
             styles.cardTitle,
-            chineseFontBoldStyle,
             showTranslated && styles.cardTitleTranslated,
             index % 2 === 1 && styles.cardTitleAlt,
           ]}
@@ -153,7 +150,7 @@ export function ArticleCard({
           <View style={styles.cardMeta}>
             {item.source && (
               <View style={styles.cardSourceWrapper}>
-                <Text style={[styles.cardSource, chineseFontStyle]}>
+                <Text style={styles.cardSource}>
                   {item.source}
                 </Text>
               </View>
@@ -172,7 +169,7 @@ export function ArticleCard({
               style={styles.summaryPressable}
             >
               <Text
-                style={[styles.cardSummary, chineseFontStyle]}
+                style={styles.cardSummary}
                 numberOfLines={summaryExpanded ? undefined : 2}
               >
                 {displaySubtitle}
@@ -180,7 +177,7 @@ export function ArticleCard({
             </Pressable>
           ) : (
             <Text
-              style={[styles.cardSummary, chineseFontStyle]}
+              style={styles.cardSummary}
               numberOfLines={2}
             >
               {displaySubtitle}

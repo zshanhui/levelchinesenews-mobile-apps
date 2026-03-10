@@ -24,7 +24,7 @@ const NATIVE_LANGUAGE_OPTIONS: {
 
 export function NativeLanguageSelector() {
   const { theme } = useTheme();
-  const { nativeLanguage, setNativeLanguage, chineseFontStyle } = useFont();
+  const { nativeLanguage, setNativeLanguage } = useFont();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -35,17 +35,17 @@ export function NativeLanguageSelector() {
   return (
     <>
       <View style={styles.etchedSection}>
-        <Text style={[styles.sectionLabel, chineseFontStyle]}>
+        <Text style={styles.sectionLabel}>
           native language
         </Text>
         <Pressable
           style={styles.dropdown}
           onPress={() => setModalVisible(true)}
         >
-          <Text style={[styles.dropdownLabel, chineseFontStyle]}>
+          <Text style={styles.dropdownLabel}>
             {selectedLabel}
           </Text>
-          <Text style={[styles.dropdownChevron, chineseFontStyle]}>▼</Text>
+          <Text style={styles.dropdownChevron}>▼</Text>
         </Pressable>
       </View>
 
@@ -63,7 +63,7 @@ export function NativeLanguageSelector() {
             style={[styles.modalContent, { backgroundColor: theme.surface }]}
             onPress={() => {}}
           >
-            <Text style={[styles.modalTitle, chineseFontStyle]}>
+            <Text style={styles.modalTitle}>
               select native language
             </Text>
             <ScrollView
@@ -86,7 +86,6 @@ export function NativeLanguageSelector() {
                   <Text
                     style={[
                       styles.modalOptionLabel,
-                      chineseFontStyle,
                       nativeLanguage === opt.value &&
                         styles.modalOptionLabelSelected,
                     ]}

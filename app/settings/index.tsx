@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
-import SettingsScreen from './(tabs)/settings';
-import { useTheme } from '../lib/ThemeContext';
+import SettingsScreen from '../(tabs)/settings';
+import { useTheme } from '../../lib/ThemeContext';
 
 export default function SettingsRoute() {
   const { theme } = useTheme();
