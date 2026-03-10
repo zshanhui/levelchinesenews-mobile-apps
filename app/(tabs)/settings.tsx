@@ -1,5 +1,12 @@
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
@@ -47,134 +54,140 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, chineseFontStyle]}>settings</Text>
-      <Text style={[styles.subtitle, chineseFontStyle]}>
-        configure your preferences
-      </Text>
-
-      {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
-
-      <View style={[styles.settingRow, styles.settingRowSpaced]}>
-        <Text style={[styles.settingLabel, chineseFontStyle]}>
-          dark mode (cyberpunk)
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+      >
+        <Text style={[styles.title, chineseFontStyle]}>settings</Text>
+        <Text style={[styles.subtitle, chineseFontStyle]}>
+          configure your preferences
         </Text>
-        <Switch
-          value={isDark}
-          onValueChange={setDark}
-          trackColor={{ false: theme.border, true: theme.accent + '66' }}
-          thumbColor={isDark ? theme.accent : theme.textMuted}
-        />
-      </View>
 
-      <View style={[styles.settingRow, styles.settingRowSpaced]}>
-        <Text style={[styles.settingLabel, chineseFontStyle]}>
-          use noto sans sc for chinese
-        </Text>
-        <Switch
-          value={useNotoSansSC}
-          onValueChange={setUseNotoSansSC}
-          trackColor={{ false: theme.border, true: theme.accent + '66' }}
-          thumbColor={useNotoSansSC ? theme.accent : theme.textMuted}
-        />
-      </View>
+        {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
 
-      <View style={[styles.settingRow, styles.settingRowSpaced]}>
-        <Text style={[styles.settingLabel, chineseFontStyle]}>
-          show pinyin in articles
-        </Text>
-        <Switch
-          value={showPinyin}
-          onValueChange={setShowPinyin}
-          trackColor={{ false: theme.border, true: theme.accent + '66' }}
-          thumbColor={showPinyin ? theme.accent : theme.textMuted}
-        />
-      </View>
-
-      <View style={styles.etchedSection}>
-        <Text style={[styles.sectionLabel, chineseFontStyle]}>
-          adjust line spacing in article content view
-        </Text>
-        <View style={styles.segmentedRow}>
-        {LINE_SPACING_OPTIONS.map((opt) => (
-          <Pressable
-            key={opt.value}
-            onPress={() => setLineSpacing(opt.value)}
-            style={[
-              styles.segmentButton,
-              opt.value === 'relaxed' && styles.segmentButtonLast,
-              lineSpacing === opt.value && styles.segmentButtonSelected,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentLabel,
-                chineseFontStyle,
-                lineSpacing === opt.value && styles.segmentLabelSelected,
-              ]}
-            >
-              {opt.label}
-            </Text>
-            <Text
-              style={[
-                styles.segmentNumbers,
-                chineseFontStyle,
-                lineSpacing === opt.value && styles.segmentNumbersSelected,
-              ]}
-            >
-              {opt.numbers}
-            </Text>
-          </Pressable>
-        ))}
-        </View>
-      </View>
-
-      <View style={styles.etchedSection}>
-        <Text style={[styles.sectionLabel, chineseFontStyle]}>
-          adjust article font size
-        </Text>
-        <View style={styles.segmentedRow}>
-        {FONT_SIZE_OPTIONS.map((opt, index) => (
-          <Pressable
-            key={opt.value}
-            onPress={() => setFontSize(opt.value)}
-            style={[
-              styles.segmentButton,
-              index === FONT_SIZE_OPTIONS.length - 1 && styles.segmentButtonLast,
-              fontSize === opt.value && styles.segmentButtonSelected,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentLabel,
-                chineseFontStyle,
-                fontSize === opt.value && styles.segmentLabelSelected,
-              ]}
-            >
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
-        </View>
-      </View>
-
-      {process.env.EXPO_PUBLIC_DEBUG === '1' && (
-        <View style={styles.debugSection}>
-          <Text style={[styles.debugSectionTitle, chineseFontStyle]}>
-            Debug – environment variables
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, chineseFontStyle]}>
+            dark mode (cyberpunk)
           </Text>
-          <Text
-            style={[styles.debugBlock, chineseFontStyle]}
-            selectable
-          >
-            {[
-              `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
-              `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
-              `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
-              `__DEV__=${__DEV__}`,
-            ].join('\n')}
-          </Text>
+          <Switch
+            value={isDark}
+            onValueChange={setDark}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={isDark ? theme.accent : theme.textMuted}
+          />
         </View>
-      )}
+
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, chineseFontStyle]}>
+            use noto sans sc for chinese
+          </Text>
+          <Switch
+            value={useNotoSansSC}
+            onValueChange={setUseNotoSansSC}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={useNotoSansSC ? theme.accent : theme.textMuted}
+          />
+        </View>
+
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, chineseFontStyle]}>
+            show pinyin in articles
+          </Text>
+          <Switch
+            value={showPinyin}
+            onValueChange={setShowPinyin}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={showPinyin ? theme.accent : theme.textMuted}
+          />
+        </View>
+
+        <View style={styles.etchedSection}>
+          <Text style={[styles.sectionLabel, chineseFontStyle]}>
+            adjust line spacing in article content view
+          </Text>
+          <View style={styles.segmentedRow}>
+            {LINE_SPACING_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                onPress={() => setLineSpacing(opt.value)}
+                style={[
+                  styles.segmentButton,
+                  opt.value === 'relaxed' && styles.segmentButtonLast,
+                  lineSpacing === opt.value && styles.segmentButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    chineseFontStyle,
+                    lineSpacing === opt.value && styles.segmentLabelSelected,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.segmentNumbers,
+                    chineseFontStyle,
+                    lineSpacing === opt.value && styles.segmentNumbersSelected,
+                  ]}
+                >
+                  {opt.numbers}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.etchedSection}>
+          <Text style={[styles.sectionLabel, chineseFontStyle]}>
+            adjust article font size
+          </Text>
+          <View style={styles.segmentedRow}>
+            {FONT_SIZE_OPTIONS.map((opt, index) => (
+              <Pressable
+                key={opt.value}
+                onPress={() => setFontSize(opt.value)}
+                style={[
+                  styles.segmentButton,
+                  index === FONT_SIZE_OPTIONS.length - 1 && styles.segmentButtonLast,
+                  fontSize === opt.value && styles.segmentButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    chineseFontStyle,
+                    fontSize === opt.value && styles.segmentLabelSelected,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {process.env.EXPO_PUBLIC_DEBUG === '1' && (
+          <View style={styles.debugSection}>
+            <Text style={[styles.debugSectionTitle, chineseFontStyle]}>
+              Debug – environment variables
+            </Text>
+            <Text
+              style={[styles.debugBlock, chineseFontStyle]}
+              selectable
+            >
+              {[
+                `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
+                `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
+                `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
+                `__DEV__=${__DEV__}`,
+              ].join('\n')}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -184,6 +197,11 @@ function createStyles(theme: Theme) {
   container: {
     flex: 1,
     backgroundColor: theme.background,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 16,
     paddingTop: 20,
     paddingBottom: 24,
