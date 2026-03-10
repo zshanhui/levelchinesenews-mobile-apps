@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
+import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
+import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { envConfig } from '../../lib/api';
@@ -50,7 +52,9 @@ export default function SettingsScreen() {
         configure your preferences
       </Text>
 
-      <View style={styles.settingRow}>
+      {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
+
+      <View style={[styles.settingRow, styles.settingRowSpaced]}>
         <Text style={[styles.settingLabel, chineseFontStyle]}>
           dark mode (cyberpunk)
         </Text>
@@ -199,7 +203,7 @@ function createStyles(theme: Theme) {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 0,
     paddingHorizontal: 12,
     backgroundColor: theme.surface,
     borderRadius: 10,
@@ -208,6 +212,9 @@ function createStyles(theme: Theme) {
   },
   settingRowSpaced: {
     marginTop: 10,
+  },
+  settingRowTextGroup: {
+    flex: 1,
   },
   sectionLabel: {
     fontSize: 13,
@@ -229,9 +236,14 @@ function createStyles(theme: Theme) {
     color: theme.text,
     flex: 1,
   },
+  settingDescription: {
+    marginTop: 2,
+    fontSize: 11,
+    color: theme.textSecondary,
+  },
   segmentedRow: {
     flexDirection: 'row',
-    marginTop: 6,
+    marginTop: 4,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
@@ -240,7 +252,7 @@ function createStyles(theme: Theme) {
   },
   segmentButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
