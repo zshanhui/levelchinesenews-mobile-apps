@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 import type { RefObject } from 'react';
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
+import { i18n, useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   Animated,
@@ -84,7 +85,7 @@ function buildPlecoUrl(
 
   const useSearch = word.length >= 3;
   const baseParams: Record<string, string> = {
-    'x-source': 'Level Chinese News',
+    'x-source': i18n.t('plecoSource'),
     'x-success': xSuccess,
   };
 
@@ -114,6 +115,7 @@ export function SentenceStudyPanel({
   bottomInset: number;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle } = useFont();
 
@@ -137,9 +139,9 @@ export function SentenceStudyPanel({
               onPress={openInPleco}
               style={({ pressed }) => [styles.plecoButton, pressed && styles.plecoButtonPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Open in Pleco dictionary"
+              accessibilityLabel={t('openInPleco')}
             >
-              <Text style={styles.plecoButtonText}>Pleco</Text>
+              <Text style={styles.plecoButtonText}>{t('pleco')}</Text>
               <Ionicons name="search-outline" size={14} color="#fff" />
             </Pressable>
           ) : null}
@@ -147,7 +149,7 @@ export function SentenceStudyPanel({
       </View>
       <View style={styles.panelDefinition}>
         <Text style={[styles.panelDefinitionText, chineseFontStyle]}>
-          native language definition goes here..
+          {t('nativeLanguageDefinitionPlaceholder')}
         </Text>
       </View>
     </View>

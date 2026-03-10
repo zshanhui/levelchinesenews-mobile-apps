@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '../../lib/i18n';
 import {
   Pressable,
   ScrollView,
@@ -19,12 +20,12 @@ import { envConfig } from '../../lib/api';
 
 const LINE_SPACING_OPTIONS: {
   value: LineSpacingLevel;
-  label: string;
-  numbers: string;
+  labelKey: string;
+  numbersKey: string;
 }[] = [
-  { value: 'compact', label: 'compact', numbers: '0px, 8px' },
-  { value: 'normal', label: 'normal', numbers: '6px, 24px' },
-  { value: 'relaxed', label: 'relaxed', numbers: '14px, 40px' },
+  { value: 'compact', labelKey: 'lineSpacingCompact', numbersKey: 'lineSpacingNumbersCompact' },
+  { value: 'normal', labelKey: 'lineSpacingNormal', numbersKey: 'lineSpacingNumbersNormal' },
+  { value: 'relaxed', labelKey: 'lineSpacingRelaxed', numbersKey: 'lineSpacingNumbersRelaxed' },
 ];
 
 const FONT_SIZE_OPTIONS: {
@@ -40,6 +41,7 @@ const FONT_SIZE_OPTIONS: {
 
 export default function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
+  const { t } = useTranslation();
   const {
     useNotoSansSC,
     setUseNotoSansSC,
@@ -60,14 +62,13 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
       >
-        <Text style={styles.title}>settings</Text>
-        <Text style={styles.subtitle}>
-          configure your preferences
-        </Text>
+        <View style={[styles.sectionHeader, styles.sectionHeaderFirst]}>
+          <Text style={styles.sectionHeaderText}>{t('configurePreferences')}</Text>
+        </View>
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
           <Text style={styles.settingLabel}>
-            dark mode (cyberpunk)
+            {t('darkMode')}
           </Text>
           <Switch
             value={isDark}
@@ -92,9 +93,9 @@ export default function SettingsScreen() {
               <Ionicons name="book-outline" size={20} color={theme.accent} />
             </View>
             <View style={styles.navRowTextGroup}>
-              <Text style={styles.navRowLabel}>configure local dictionary</Text>
+              <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
               <Text style={styles.navRowDescription}>
-                download and reset
+                {t('downloadAndReset')}
               </Text>
             </View>
           </View>
@@ -108,12 +109,12 @@ export default function SettingsScreen() {
         </Pressable>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>reader preferences</Text>
+          <Text style={styles.sectionHeaderText}>{t('readerPreferences')}</Text>
         </View>
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
           <Text style={styles.settingLabel}>
-            use noto sans sc for chinese
+            {t('useNotoSansSc')}
           </Text>
           <Switch
             value={useNotoSansSC}
@@ -125,7 +126,7 @@ export default function SettingsScreen() {
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
           <Text style={styles.settingLabel}>
-            show pinyin in articles
+            {t('showPinyin')}
           </Text>
           <Switch
             value={showPinyin}
@@ -137,7 +138,7 @@ export default function SettingsScreen() {
 
         <View style={styles.etchedSection}>
           <Text style={styles.sectionLabel}>
-            adjust line spacing in article content view
+            {t('adjustLineSpacing')}
           </Text>
           <View style={styles.segmentedRow}>
             {LINE_SPACING_OPTIONS.map((opt) => (
@@ -156,7 +157,7 @@ export default function SettingsScreen() {
                     lineSpacing === opt.value && styles.segmentLabelSelected,
                   ]}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
                 <Text
                   style={[
@@ -164,7 +165,7 @@ export default function SettingsScreen() {
                     lineSpacing === opt.value && styles.segmentNumbersSelected,
                   ]}
                 >
-                  {opt.numbers}
+                  {t(opt.numbersKey)}
                 </Text>
               </Pressable>
             ))}
@@ -173,7 +174,7 @@ export default function SettingsScreen() {
 
         <View style={styles.etchedSection}>
           <Text style={styles.sectionLabel}>
-            adjust article font size
+            {t('adjustFontSize')}
           </Text>
           <View style={styles.segmentedRow}>
             {FONT_SIZE_OPTIONS.map((opt, index) => (
@@ -202,7 +203,7 @@ export default function SettingsScreen() {
         {process.env.EXPO_PUBLIC_DEBUG === '1' && (
           <View style={styles.debugSection}>
             <Text style={styles.debugSectionTitle}>
-              Debug – environment variables
+              {t('debugEnvVars')}
             </Text>
             <Text
               style={styles.debugBlock}
@@ -313,6 +314,9 @@ function createStyles(theme: Theme) {
   sectionHeader: {
     marginTop: 24,
     marginBottom: 8,
+  },
+  sectionHeaderFirst: {
+    marginTop: 0,
   },
   sectionHeaderText: {
     fontSize: 13,

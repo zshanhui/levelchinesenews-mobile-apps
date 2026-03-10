@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text, View } from 'react-native';
+import { useTranslation } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeContext';
 
 function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
@@ -25,11 +26,12 @@ function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
 }
 
 function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
+  const { t } = useTranslation();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <LogoIcon theme={theme} />
       <Text style={{ fontSize: 18, fontWeight: '600', color: theme.text }}>
-        LevelChineseNews
+        {t('brand')}
       </Text>
     </View>
   );
@@ -37,6 +39,7 @@ function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
 
 export default function TabLayout() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -61,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'articles',
+          title: t('tabs.articles'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'newspaper' : 'newspaper-outline'} color={color} size={24} />
           ),
@@ -70,7 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'create',
+          title: t('tabs.create'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} color={color} size={24} />
           ),
@@ -79,7 +82,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'settings',
+          title: t('tabs.settings'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'settings' : 'settings-outline'} color={color} size={24} />
           ),

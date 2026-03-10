@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from '../i18n';
 import {
   Modal,
   Pressable,
@@ -14,29 +15,35 @@ import { useTheme } from '../ThemeContext';
 
 const NATIVE_LANGUAGE_OPTIONS: {
   value: NativeLanguage;
-  label: string;
+  labelKey: string;
 }[] = [
-  { value: 'en', label: '🇺🇸 English' },
-  { value: 'es', label: '🇪🇸 Español' },
-  { value: 'ms', label: '🇲🇾 Bahasa Melayu' },
-  { value: 'ar', label: '🇸🇦 العربية' },
+  { value: 'en', labelKey: 'langEnglish' },
+  { value: 'zh', labelKey: 'langChinese' },
+  { value: 'es', labelKey: 'langSpanish' },
+  { value: 'ms', labelKey: 'langMalay' },
+  { value: 'ar', labelKey: 'langArabic' },
 ];
 
 export function NativeLanguageSelector() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const { nativeLanguage, setNativeLanguage } = useFont();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const selectedLabel =
-    NATIVE_LANGUAGE_OPTIONS.find((o) => o.value === nativeLanguage)?.label ??
-    'Select';
+  const selectedOpt = NATIVE_LANGUAGE_OPTIONS.find(
+    (o) => o.value === nativeLanguage,
+  );
+  const selectedLabel = selectedOpt ? t(selectedOpt.labelKey) : t('select');
 
   return (
     <>
       <View style={styles.etchedSection}>
         <Text style={styles.sectionLabel}>
-          native language
+          {t('nativeLanguage')}
+        </Text>
+        <Text style={styles.nativeLanguageHint}>
+          {t('nativeLanguageHint')}
         </Text>
         <Pressable
           style={styles.dropdown}
@@ -64,7 +71,7 @@ export function NativeLanguageSelector() {
             onPress={() => {}}
           >
             <Text style={styles.modalTitle}>
-              select native language
+              {t('selectNativeLanguage')}
             </Text>
             <ScrollView
               style={styles.modalScroll}
@@ -90,7 +97,7 @@ export function NativeLanguageSelector() {
                         styles.modalOptionLabelSelected,
                     ]}
                   >
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </Text>
                 </Pressable>
               ))}
@@ -118,6 +125,12 @@ function createStyles(theme: Theme) {
     sectionLabel: {
       fontSize: 13,
       color: theme.text,
+    },
+    nativeLanguageHint: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 4,
+      lineHeight: 16,
     },
     dropdown: {
       flexDirection: 'row',

@@ -23,7 +23,7 @@ import {
 export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
 export type FontSizeLevel = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 /** ISO 639-1 language code for user's native language */
-export type NativeLanguage = 'en' | 'es' | 'ms' | 'ar';
+export type NativeLanguage = 'en' | 'es' | 'ms' | 'ar' | 'zh';
 
 const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
   xs: 14,
@@ -110,7 +110,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY_NATIVE_LANGUAGE).then((stored) => {
-      const validCodes: NativeLanguage[] = ['en', 'es', 'ms', 'ar'];
+      const validCodes: NativeLanguage[] = ['en', 'es', 'ms', 'ar', 'zh'];
       if (stored && validCodes.includes(stored as NativeLanguage)) {
         setNativeLanguageState(stored as NativeLanguage);
       } else if (stored) {
@@ -119,6 +119,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
           spanish: 'es',
           'bahasa-malay': 'ms',
           arabic: 'ar',
+          chinese: 'zh',
         };
         const migrated = legacyMap[stored];
         if (migrated) {

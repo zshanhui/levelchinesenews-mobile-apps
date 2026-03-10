@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from '../i18n';
 import {
   ActivityIndicator,
   Alert,
@@ -56,6 +57,7 @@ export function ArticleCard({
   index?: number;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -113,7 +115,7 @@ export function ArticleCard({
           pressed && styles.thumbnailPressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`open article: ${displayTitle}`}
+        accessibilityLabel={t('openArticle', { title: displayTitle })}
       >
         {imageUri ? (
           <Image
@@ -134,7 +136,7 @@ export function ArticleCard({
         style={styles.cardContent}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`open article: ${displayTitle}`}
+        accessibilityLabel={t('openArticle', { title: displayTitle })}
       >
         <Text
           style={[
@@ -201,14 +203,14 @@ export function ArticleCard({
                       setShowTranslated(true);
                     } else {
                       Alert.alert(
-                        'Translation failed',
-                        'Could not generate translation. Please try again.',
+                        t('translationFailed'),
+                        t('couldNotGenerateTranslation'),
                       );
                     }
                   } catch {
                     Alert.alert(
-                      'Translation failed',
-                      'Could not generate translation. Please try again.',
+                      t('translationFailed'),
+                      t('couldNotGenerateTranslation'),
                     );
                   } finally {
                     translatingRef.current = false;
@@ -225,12 +227,12 @@ export function ArticleCard({
         accessibilityRole={hasTranslation(item) || (onRequestTranslation && !translating) ? 'button' : 'image'}
         accessibilityLabel={
           translating
-            ? 'Generating translation…'
+            ? t('generatingTranslation')
             : hasTranslation(item)
               ? showTranslated
-                ? 'Show Chinese title'
-                : 'Show English translation'
-              : 'Request translation'
+                ? t('showChineseTitle')
+                : t('showEnglishTranslation')
+              : t('requestTranslation')
         }
       >
         {translating ? (

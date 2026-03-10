@@ -1,15 +1,17 @@
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
+import { useTranslation } from '../lib/i18n';
 import { useTheme } from '../lib/ThemeContext';
 
 export default function DictionarySettingsScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'local dictionary settings',
-          headerBackTitle: 'back',
+          title: t('localDictionarySettings'),
+          headerBackTitle: t('back'),
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.text,
         }}

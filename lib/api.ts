@@ -4,6 +4,7 @@ import {
   POST_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
 } from './constants';
+import { i18n } from './i18n';
 import type { ArticleListItem } from './types';
 
 export const envConfig = {
@@ -23,28 +24,30 @@ if (!envConfig.tempAdminAccessWriteKey?.trim()) {
 }
 
 /** Convert raw API/network errors to user-friendly messages. */
-export function getUserFriendlyErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
+export function getUserFriendlyErrorMessage(err: unknown, fallback?: string): string {
+  const defaultFallback = i18n.t('somethingWentWrong');
+  const fb = fallback ?? defaultFallback;
   const msg = err instanceof Error ? err.message : String(err);
   const lower = msg.toLowerCase();
 
   // Timeout (AbortController.abort())
-  if (err instanceof Error && err.name === 'AbortError') return 'Request timed out. Please try again.';
-  if (lower.includes('abort')) return 'Request timed out. Please try again.';
+  if (err instanceof Error && err.name === 'AbortError') return i18n.t('requestTimedOut');
+  if (lower.includes('abort')) return i18n.t('requestTimedOut');
 
   // Network/connection errors
-  if (err instanceof TypeError && lower.includes('fetch')) return 'Unable to connect. Please check your internet connection.';
-  if (lower.includes('failed to fetch') || lower.includes('network request failed')) return 'Unable to connect. Please check your internet connection.';
+  if (err instanceof TypeError && lower.includes('fetch')) return i18n.t('unableToConnect');
+  if (lower.includes('failed to fetch') || lower.includes('network request failed')) return i18n.t('unableToConnect');
 
   // Server errors (5xx) - avoid exposing raw status
-  if (/api error:\s*5\d{2}/.test(lower) || lower.includes('502') || lower.includes('503')) return 'Server error. Please try again later.';
+  if (/api error:\s*5\d{2}/.test(lower) || lower.includes('502') || lower.includes('503')) return i18n.t('serverError');
 
   // Not found (404)
-  if (lower.includes('404')) return 'Not found.';
+  if (lower.includes('404')) return i18n.t('errorNotFound');
 
   // Preserve server-provided detail (e.g. "Unsupported news source. Supported: zaobao.com")
   if (msg && !lower.startsWith('api error:')) return msg;
 
-  return fallback;
+  return fb;
 }
 
 export function apiReadUrl(path: string, params?: Record<string, string | number | boolean>): string {

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useLayoutEffect, useMemo } from 'react';
+import { useTranslation } from '../../lib/i18n';
 import { generateArticleSummary } from '../../lib/api';
 import type { ArticleListItem } from '../../lib/types';
 import {
@@ -23,6 +24,7 @@ const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
 export default function ArticlesScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
   const {
@@ -85,7 +87,7 @@ export default function ArticlesScreen() {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={theme.accent} />
-        <Text style={styles.loadingText}>Loading articles…</Text>
+        <Text style={styles.loadingText}>{t('loadingArticles')}</Text>
       </View>
     );
   }
@@ -96,7 +98,7 @@ export default function ArticlesScreen() {
         <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
         <Text style={styles.errorText}>{error}</Text>
         <Pressable style={styles.retryButton} onPress={loadInitial}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>{t('retry')}</Text>
         </Pressable>
       </View>
     );
@@ -120,9 +122,9 @@ export default function ArticlesScreen() {
       ListEmptyComponent={
         <View style={styles.emptyContainer}>
           <Ionicons name="newspaper-outline" size={64} color={theme.textMuted} />
-          <Text style={styles.emptyTitle}>no articles yet</Text>
+          <Text style={styles.emptyTitle}>{t('noArticlesYet')}</Text>
           <Text style={styles.emptySubtitle}>
-            add articles from the create tab by pasting a news url
+            {t('addArticlesHint')}
           </Text>
         </View>
       }
