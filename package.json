@@ -20,7 +20,9 @@
     "expo-image": "~3.0.11",
     "expo-linking": "^8.0.11",
     "expo-router": "^6.0.23",
+    "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
+    "fflate": "^0.8.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
@@ -29,11 +31,11 @@
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
-    "@types/react": "~19.1.0",
-    "typescript": "~5.9.2",
     "@types/jest": "^29.5.14",
+    "@types/react": "~19.1.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.5"
+    "ts-jest": "^29.2.5",
+    "typescript": "~5.9.2"
   },
   "private": true,
   "packageManager": "pnpm@10.25.0+sha512.5e82639027af37cf832061bcc6d639c219634488e0f2baebe785028a793de7b525ffcd3f7ff574f5e9860654e098fe852ba8ac5dd5cefe1767d23a020a92f501"

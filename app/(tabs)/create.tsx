@@ -18,8 +18,8 @@ import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import {
-  ADMIN_ACCESS_KEY,
-  apiUrl,
+  envConfig,
+  apiWriteUrl,
   generateArticleSummary,
   getUserFriendlyErrorMessage,
   postWithTimeout,
@@ -109,10 +109,10 @@ export default function CreateScreen() {
     setError(null);
     try {
       const result = await postWithTimeout<ScrapeResponse>(
-        apiUrl('/scrape'),
+        apiWriteUrl('/scrape'),
         { url: trimmed },
         undefined,
-        ADMIN_ACCESS_KEY ? { 'X-Admin-Key': ADMIN_ACCESS_KEY } : undefined,
+        envConfig.tempAdminAccessWriteKey ? { 'X-Admin-Key': envConfig.tempAdminAccessWriteKey } : undefined,
       );
       if (!result.existing) {
         const newCount = await incrementDailyCount();

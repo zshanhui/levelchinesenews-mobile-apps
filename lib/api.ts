@@ -6,10 +6,21 @@ import {
 } from './constants';
 import type { ArticleListItem } from './types';
 
-/** API base URL. Override with EXPO_PUBLIC_API_URL for different environments. */
-export const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-  (__DEV__ ? 'http://localhost:8000' : process.env.EXPO_PUBLIC_API_URL);
+export const envConfig = {
+  apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
+  apiWriteBaseUrl: process.env.EXPO_PUBLIC_API_WRITE_URL,
+  tempAdminAccessWriteKey: process.env.EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY,
+}
+
+if (!envConfig.apiBaseUrl?.trim()) {
+  throw new Error('EXPO_PUBLIC_API_URL is required. Set it in .env or app.json config.');
+}
+if (!envConfig.apiWriteBaseUrl?.trim()) {
+  throw new Error('EXPO_PUBLIC_API_WRITE_URL is required. Set it in .env or app.json config.');
+}
+if (!envConfig.tempAdminAccessWriteKey?.trim()) {
+  throw new Error('EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY is required. Set it in .env or app.json config.');
+}
 
 /** Convert raw API/network errors to user-friendly messages. */
 export function getUserFriendlyErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
@@ -36,12 +47,17 @@ export function getUserFriendlyErrorMessage(err: unknown, fallback = 'Something 
   return fallback;
 }
 
-/** Admin key for protected endpoints (e.g. scrape). Set EXPO_PUBLIC_ADMIN_ACCESS_KEY to match server ADMIN_ACCESS_KEY. */
-export const ADMIN_ACCESS_KEY =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_ADMIN_ACCESS_KEY) || '';
+export function apiReadUrl(path: string, params?: Record<string, string | number | boolean>): string {
+  const url = `${envConfig.apiBaseUrl}${API_PREFIX}${path}`;
+  if (!params) return url;
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => search.set(k, String(v)));
+  return `${url}?${search.toString()}`;
+}
 
-export function apiUrl(path: string, params?: Record<string, string | number | boolean>): string {
-  const url = `${API_BASE_URL}${API_PREFIX}${path}`;
+/** Build full URL for write endpoints (scrape, generate_summary) using envConfig.apiWriteBaseUrl. */
+export function apiWriteUrl(path: string, params?: Record<string, string | number | boolean>): string {
+  const url = `${envConfig.apiWriteBaseUrl}${API_PREFIX}${path}`;
   if (!params) return url;
   const search = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => search.set(k, String(v)));
@@ -53,7 +69,7 @@ export function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
   const trimmed = url.trim();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-  const base = API_BASE_URL?.replace(/\/$/, '') ?? '';
+  const base = envConfig.apiBaseUrl!.replace(/\/$/, '');
   return base ? `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}` : trimmed;
 }
 
@@ -129,10 +145,10 @@ export async function postWithTimeout<T>(
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */
 export async function generateArticleSummary(articleId: string): Promise<ArticleListItem> {
-  const url = apiUrl(`/articles/${articleId}/generate_summary`);
+  const url = apiWriteUrl(`/articles/${articleId}/generate_summary`);
   const headers: Record<string, string> = {};
-  if (ADMIN_ACCESS_KEY) {
-    headers['X-Admin-Key'] = ADMIN_ACCESS_KEY;
+  if (envConfig.tempAdminAccessWriteKey) {
+    headers['X-Admin-Key'] = envConfig.tempAdminAccessWriteKey;
   }
   return postWithTimeout<ArticleListItem>(
     url,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
 import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
 import {
   loadArticleDetail,
@@ -38,12 +38,12 @@ export function useArticle(id: string | undefined) {
       setUsingSeed(false);
       setLoading(false);
       try {
-        const url = apiUrl(`/articles/${id}`);
+        const url = apiReadUrl(`/articles/${id}`);
         const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
         setArticle(data);
         setUsingCache(false);
         setCachedAt(null);
-        saveArticleDetail(id, data).catch(() => {});
+        saveArticleDetail(id, data).catch(() => { });
       } catch {
         // Keep showing cached data on network failure
       }
@@ -51,13 +51,13 @@ export function useArticle(id: string | undefined) {
     }
 
     try {
-      const url = apiUrl(`/articles/${id}`);
+      const url = apiReadUrl(`/articles/${id}`);
       const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
       setArticle(data);
       setUsingCache(false);
       setCachedAt(null);
       setUsingSeed(false);
-      saveArticleDetail(id, data).catch(() => {});
+      saveArticleDetail(id, data).catch(() => { });
     } catch (err) {
       const seed = seedArticleDetails[id];
       if (seed) {

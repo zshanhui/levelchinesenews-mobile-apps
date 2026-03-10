@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { apiUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
 import { ARTICLE_REQUEST_TIMEOUT_MS, PAGE_SIZE } from './constants';
 import {
   dedupeById,
@@ -44,7 +44,7 @@ export function useArticles() {
 
   const fetchPage = useCallback(
     async (pageNum: number, append: boolean) => {
-      const url = apiUrl('/articles', {
+      const url = apiReadUrl('/articles', {
         page: pageNum,
         page_size: PAGE_SIZE,
         order_by: 'published_date',

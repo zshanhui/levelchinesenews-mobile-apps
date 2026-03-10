@@ -4,6 +4,7 @@ import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
+import { envConfig } from '../../lib/api';
 
 const LINE_SPACING_OPTIONS: {
   value: LineSpacingLevel;
@@ -151,6 +152,25 @@ export default function SettingsScreen() {
         ))}
         </View>
       </View>
+
+      {process.env.EXPO_PUBLIC_DEBUG === '1' && (
+        <View style={styles.debugSection}>
+          <Text style={[styles.debugSectionTitle, chineseFontStyle]}>
+            Debug – environment variables
+          </Text>
+          <Text
+            style={[styles.debugBlock, chineseFontStyle]}
+            selectable
+          >
+            {[
+              `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
+              `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
+              `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
+              `__DEV__=${__DEV__}`,
+            ].join('\n')}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -247,6 +267,25 @@ function createStyles(theme: Theme) {
   },
   segmentNumbersSelected: {
     color: theme.accent,
+  },
+  debugSection: {
+    marginTop: 24,
+  },
+  debugSectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.textMuted,
+    marginBottom: 6,
+  },
+  debugBlock: {
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: theme.textMuted,
+    backgroundColor: theme.etchedBg,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
   });
 }
