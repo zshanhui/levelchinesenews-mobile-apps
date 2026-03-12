@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { apiUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { useTranslation } from './i18n';
+import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
 import { ARTICLE_REQUEST_TIMEOUT_MS, PAGE_SIZE } from './constants';
 import {
   dedupeById,
@@ -24,6 +25,7 @@ function getSeedPage(pageNum: number): ArticleListResponse {
 }
 
 export function useArticles() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ArticleListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -44,7 +46,7 @@ export function useArticles() {
 
   const fetchPage = useCallback(
     async (pageNum: number, append: boolean) => {
-      const url = apiUrl('/articles', {
+      const url = apiReadUrl('/articles', {
         page: pageNum,
         page_size: PAGE_SIZE,
         order_by: 'published_date',
@@ -106,12 +108,12 @@ export function useArticles() {
     try {
       await fetchPage(1, false);
     } catch (err) {
-      setError(getUserFriendlyErrorMessage(err, 'Failed to load articles.'));
+      setError(getUserFriendlyErrorMessage(err, t('failedToLoadArticles')));
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [fetchPage]);
+  }, [fetchPage, t]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -119,11 +121,11 @@ export function useArticles() {
     try {
       await fetchPage(1, false);
     } catch (err) {
-      setError(getUserFriendlyErrorMessage(err, 'Failed to refresh.'));
+      setError(getUserFriendlyErrorMessage(err, t('failedToRefresh')));
     } finally {
       setRefreshing(false);
     }
-  }, [fetchPage]);
+  }, [fetchPage, t]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || loading) return;
@@ -132,11 +134,11 @@ export function useArticles() {
     try {
       await fetchPage(page + 1, true);
     } catch (err) {
-      setError(getUserFriendlyErrorMessage(err, 'Failed to load more.'));
+      setError(getUserFriendlyErrorMessage(err, t('failedToLoadMore')));
     } finally {
       setLoadingMore(false);
     }
-  }, [fetchPage, hasMore, loading, loadingMore, page]);
+  }, [fetchPage, hasMore, loading, loadingMore, page, t]);
 
   const updateArticle = useCallback((id: string, patch: Partial<ArticleListItem>) => {
     setItems((prev) =>

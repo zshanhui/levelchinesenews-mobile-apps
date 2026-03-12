@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from '../../lib/i18n';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,7 +17,6 @@ import {
   ArticleContent,
   SentenceStudyPanel,
 } from '../../lib/components/ArticleContent';
-import { useFont } from '../../lib/FontContext';
 import { resolveImageUrl } from '../../lib/api';
 import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
 import type { Theme } from '../../lib/theme';
@@ -53,15 +53,15 @@ export default function ArticleDetailScreen() {
   } = useArticle(id);
 
   const { theme } = useTheme();
-  const { chineseFontStyle } = useFont();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const SourceLabel = () => {
     if (usingCache) {
-      return <Text style={styles.metaText}>cached</Text>;
+      return <Text style={styles.metaText}>{t('cached')}</Text>;
     }
     if (usingSeed) {
-      return <Text style={styles.metaText}>seed</Text>;
+      return <Text style={styles.metaText}>{t('seed')}</Text>;
     }
     return null;
   };
@@ -133,8 +133,8 @@ export default function ArticleDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          title: article?.title ?? 'article',
-          headerBackTitle: 'back',
+          title: article?.title ?? t('article'),
+          headerBackTitle: t('back'),
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.text,
           headerRight: () => (
@@ -143,7 +143,7 @@ export default function ArticleDetailScreen() {
               hitSlop={12}
               style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Open settings"
+              accessibilityLabel={t('openSettings')}
             >
               <Ionicons name="settings-outline" size={24} color={theme.textMuted} />
             </Pressable>
@@ -153,14 +153,14 @@ export default function ArticleDetailScreen() {
       {loading && !article ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>loading…</Text>
+          <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
       ) : error && !article ? (
         <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryButton} onPress={refetch}>
-            <Text style={styles.retryButtonText}>retry</Text>
+            <Text style={styles.retryButtonText}>{t('retry')}</Text>
           </Pressable>
         </View>
       ) : article ? (
@@ -180,7 +180,7 @@ export default function ArticleDetailScreen() {
               collapsable={false}
               onPress={selectedWord ? onClosePanel : undefined}
             >
-              <Text style={[styles.title, chineseFontStyle]}>{article.title}</Text>
+              <Text style={styles.title}>{article.title}</Text>
               <View style={styles.meta}>
                 {article.source && (
                   <View style={styles.metaSource}>
@@ -190,7 +190,7 @@ export default function ArticleDetailScreen() {
                         onPress={() => Linking.openURL(article.source_url!)}
                         hitSlop={8}
                         accessibilityRole="link"
-                        accessibilityLabel="open source article"
+                        accessibilityLabel={t('openSourceArticle')}
                       >
                         <Ionicons name="open-outline" size={16} color={theme.accent} />
                       </Pressable>
@@ -231,8 +231,8 @@ export default function ArticleDetailScreen() {
                   contentRef={contentRef}
                 />
               ) : (
-                <Text style={[styles.emptyContent, chineseFontStyle]}>
-                  no content available
+                <Text style={styles.emptyContent}>
+                  {t('noContentAvailable')}
                 </Text>
               )}
             </Pressable>

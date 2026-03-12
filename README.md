@@ -26,4 +26,8 @@ Then choose iOS, Android, or Web from the Expo dev tools.
 
 The app expects a backend at `http://localhost:8000` in dev. Override with `EXPO_PUBLIC_API_URL` for other environments.
 
-For production servers that require admin authentication (e.g. scrape), set `EXPO_PUBLIC_ADMIN_ACCESS_KEY` to match the backend’s `ADMIN_ACCESS_KEY`. When set, the app sends `X-Admin-Key` on protected requests.
+For production servers that require admin authentication (e.g. scrape), set `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY` to match the backend’s `ADMIN_ACCESS_KEY`. When set, the app sends `X-Admin-Key` on protected requests.
+
+## Backend Service
+
+The backend is not ready to be opensourced yet. The security needs to be improved along with other things. If you would like to run this app, you can email me shanhui.dev@proton.me for url to a development server

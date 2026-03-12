@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '../i18n';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
@@ -30,12 +31,13 @@ function formatCachedAt(iso: string): string {
 
 export function CacheIndicator({ cachedAt }: { cachedAt: string }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const label = formatCachedAt(cachedAt);
   if (!label) return null;
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Cached {label}</Text>
+      <Text style={styles.text}>{t('cachedLabel', { label })}</Text>
     </View>
   );
 }

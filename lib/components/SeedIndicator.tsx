@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
+import { useTranslation } from '../i18n';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 
 export function SeedIndicator() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Seed data</Text>
+      <Text style={styles.text}>{t('seedData')}</Text>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { useTranslation } from './i18n';
+import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
 import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
 import {
   loadArticleDetail,
@@ -11,6 +12,7 @@ import type { ArticleDetail } from './types';
 const seedArticleDetails: Record<string, ArticleDetail> = require('../assets/seed-article-details.json');
 
 export function useArticle(id: string | undefined) {
+  const { t } = useTranslation();
   const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +40,12 @@ export function useArticle(id: string | undefined) {
       setUsingSeed(false);
       setLoading(false);
       try {
-        const url = apiUrl(`/articles/${id}`);
+        const url = apiReadUrl(`/articles/${id}`);
         const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
         setArticle(data);
         setUsingCache(false);
         setCachedAt(null);
-        saveArticleDetail(id, data).catch(() => {});
+        saveArticleDetail(id, data).catch(() => { });
       } catch {
         // Keep showing cached data on network failure
       }
@@ -51,13 +53,13 @@ export function useArticle(id: string | undefined) {
     }
 
     try {
-      const url = apiUrl(`/articles/${id}`);
+      const url = apiReadUrl(`/articles/${id}`);
       const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
       setArticle(data);
       setUsingCache(false);
       setCachedAt(null);
       setUsingSeed(false);
-      saveArticleDetail(id, data).catch(() => {});
+      saveArticleDetail(id, data).catch(() => { });
     } catch (err) {
       const seed = seedArticleDetails[id];
       if (seed) {
@@ -66,7 +68,7 @@ export function useArticle(id: string | undefined) {
         setCachedAt(null);
         setUsingSeed(true);
       } else {
-        setError(getUserFriendlyErrorMessage(err, 'Article not found'));
+        setError(getUserFriendlyErrorMessage(err, t('articleNotFound')));
         setArticle(null);
         setUsingCache(false);
         setCachedAt(null);
@@ -75,7 +77,7 @@ export function useArticle(id: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     fetchArticle();

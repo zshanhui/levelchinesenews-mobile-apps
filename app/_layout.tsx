@@ -1,4 +1,6 @@
+import '../lib/i18n';
 import { FontProvider } from '../lib/FontContext';
+import { I18nSync } from '../lib/i18n/I18nSync';
 import { ThemeProvider, useTheme } from '../lib/ThemeContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,10 +11,12 @@ function RootContent() {
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <FontProvider>
+        <I18nSync />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="article/[id]" />
-          <Stack.Screen name="settings" />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+          <Stack.Screen name="dictionary-settings" />
           <Stack.Screen name="+not-found" />
         </Stack>
       </FontProvider>

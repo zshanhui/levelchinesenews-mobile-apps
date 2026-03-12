@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 import type { RefObject } from 'react';
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { i18n, useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   Animated,
@@ -16,6 +17,7 @@ import { useFont } from '../FontContext';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import type { ParsedParagraph, WordSegment } from '../types';
+import { fetchDictEntryByWord } from '../useLocalDictService';
 
 const isWebLocalhost =
   Platform.OS === 'web' &&
@@ -84,7 +86,7 @@ function buildPlecoUrl(
 
   const useSearch = word.length >= 3;
   const baseParams: Record<string, string> = {
-    'x-source': 'Level Chinese News',
+    'x-source': i18n.t('plecoSource'),
     'x-success': xSuccess,
   };
 
@@ -114,8 +116,24 @@ export function SentenceStudyPanel({
   bottomInset: number;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle } = useFont();
+  const [dictEntry, setDictEntry] = useState<{ definitions: string } | null>(null);
+  const [lookupComplete, setLookupComplete] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDictEntry(null);
+    setLookupComplete(false);
+    fetchDictEntryByWord(word).then((entry) => {
+      if (!cancelled) {
+        setDictEntry(entry ?? null);
+        setLookupComplete(true);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [word]);
 
   const openInPleco = useCallback(() => {
     const url = buildPlecoUrl(word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey);
@@ -137,17 +155,25 @@ export function SentenceStudyPanel({
               onPress={openInPleco}
               style={({ pressed }) => [styles.plecoButton, pressed && styles.plecoButtonPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Open in Pleco dictionary"
+              accessibilityLabel={t('openInPleco')}
             >
-              <Text style={styles.plecoButtonText}>Pleco</Text>
+              <Text style={styles.plecoButtonText}>{t('pleco')}</Text>
               <Ionicons name="search-outline" size={14} color="#fff" />
             </Pressable>
           ) : null}
         </View>
       </View>
       <View style={styles.panelDefinition}>
-        <Text style={[styles.panelDefinitionText, chineseFontStyle]}>
-          native language definition goes here..
+        <Text
+          style={[
+            styles.panelDefinitionText,
+            dictEntry?.definitions ? styles.panelDefinitionTextLoaded : null,
+            lookupComplete && !dictEntry?.definitions ? styles.panelDefinitionTextMissing : null,
+            chineseFontStyle,
+          ]}
+        >
+          {dictEntry?.definitions ??
+            (lookupComplete ? t('wordMissingInLocalDict') : t('nativeLanguageDefinitionPlaceholder'))}
         </Text>
       </View>
     </View>
@@ -420,6 +446,13 @@ function createStyles(theme: Theme) {
   panelDefinitionText: {
     fontSize: 14,
     color: theme.textMuted,
+  },
+  panelDefinitionTextLoaded: {
+    color: theme.textSecondary,
+  },
+  panelDefinitionTextMissing: {
+    color: theme.textMuted,
+    fontStyle: 'italic',
   },
   plecoButton: {
     flexDirection: 'row',

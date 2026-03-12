@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '../../lib/i18n';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,12 +15,11 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import {
-  ADMIN_ACCESS_KEY,
-  apiUrl,
+  envConfig,
+  apiWriteUrl,
   generateArticleSummary,
   getUserFriendlyErrorMessage,
   postWithTimeout,
@@ -63,8 +63,8 @@ type TabKey = 'parse' | 'my-articles';
 
 export default function CreateScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { chineseFontStyle } = useFont();
   const [activeTab, setActiveTab] = useState<TabKey>('parse');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -109,10 +109,10 @@ export default function CreateScreen() {
     setError(null);
     try {
       const result = await postWithTimeout<ScrapeResponse>(
-        apiUrl('/scrape'),
+        apiWriteUrl('/scrape'),
         { url: trimmed },
         undefined,
-        ADMIN_ACCESS_KEY ? { 'X-Admin-Key': ADMIN_ACCESS_KEY } : undefined,
+        envConfig.tempAdminAccessWriteKey ? { 'X-Admin-Key': envConfig.tempAdminAccessWriteKey } : undefined,
       );
       if (!result.existing) {
         const newCount = await incrementDailyCount();
@@ -124,7 +124,7 @@ export default function CreateScreen() {
         return [result, ...prev];
       });
     } catch (err: unknown) {
-      setError(getUserFriendlyErrorMessage(err));
+      setError(getUserFriendlyErrorMessage(err, t('somethingWentWrong')));
     } finally {
       setLoading(false);
     }
@@ -180,7 +180,7 @@ export default function CreateScreen() {
               activeTab === tab && styles.tabTextActive,
             ]}
           >
-            {tab === 'parse' ? 'parse' : `my articles (${myArticles.length})`}
+            {tab === 'parse' ? t('parse') : t('myArticles', { count: myArticles.length })}
           </Text>
         </Pressable>
       ))}
@@ -193,8 +193,8 @@ export default function CreateScreen() {
         {renderTabBar()}
         {myArticles.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, chineseFontStyle]}>
-              no articles yet — parse one first
+            <Text style={styles.emptyText}>
+              {t('noArticlesParseFirst')}
             </Text>
           </View>
         ) : (
@@ -225,9 +225,9 @@ export default function CreateScreen() {
         {renderTabBar()}
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>fetching…</Text>
+          <Text style={styles.loadingText}>{t('fetching')}</Text>
           {showIndexing && (
-            <Text style={styles.loadingText}>indexing…</Text>
+            <Text style={styles.loadingText}>{t('indexing')}</Text>
           )}
         </View>
       </View>
@@ -239,13 +239,13 @@ export default function CreateScreen() {
       <View style={styles.container}>
         {renderTabBar()}
         <View style={styles.resultContent}>
-          <Text style={[styles.successTitle, chineseFontStyle]}>
-            {lastParsed.existing ? 'article saved' : 'new article created'}
+          <Text style={styles.successTitle}>
+            {lastParsed.existing ? t('articleSaved') : t('newArticleCreated')}
           </Text>
 
           {lastParsed.existing && (
-            <Text style={[styles.existingNote, chineseFontStyle]}>
-              This article was already created — no need to fetch again
+            <Text style={styles.existingNote}>
+              {t('articleAlreadyCreated')}
             </Text>
           )}
 
@@ -262,8 +262,8 @@ export default function CreateScreen() {
             ]}
             onPress={handleReset}
           >
-            <Text style={[styles.resetButtonText, chineseFontStyle]}>
-              fetch another article
+            <Text style={styles.resetButtonText}>
+              {t('fetchAnotherArticle')}
             </Text>
           </Pressable>
         </View>
@@ -280,14 +280,14 @@ export default function CreateScreen() {
       >
         <View style={styles.parseContent}>
           <View style={styles.centerContent}>
-            <Text style={[styles.parseSubtitle, chineseFontStyle]}>
-              Enter a supported url to fetch an article
+            <Text style={styles.parseSubtitle}>
+              {t('enterUrl')}
             </Text>
 
             <View style={[styles.inputRow, limitReached && styles.inputRowDisabled]}>
               <TextInput
-                style={[styles.input, chineseFontStyle]}
-                placeholder="https://zaobao.com/..."
+                style={styles.input}
+                placeholder={t('urlPlaceholder')}
                 placeholderTextColor={theme.textMuted}
                 value={url}
                 onChangeText={setUrl}
@@ -308,7 +308,7 @@ export default function CreateScreen() {
                 ]}
                 onPress={handleFetch}
                 disabled={limitReached}
-                accessibilityLabel="Parse article URL"
+                accessibilityLabel={t('parseArticleUrl')}
               >
                 <Ionicons name="cloud-download-outline" size={24} color="#fff" />
               </Pressable>
@@ -316,8 +316,8 @@ export default function CreateScreen() {
 
             <Text style={styles.dailyLimit}>
               {limitReached
-                ? 'daily limit reached — come back tomorrow'
-                : `${remaining} of ${MAX_DAILY_PARSES} parses remaining today`}
+                ? t('dailyLimitReached')
+                : t('parsesRemaining', { remaining, max: MAX_DAILY_PARSES })}
             </Text>
 
             {error && (
@@ -326,7 +326,7 @@ export default function CreateScreen() {
           </View>
 
           <View style={styles.supportedList}>
-            <Text style={styles.supportedLabel}>supported sites</Text>
+            <Text style={styles.supportedLabel}>{t('supportedSites')}</Text>
             {SUPPORTED_URLS.map((site) => (
               <Pressable key={site} onPress={() => Linking.openURL(site)}>
                 <Text style={styles.supportedUrl}>{site}</Text>

@@ -4,44 +4,64 @@ import {
   POST_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
 } from './constants';
+import { i18n } from './i18n';
 import type { ArticleListItem } from './types';
 
-/** API base URL. Override with EXPO_PUBLIC_API_URL for different environments. */
-export const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-  (__DEV__ ? 'http://localhost:8000' : process.env.EXPO_PUBLIC_API_URL);
+export const envConfig = {
+  apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
+  apiWriteBaseUrl: process.env.EXPO_PUBLIC_API_WRITE_URL,
+  tempAdminAccessWriteKey: process.env.EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY,
+  remoteBaseChineseEnglishDictUrl: process.env.EXPO_PUBLIC_REMOTE_DICT_URL,
+}
+
+if (!envConfig.apiBaseUrl?.trim()) {
+  throw new Error('EXPO_PUBLIC_API_URL is required. Set it in .env or app.json config.');
+}
+if (!envConfig.apiWriteBaseUrl?.trim()) {
+  throw new Error('EXPO_PUBLIC_API_WRITE_URL is required. Set it in .env or app.json config.');
+}
+if (!envConfig.tempAdminAccessWriteKey?.trim()) {
+  throw new Error('EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY is required. Set it in .env or app.json config.');
+}
 
 /** Convert raw API/network errors to user-friendly messages. */
-export function getUserFriendlyErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
+export function getUserFriendlyErrorMessage(err: unknown, fallback?: string): string {
+  const defaultFallback = i18n.t('somethingWentWrong');
+  const fb = fallback ?? defaultFallback;
   const msg = err instanceof Error ? err.message : String(err);
   const lower = msg.toLowerCase();
 
   // Timeout (AbortController.abort())
-  if (err instanceof Error && err.name === 'AbortError') return 'Request timed out. Please try again.';
-  if (lower.includes('abort')) return 'Request timed out. Please try again.';
+  if (err instanceof Error && err.name === 'AbortError') return i18n.t('requestTimedOut');
+  if (lower.includes('abort')) return i18n.t('requestTimedOut');
 
   // Network/connection errors
-  if (err instanceof TypeError && lower.includes('fetch')) return 'Unable to connect. Please check your internet connection.';
-  if (lower.includes('failed to fetch') || lower.includes('network request failed')) return 'Unable to connect. Please check your internet connection.';
+  if (err instanceof TypeError && lower.includes('fetch')) return i18n.t('unableToConnect');
+  if (lower.includes('failed to fetch') || lower.includes('network request failed')) return i18n.t('unableToConnect');
 
   // Server errors (5xx) - avoid exposing raw status
-  if (/api error:\s*5\d{2}/.test(lower) || lower.includes('502') || lower.includes('503')) return 'Server error. Please try again later.';
+  if (/api error:\s*5\d{2}/.test(lower) || lower.includes('502') || lower.includes('503')) return i18n.t('serverError');
 
   // Not found (404)
-  if (lower.includes('404')) return 'Not found.';
+  if (lower.includes('404')) return i18n.t('errorNotFound');
 
   // Preserve server-provided detail (e.g. "Unsupported news source. Supported: zaobao.com")
   if (msg && !lower.startsWith('api error:')) return msg;
 
-  return fallback;
+  return fb;
 }
 
-/** Admin key for protected endpoints (e.g. scrape). Set EXPO_PUBLIC_ADMIN_ACCESS_KEY to match server ADMIN_ACCESS_KEY. */
-export const ADMIN_ACCESS_KEY =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_ADMIN_ACCESS_KEY) || '';
+export function apiReadUrl(path: string, params?: Record<string, string | number | boolean>): string {
+  const url = `${envConfig.apiBaseUrl}${API_PREFIX}${path}`;
+  if (!params) return url;
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => search.set(k, String(v)));
+  return `${url}?${search.toString()}`;
+}
 
-export function apiUrl(path: string, params?: Record<string, string | number | boolean>): string {
-  const url = `${API_BASE_URL}${API_PREFIX}${path}`;
+/** Build full URL for write endpoints (scrape, generate_summary) using envConfig.apiWriteBaseUrl. */
+export function apiWriteUrl(path: string, params?: Record<string, string | number | boolean>): string {
+  const url = `${envConfig.apiWriteBaseUrl}${API_PREFIX}${path}`;
   if (!params) return url;
   const search = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => search.set(k, String(v)));
@@ -53,7 +73,7 @@ export function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
   const trimmed = url.trim();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-  const base = API_BASE_URL?.replace(/\/$/, '') ?? '';
+  const base = envConfig.apiBaseUrl!.replace(/\/$/, '');
   return base ? `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}` : trimmed;
 }
 
@@ -129,10 +149,10 @@ export async function postWithTimeout<T>(
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */
 export async function generateArticleSummary(articleId: string): Promise<ArticleListItem> {
-  const url = apiUrl(`/articles/${articleId}/generate_summary`);
+  const url = apiWriteUrl(`/articles/${articleId}/generate_summary`);
   const headers: Record<string, string> = {};
-  if (ADMIN_ACCESS_KEY) {
-    headers['X-Admin-Key'] = ADMIN_ACCESS_KEY;
+  if (envConfig.tempAdminAccessWriteKey) {
+    headers['X-Admin-Key'] = envConfig.tempAdminAccessWriteKey;
   }
   return postWithTimeout<ArticleListItem>(
     url,

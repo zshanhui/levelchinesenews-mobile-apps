@@ -1,0 +1,13 @@
+---
+description: Do not modify translations.ts unless adding new definitions
+globs: lib/i18n/translations.ts
+alwaysApply: false
+---
+
+# Translations File
+
+Do **not** modify `lib/i18n/translations.ts` unless the task explicitly asks to add new translation keys or definitions.
+
+- Do not add translations as a side effect of implementing features
+- Do not add translations "for completeness" when implementing UI
+- Only add or change translations when the user's task specifically requests it (e.g., "add translations for X", "localize Y")

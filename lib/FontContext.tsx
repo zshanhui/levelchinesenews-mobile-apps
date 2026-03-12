@@ -17,10 +17,13 @@ import {
   STORAGE_KEY_FONT_SIZE,
   STORAGE_KEY_LINE_SPACING,
   STORAGE_KEY_PINYIN,
+  STORAGE_KEY_NATIVE_LANGUAGE,
 } from './constants';
 
 export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
 export type FontSizeLevel = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+/** ISO 639-1 language code for user's native language */
+export type NativeLanguage = 'en' | 'es' | 'ms' | 'ar' | 'zh';
 
 const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
   xs: 14,
@@ -43,6 +46,9 @@ type FontContextValue = {
   /** Font size level for article content */
   fontSize: FontSizeLevel;
   setFontSize: (value: FontSizeLevel) => void;
+  /** User's native language */
+  nativeLanguage: NativeLanguage;
+  setNativeLanguage: (value: NativeLanguage) => void;
   /** Style to apply to Text for Chinese content */
   chineseFontStyle: { fontFamily?: string };
   /** Bold variant for headings */
@@ -62,6 +68,8 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
   const [showPinyin, setShowPinyinState] = useState(true);
   const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('normal');
   const [fontSize, setFontSizeState] = useState<FontSizeLevel>('md');
+  const [nativeLanguage, setNativeLanguageState] =
+    useState<NativeLanguage>('en');
 
   const [fontsLoaded] = useFonts({
     NotoSansSC_400Regular,
@@ -100,6 +108,28 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_NATIVE_LANGUAGE).then((stored) => {
+      const validCodes: NativeLanguage[] = ['en', 'es', 'ms', 'ar', 'zh'];
+      if (stored && validCodes.includes(stored as NativeLanguage)) {
+        setNativeLanguageState(stored as NativeLanguage);
+      } else if (stored) {
+        const legacyMap: Record<string, NativeLanguage> = {
+          english: 'en',
+          spanish: 'es',
+          'bahasa-malay': 'ms',
+          arabic: 'ar',
+          chinese: 'zh',
+        };
+        const migrated = legacyMap[stored];
+        if (migrated) {
+          setNativeLanguageState(migrated);
+          AsyncStorage.setItem(STORAGE_KEY_NATIVE_LANGUAGE, migrated);
+        }
+      }
+    });
+  }, []);
+
   const setUseNotoSansSC = useCallback((value: boolean) => {
     setUseNotoSansSCState(value);
     AsyncStorage.setItem(STORAGE_KEY_FONT, String(value));
@@ -118,6 +148,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
   const setFontSize = useCallback((value: FontSizeLevel) => {
     setFontSizeState(value);
     AsyncStorage.setItem(STORAGE_KEY_FONT_SIZE, value);
+  }, []);
+
+  const setNativeLanguage = useCallback((value: NativeLanguage) => {
+    setNativeLanguageState(value);
+    AsyncStorage.setItem(STORAGE_KEY_NATIVE_LANGUAGE, value);
   }, []);
 
   const chineseFontStyle =
@@ -141,6 +176,8 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     setLineSpacing,
     fontSize,
     setFontSize,
+    nativeLanguage,
+    setNativeLanguage,
     chineseFontStyle,
     chineseFontBoldStyle,
     articleFontSize,
