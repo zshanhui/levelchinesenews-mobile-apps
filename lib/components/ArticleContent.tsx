@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import type { RefObject } from 'react';
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { i18n, useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
@@ -17,6 +17,7 @@ import { useFont } from '../FontContext';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import type { ParsedParagraph, WordSegment } from '../types';
+import { fetchDictEntryByWord } from '../useLocalDictService';
 
 const isWebLocalhost =
   Platform.OS === 'web' &&
@@ -118,6 +119,21 @@ export function SentenceStudyPanel({
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle } = useFont();
+  const [dictEntry, setDictEntry] = useState<{ definitions: string } | null>(null);
+  const [lookupComplete, setLookupComplete] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDictEntry(null);
+    setLookupComplete(false);
+    fetchDictEntryByWord(word).then((entry) => {
+      if (!cancelled) {
+        setDictEntry(entry ?? null);
+        setLookupComplete(true);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [word]);
 
   const openInPleco = useCallback(() => {
     const url = buildPlecoUrl(word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey);
@@ -148,8 +164,16 @@ export function SentenceStudyPanel({
         </View>
       </View>
       <View style={styles.panelDefinition}>
-        <Text style={[styles.panelDefinitionText, chineseFontStyle]}>
-          {t('nativeLanguageDefinitionPlaceholder')}
+        <Text
+          style={[
+            styles.panelDefinitionText,
+            dictEntry?.definitions ? styles.panelDefinitionTextLoaded : null,
+            lookupComplete && !dictEntry?.definitions ? styles.panelDefinitionTextMissing : null,
+            chineseFontStyle,
+          ]}
+        >
+          {dictEntry?.definitions ??
+            (lookupComplete ? t('wordMissingInLocalDict') : t('nativeLanguageDefinitionPlaceholder'))}
         </Text>
       </View>
     </View>
@@ -422,6 +446,13 @@ function createStyles(theme: Theme) {
   panelDefinitionText: {
     fontSize: 14,
     color: theme.textMuted,
+  },
+  panelDefinitionTextLoaded: {
+    color: theme.textSecondary,
+  },
+  panelDefinitionTextMissing: {
+    color: theme.textMuted,
+    fontStyle: 'italic',
   },
   plecoButton: {
     flexDirection: 'row',

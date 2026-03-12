@@ -11,13 +11,7 @@ export default function SettingsLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen
-        name="localdict"
-        options={{
-          title: 'local dictionary',
-          headerBackTitle: 'back',
-        }}
-      />
+      <Stack.Screen name="localdict" />
     </Stack>
   );
 }

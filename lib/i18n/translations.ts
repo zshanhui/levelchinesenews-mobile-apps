@@ -70,6 +70,15 @@ export const translations = {
     // Local dict / dictionary
     localDictionary: 'local dictionary',
     localDictionarySettings: 'local dictionary settings',
+    downloadLocalDict: 'Load dictionary from remote',
+    resetLocalDict: 'Reset local dictionary',
+    resetting: 'Resetting…',
+    downloading: 'Downloading…',
+    downloadLocalDictHint:
+      'Download the CE-DICT dictionary from the remote server and load it into your local database. Total size around 10mb.',
+    dictEntriesCount: '{{count}} entries in local dictionary',
+    randomEntrySample: 'Sample entry',
+    downloadFailed: 'Download failed',
 
     // Article card (translation)
     translationFailed: 'Translation failed',
@@ -95,6 +104,7 @@ export const translations = {
 
     // Article content
     nativeLanguageDefinitionPlaceholder: 'native language definition goes here..',
+    wordMissingInLocalDict: 'Word is missing in local dictionary, try Pleco or report missing.',
     openInPleco: 'Open in Pleco dictionary',
     pleco: 'Pleco',
     plecoSource: 'Level Chinese News',
@@ -183,6 +193,15 @@ export const translations = {
     // Local dict / dictionary
     localDictionary: 'diccionario local',
     localDictionarySettings: 'ajustes del diccionario local',
+    downloadLocalDict: 'Cargar diccionario desde remoto',
+    resetLocalDict: 'Restablecer diccionario local',
+    resetting: 'Restableciendo…',
+    downloading: 'Descargando…',
+    downloadLocalDictHint:
+      'Descarga el diccionario CEDICT del servidor remoto y cárgalo en tu base de datos local. Tamaño total aprox. 10mb.',
+    dictEntriesCount: '{{count}} entradas en el diccionario local',
+    randomEntrySample: 'Entrada de ejemplo',
+    downloadFailed: 'Error al descargar',
 
     // Article card (translation)
     translationFailed: 'Traducción fallida',
@@ -209,6 +228,8 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'la definición en tu idioma aparece aquí..',
+    wordMissingInLocalDict:
+      'La palabra no está en el diccionario local, prueba Pleco o reporta como faltante.',
     openInPleco: 'Abrir en diccionario Pleco',
     pleco: 'Pleco',
     plecoSource: 'Level Chinese News',
@@ -297,6 +318,15 @@ export const translations = {
     // Local dict / dictionary
     localDictionary: 'kamus tempatan',
     localDictionarySettings: 'tetapan kamus tempatan',
+    downloadLocalDict: 'Muat kamus dari jauh',
+    resetLocalDict: 'Set semula kamus tempatan',
+    resetting: 'Menetapkan semula…',
+    downloading: 'Memuat turun…',
+    downloadLocalDictHint:
+      'Muat turun kamus CEDICT dari pelayan jauh dan muat ke pangkalan data tempatan anda. Saiz keseluruhan kira-kira 10mb.',
+    dictEntriesCount: '{{count}} entri dalam kamus tempatan',
+    randomEntrySample: 'Contoh entri',
+    downloadFailed: 'Muat turun gagal',
 
     // Article card (translation)
     translationFailed: 'Terjemahan gagal',
@@ -323,6 +353,8 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'definisi dalam bahasa ibunda akan muncul di sini..',
+    wordMissingInLocalDict:
+      'Perkataan tiada dalam kamus tempatan, cuba Pleco atau laporkan sebagai tiada.',
     openInPleco: 'Buka dalam kamus Pleco',
     pleco: 'Pleco',
     plecoSource: 'Level Chinese News',
@@ -411,6 +443,15 @@ export const translations = {
     // Local dict / dictionary
     localDictionary: 'القاموس المحلي',
     localDictionarySettings: 'إعدادات القاموس المحلي',
+    downloadLocalDict: 'تحميل القاموس من البعيد',
+    resetLocalDict: 'إعادة تعيين القاموس المحلي',
+    resetting: 'جاري إعادة التعيين…',
+    downloading: 'جاري التنزيل…',
+    downloadLocalDictHint:
+      'تنزيل قاموس CEDICT من الخادم البعيد وتحميله إلى قاعدة البيانات المحلية. الحجم الإجمالي حوالي 10 ميجابايت.',
+    dictEntriesCount: '{{count}} إدخالات في القاموس المحلي',
+    randomEntrySample: 'مثال على إدخال',
+    downloadFailed: 'فشل التنزيل',
 
     // Article card (translation)
     translationFailed: 'فشل الترجمة',
@@ -437,6 +478,8 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'سيظهر تعريف لغتك الأم هنا..',
+    wordMissingInLocalDict:
+      'الكلمة غير موجودة في القاموس المحلي، جرب بليكو أو أبلغ عن كلمة مفقودة.',
     openInPleco: 'فتح في قاموس بليكو',
     pleco: 'بليكو',
     plecoSource: 'Level Chinese News',
@@ -523,6 +566,14 @@ export const translations = {
     // Local dict / dictionary
     localDictionary: '本地词典',
     localDictionarySettings: '本地词典设置',
+    downloadLocalDict: '从远程加载词典',
+    resetLocalDict: '重置本地词典',
+    resetting: '重置中…',
+    downloading: '下载中…',
+    downloadLocalDictHint: '从远程服务器下载 CEDICT 词典并加载到本地数据库。总大小约 10mb。',
+    dictEntriesCount: '本地词典中共 {{count}} 条词条',
+    randomEntrySample: '示例词条',
+    downloadFailed: '下载失败',
 
     // Article card (translation)
     translationFailed: '翻译失败',
@@ -546,6 +597,7 @@ export const translations = {
 
     // Article content
     nativeLanguageDefinitionPlaceholder: '母语释义将显示在此处..',
+    wordMissingInLocalDict: '该词不在本地词典中，请尝试使用 Pleco 或报告缺失。',
     openInPleco: '在 Pleco 词典中打开',
     pleco: 'Pleco',
     plecoSource: 'Level Chinese News',

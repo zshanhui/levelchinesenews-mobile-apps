@@ -11,6 +11,7 @@ export const envConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
   apiWriteBaseUrl: process.env.EXPO_PUBLIC_API_WRITE_URL,
   tempAdminAccessWriteKey: process.env.EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY,
+  remoteBaseChineseEnglishDictUrl: process.env.EXPO_PUBLIC_REMOTE_DICT_URL,
 }
 
 if (!envConfig.apiBaseUrl?.trim()) {

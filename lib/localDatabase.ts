@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { randomUUID } from './uuid';
 
 const LOCAL_DATABASE_NAME = 'lcnlocal';
 const lcnDictTableName = 'lcndict';
@@ -30,7 +31,7 @@ export interface DictEntry {
 
 export async function insertDictEntry(entry: DictEntry) {
   const db = await getLocalDatabase();
-  const id = crypto.randomUUID();
+  const id = randomUUID();
   await db.runAsync(
     `
       INSERT INTO ${lcnDictTableName} (id, simplified, traditional, pinyin, definitions)
@@ -68,14 +69,19 @@ export async function ensureLcnDictTableExists(db: SQLite.SQLiteDatabase) {
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS ${lcnDictTableName} (
       id TEXT PRIMARY KEY,
-      simplified TEXT NOTE NULL,
+      simplified TEXT NOT NULL,
       traditional TEXT NOT NULL,
       pinyin TEXT NOT NULL DEFAULT '',
       definitions TEXT NOT NULL DEFAULT ''
     );
+  `)
+}
+
+export async function createLcnDictIndexes(db: SQLite.SQLiteDatabase) {
+  await db.execAsync(`
     CREATE INDEX IF NOT EXISTS idx_lcndict_simplified ON ${lcnDictTableName} (simplified);
     CREATE INDEX IF NOT EXISTS idx_lcndict_traditional ON ${lcnDictTableName} (traditional);
-  `)
+  `);
 }
 
 export async function checkIfLcnDictExist() {
@@ -87,7 +93,7 @@ export async function checkIfLcnDictExist() {
 }
 
 export async function getTotalLcnDictEntriesCount(): Promise<number> {
-  const exists = checkIfLcnDictExist();
+  const exists = await checkIfLcnDictExist();
   if (!exists) return 0;
 
   const db = await getLocalDatabase();
@@ -95,4 +101,15 @@ export async function getTotalLcnDictEntriesCount(): Promise<number> {
     `SELECT COUNT(*) AS count FROM ${lcnDictTableName}`
   );
   return result?.count ?? 0;
+}
+
+export async function getRandomDictEntry(): Promise<DictEntry | null> {
+  const exists = await checkIfLcnDictExist();
+  if (!exists) return null;
+
+  const db = await getLocalDatabase();
+  const result = await db.getFirstAsync<DictEntry>(
+    `SELECT * FROM ${lcnDictTableName} ORDER BY RANDOM() LIMIT 1`
+  );
+  return result ?? null;
 }
