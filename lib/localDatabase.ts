@@ -6,12 +6,53 @@ const lcnDictTableName = 'lcndict';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
+async function openFreshDatabase() {
+  _db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME);
+  return _db;
+}
+
+async function isDatabaseConnectionHealthy(db: SQLite.SQLiteDatabase): Promise<boolean> {
+  try {
+    await db.getFirstAsync<{ ok: number }>('SELECT 1 AS ok');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function execWithReconnectRetry(
+  sql: string,
+  db?: SQLite.SQLiteDatabase
+) {
+  const currentDb = db ?? await getLocalDatabase();
+  try {
+    await currentDb.execAsync(sql);
+  } catch (err) {
+    console.warn('SQLite exec failed, reconnecting and retrying once:', err);
+    try {
+      await closeLocalDatabase();
+    } catch {
+      // noop: best-effort close before reopening
+    }
+    const freshDb = await getLocalDatabase();
+    await freshDb.execAsync(sql);
+  }
+}
+
 export async function getLocalDatabase() {
   if (!_db) {
-    _db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME)
-    // await migrateLocalDatabaseIfNeeded(_db)
+    return openFreshDatabase();
   }
-  return _db;
+
+  const healthy = await isDatabaseConnectionHealthy(_db);
+  if (healthy) return _db;
+
+  try {
+    await _db.closeAsync();
+  } catch {
+    // noop: best-effort close before reopening
+  }
+  return openFreshDatabase();
 }
 
 export async function closeLocalDatabase() {
@@ -50,8 +91,7 @@ export async function getDictEntryByWord(chineseWord: string) {
 }
 
 export async function dropLcnDictTable() {
-  const db = await getLocalDatabase()
-  await db.execAsync(`DROP TABLE IF EXISTS ${lcnDictTableName}`)
+  await execWithReconnectRetry(`DROP TABLE IF EXISTS ${lcnDictTableName}`)
 }
 
 export async function migrateLocalDatabaseIfNeeded(db: SQLite.SQLiteDatabase) {
@@ -66,7 +106,7 @@ export async function migrateLocalDatabaseIfNeeded(db: SQLite.SQLiteDatabase) {
 }
 
 export async function ensureLcnDictTableExists(db: SQLite.SQLiteDatabase) {
-  await db.execAsync(`
+  await execWithReconnectRetry(`
     CREATE TABLE IF NOT EXISTS ${lcnDictTableName} (
       id TEXT PRIMARY KEY,
       simplified TEXT NOT NULL,
@@ -74,33 +114,43 @@ export async function ensureLcnDictTableExists(db: SQLite.SQLiteDatabase) {
       pinyin TEXT NOT NULL DEFAULT '',
       definitions TEXT NOT NULL DEFAULT ''
     );
-  `)
+  `, db)
 }
 
 export async function createLcnDictIndexes(db: SQLite.SQLiteDatabase) {
-  await db.execAsync(`
+  await execWithReconnectRetry(`
     CREATE INDEX IF NOT EXISTS idx_lcndict_simplified ON ${lcnDictTableName} (simplified);
     CREATE INDEX IF NOT EXISTS idx_lcndict_traditional ON ${lcnDictTableName} (traditional);
-  `);
+  `, db);
 }
 
 export async function checkIfLcnDictExist() {
-  const db = await getLocalDatabase()
-  const tableExists = await db.getFirstAsync<{ name: string }>(
-    `SELECT name FROM sqlite_master WHERE type= 'table' AND name=?`, [lcnDictTableName]
-  )
-  return tableExists !== null
+  try {
+    const db = await getLocalDatabase()
+    const tableExists = await db.getFirstAsync<{ name: string }>(
+      `SELECT name FROM sqlite_master WHERE type= 'table' AND name=?`, [lcnDictTableName]
+    )
+    return tableExists !== null
+  } catch (err) {
+    console.warn('checkIfLcnDictExist warning:', err);
+    return false;
+  }
 }
 
 export async function getTotalLcnDictEntriesCount(): Promise<number> {
-  const exists = await checkIfLcnDictExist();
-  if (!exists) return 0;
+  try {
+    const exists = await checkIfLcnDictExist();
+    if (!exists) return 0;
 
-  const db = await getLocalDatabase();
-  const result = await db.getFirstAsync<{ count: number }>(
-    `SELECT COUNT(*) AS count FROM ${lcnDictTableName}`
-  );
-  return result?.count ?? 0;
+    const db = await getLocalDatabase();
+    const result = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) AS count FROM ${lcnDictTableName}`
+    );
+    return result?.count ?? 0;
+  } catch (err) {
+    console.warn('getTotalLcnDictEntriesCount warning:', err);
+    return 0;
+  }
 }
 
 export async function getRandomDictEntry(): Promise<DictEntry | null> {
@@ -110,6 +160,20 @@ export async function getRandomDictEntry(): Promise<DictEntry | null> {
   const db = await getLocalDatabase();
   const result = await db.getFirstAsync<DictEntry>(
     `SELECT * FROM ${lcnDictTableName} ORDER BY RANDOM() LIMIT 1`
+  );
+  return result ?? null;
+}
+
+export async function getRandomProverbOrChengyuEntry(): Promise<DictEntry | null> {
+  const exists = await checkIfLcnDictExist();
+  if (!exists) return null;
+
+  const db = await getLocalDatabase();
+  const result = await db.getFirstAsync<DictEntry>(
+    `SELECT * FROM ${lcnDictTableName}
+     WHERE simplified GLOB '????*'
+     ORDER BY RANDOM()
+     LIMIT 1`
   );
   return result ?? null;
 }

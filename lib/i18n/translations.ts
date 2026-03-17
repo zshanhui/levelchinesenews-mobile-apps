@@ -77,7 +77,8 @@ export const translations = {
     downloadLocalDictHint:
       'Download the CE-DICT dictionary from the remote server and load it into your local database. Total size around 10mb.',
     dictEntriesCount: '{{count}} entries in local dictionary',
-    randomEntrySample: 'Sample entry',
+    randomEntrySample: 'sample phrase, proverb, 成语',
+    showAnotherRandomEntry: 'Show another random entry',
     downloadFailed: 'Download failed',
 
     // Article card (translation)
@@ -104,6 +105,10 @@ export const translations = {
 
     // Article content
     nativeLanguageDefinitionPlaceholder: 'native language definition goes here..',
+    loadLocalDictFirstHint: 'please load local dictionary first to see definitions here',
+    setupLocalDict: 'setup local dictionary',
+    getPleco: 'Get Pleco',
+    openPlecoWebsite: 'Open Pleco website',
     wordMissingInLocalDict: 'Word is missing in local dictionary, try Pleco or report missing.',
     openInPleco: 'Open in Pleco dictionary',
     pleco: 'Pleco',
@@ -200,7 +205,8 @@ export const translations = {
     downloadLocalDictHint:
       'Descarga el diccionario CEDICT del servidor remoto y cárgalo en tu base de datos local. Tamaño total aprox. 10mb.',
     dictEntriesCount: '{{count}} entradas en el diccionario local',
-    randomEntrySample: 'Entrada de ejemplo',
+    randomEntrySample: 'muestra: frase, proverbio, 成语',
+    showAnotherRandomEntry: 'Mostrar otra entrada aleatoria',
     downloadFailed: 'Error al descargar',
 
     // Article card (translation)
@@ -228,6 +234,10 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'la definición en tu idioma aparece aquí..',
+    loadLocalDictFirstHint: 'carga el diccionario local primero para ver las definiciones aquí',
+    setupLocalDict: 'configurar diccionario local',
+    getPleco: 'Obtener Pleco',
+    openPlecoWebsite: 'Abrir sitio web de Pleco',
     wordMissingInLocalDict:
       'La palabra no está en el diccionario local, prueba Pleco o reporta como faltante.',
     openInPleco: 'Abrir en diccionario Pleco',
@@ -325,7 +335,8 @@ export const translations = {
     downloadLocalDictHint:
       'Muat turun kamus CEDICT dari pelayan jauh dan muat ke pangkalan data tempatan anda. Saiz keseluruhan kira-kira 10mb.',
     dictEntriesCount: '{{count}} entri dalam kamus tempatan',
-    randomEntrySample: 'Contoh entri',
+    randomEntrySample: 'contoh frasa, peribahasa, 成语',
+    showAnotherRandomEntry: 'Tunjukkan entri rawak lain',
     downloadFailed: 'Muat turun gagal',
 
     // Article card (translation)
@@ -353,6 +364,10 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'definisi dalam bahasa ibunda akan muncul di sini..',
+    loadLocalDictFirstHint: 'sila muat kamus tempatan dahulu untuk melihat definisi di sini',
+    setupLocalDict: 'setup kamus tempatan',
+    getPleco: 'Dapatkan Pleco',
+    openPlecoWebsite: 'Buka laman web Pleco',
     wordMissingInLocalDict:
       'Perkataan tiada dalam kamus tempatan, cuba Pleco atau laporkan sebagai tiada.',
     openInPleco: 'Buka dalam kamus Pleco',
@@ -450,7 +465,8 @@ export const translations = {
     downloadLocalDictHint:
       'تنزيل قاموس CEDICT من الخادم البعيد وتحميله إلى قاعدة البيانات المحلية. الحجم الإجمالي حوالي 10 ميجابايت.',
     dictEntriesCount: '{{count}} إدخالات في القاموس المحلي',
-    randomEntrySample: 'مثال على إدخال',
+    randomEntrySample: 'عبارة أو مثل أو 成语',
+    showAnotherRandomEntry: 'عرض إدخال عشوائي آخر',
     downloadFailed: 'فشل التنزيل',
 
     // Article card (translation)
@@ -478,6 +494,10 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'سيظهر تعريف لغتك الأم هنا..',
+    loadLocalDictFirstHint: 'يرجى تحميل القاموس المحلي أولاً لرؤية التعريفات هنا',
+    setupLocalDict: 'إعداد القاموس المحلي',
+    getPleco: 'تنزيل بليكو',
+    openPlecoWebsite: 'فتح موقع بليكو',
     wordMissingInLocalDict:
       'الكلمة غير موجودة في القاموس المحلي، جرب بليكو أو أبلغ عن كلمة مفقودة.',
     openInPleco: 'فتح في قاموس بليكو',
@@ -572,7 +592,8 @@ export const translations = {
     downloading: '下载中…',
     downloadLocalDictHint: '从远程服务器下载 CEDICT 词典并加载到本地数据库。总大小约 10mb。',
     dictEntriesCount: '本地词典中共 {{count}} 条词条',
-    randomEntrySample: '示例词条',
+    randomEntrySample: '示例：短语、谚语、成语',
+    showAnotherRandomEntry: '显示另一条随机词条',
     downloadFailed: '下载失败',
 
     // Article card (translation)
@@ -597,6 +618,10 @@ export const translations = {
 
     // Article content
     nativeLanguageDefinitionPlaceholder: '母语释义将显示在此处..',
+    loadLocalDictFirstHint: '请先加载本地词典以查看释义',
+    setupLocalDict: '设置本地词典',
+    getPleco: '获取 Pleco',
+    openPlecoWebsite: '打开 Pleco 官网',
     wordMissingInLocalDict: '该词不在本地词典中，请尝试使用 Pleco 或报告缺失。',
     openInPleco: '在 Pleco 词典中打开',
     pleco: 'Pleco',

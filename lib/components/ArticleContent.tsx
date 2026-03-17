@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
 import type { RefObject } from 'react';
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { i18n, useTranslation } from '../i18n';
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 import type { ScrollView } from 'react-native';
 import { useFont } from '../FontContext';
+import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import type { ParsedParagraph, WordSegment } from '../types';
@@ -115,66 +117,160 @@ export function SentenceStudyPanel({
   highlightedSentenceKey: string;
   bottomInset: number;
 }) {
+  const router = useRouter();
   const { theme } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { chineseFontStyle } = useFont();
   const [dictEntry, setDictEntry] = useState<{ definitions: string } | null>(null);
   const [lookupComplete, setLookupComplete] = useState(false);
+  const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
+  const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
+  const stackPinyinUnderWord = word.length >= 4;
 
   useEffect(() => {
     let cancelled = false;
     setDictEntry(null);
     setLookupComplete(false);
-    fetchDictEntryByWord(word).then((entry) => {
-      if (!cancelled) {
+    setHasLocalDictData(null);
+    const runLookup = async () => {
+      try {
+        const [entry, totalCount] = await Promise.all([
+          fetchDictEntryByWord(word),
+          getTotalLcnDictEntriesCount(),
+        ]);
+        if (cancelled) return;
         setDictEntry(entry ?? null);
-        setLookupComplete(true);
+        setHasLocalDictData(totalCount > 0);
+      } catch (err) {
+        if (cancelled) return;
+        console.warn(`Study panel lookup warning for "${word}":`, err);
+        setDictEntry(null);
+        setHasLocalDictData(false);
+      } finally {
+        if (!cancelled) {
+          setLookupComplete(true);
+        }
       }
-    });
+    };
+    void runLookup();
     return () => { cancelled = true; };
   }, [word]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!showPlecoButton) {
+      setIsPlecoInstalled(false);
+      return () => { cancelled = true; };
+    }
+    const checkPlecoAvailability = async () => {
+      try {
+        const available = await Linking.canOpenURL('plecoapi://');
+        if (!cancelled) {
+          setIsPlecoInstalled(available);
+        }
+      } catch {
+        if (!cancelled) {
+          setIsPlecoInstalled(false);
+        }
+      }
+    };
+    void checkPlecoAvailability();
+    return () => { cancelled = true; };
+  }, []);
 
   const openInPleco = useCallback(() => {
     const url = buildPlecoUrl(word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey);
     Linking.openURL(url);
   }, [word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey]);
 
+  const openPlecoWebsite = useCallback(() => {
+    Linking.openURL('https://www.pleco.com?from=levelchinesenews.app');
+  }, []);
+
+  const openLocalDictSettings = useCallback(() => {
+    router.push('/settings/localdict');
+  }, [router]);
+
   return (
     <View style={[styles.panel, { paddingBottom: Math.max(bottomInset, 16) }]}>
       <View style={styles.panelHeader}>
-        <View style={styles.panelHeaderContent}>
+        <View
+          style={[
+            styles.panelHeaderContent,
+            stackPinyinUnderWord ? styles.panelHeaderContentStacked : null,
+          ]}
+        >
           <Text style={[styles.panelWord, chineseFontStyle]}>{word}</Text>
           {pinyin ? (
-            <Text style={[styles.panelPinyin, chineseFontStyle]}>{pinyin}</Text>
+            <Text
+              style={[
+                styles.panelPinyin,
+                stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
+                chineseFontStyle,
+              ]}
+            >
+              {pinyin}
+            </Text>
           ) : null}
         </View>
         <View style={styles.panelHeaderRight}>
           {showPlecoButton ? (
             <Pressable
-              onPress={openInPleco}
-              style={({ pressed }) => [styles.plecoButton, pressed && styles.plecoButtonPressed]}
+              onPress={isPlecoInstalled ? openInPleco : openPlecoWebsite}
+              style={({ pressed }) => [
+                styles.plecoButton,
+                !isPlecoInstalled ? styles.plecoWebsiteButton : null,
+                pressed && styles.plecoButtonPressed,
+              ]}
               accessibilityRole="button"
-              accessibilityLabel={t('openInPleco')}
+              accessibilityLabel={isPlecoInstalled ? t('openInPleco') : t('openPlecoWebsite')}
             >
-              <Text style={styles.plecoButtonText}>{t('pleco')}</Text>
-              <Ionicons name="search-outline" size={14} color="#fff" />
+              <Text
+                style={[
+                  styles.plecoButtonText,
+                  !isPlecoInstalled ? styles.plecoWebsiteButtonText : null,
+                ]}
+              >
+                {isPlecoInstalled ? t('pleco') : t('getPleco')}
+              </Text>
+              <Ionicons
+                name={isPlecoInstalled ? 'search-outline' : 'open-outline'}
+                size={isPlecoInstalled ? 14 : 12}
+                color={isPlecoInstalled ? '#fff' : theme.textMuted}
+              />
             </Pressable>
           ) : null}
         </View>
       </View>
       <View style={styles.panelDefinition}>
-        <Text
-          style={[
-            styles.panelDefinitionText,
-            dictEntry?.definitions ? styles.panelDefinitionTextLoaded : null,
-            lookupComplete && !dictEntry?.definitions ? styles.panelDefinitionTextMissing : null,
-            chineseFontStyle,
-          ]}
-        >
-          {dictEntry?.definitions ??
-            (lookupComplete ? t('wordMissingInLocalDict') : t('nativeLanguageDefinitionPlaceholder'))}
-        </Text>
+        {lookupComplete && !hasLocalDictData ? (
+          <View style={styles.panelDefinitionMissingDict}>
+            <Text style={[styles.panelDefinitionText, styles.panelDefinitionTextMissing, chineseFontStyle]}>
+              {t('loadLocalDictFirstHint')}
+            </Text>
+            <Pressable onPress={openLocalDictSettings} accessibilityRole="button">
+              {({ pressed }) => (
+                <View style={[styles.panelDefinitionLinkRow, pressed && styles.panelDefinitionLinkRowPressed]}>
+                  <Text style={styles.panelDefinitionLink}>{t('setupLocalDict')}</Text>
+                  <Ionicons name="arrow-forward-outline" size={14} color={theme.accent} />
+                </View>
+              )}
+            </Pressable>
+          </View>
+        ) : (
+          <Text
+            style={[
+              styles.panelDefinitionText,
+              dictEntry?.definitions ? styles.panelDefinitionTextLoaded : null,
+              lookupComplete && !dictEntry?.definitions ? styles.panelDefinitionTextMissing : null,
+              chineseFontStyle,
+            ]}
+          >
+            {dictEntry?.definitions ??
+              (lookupComplete ? t('wordMissingInLocalDict') : t('nativeLanguageDefinitionPlaceholder'))}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -422,9 +518,15 @@ function createStyles(theme: Theme) {
   },
   panelHeaderContent: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 10,
+  },
+  panelHeaderContentStacked: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 2,
   },
   panelHeaderRight: {
     flexDirection: 'row',
@@ -435,13 +537,19 @@ function createStyles(theme: Theme) {
     fontSize: 14,
     color: theme.textMuted,
   },
+  panelPinyinUnderWord: {
+    fontSize: 13,
+  },
   panelWord: {
     fontSize: 22,
-    color: theme.text,
-    fontWeight: '600',
+    color: '#6a0000',
+    fontWeight: '700',
   },
   panelDefinition: {
     paddingTop: 8,
+  },
+  panelDefinitionMissingDict: {
+    gap: 8,
   },
   panelDefinitionText: {
     fontSize: 14,
@@ -454,6 +562,21 @@ function createStyles(theme: Theme) {
     color: theme.textMuted,
     fontStyle: 'italic',
   },
+  panelDefinitionLink: {
+    fontSize: 14,
+    color: theme.accent,
+    textDecorationLine: 'underline',
+  },
+  panelDefinitionLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+    alignSelf: 'flex-end',
+  },
+  panelDefinitionLinkRowPressed: {
+    opacity: 0.75,
+  },
   plecoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -463,6 +586,14 @@ function createStyles(theme: Theme) {
     backgroundColor: '#0078c3',
     borderRadius: 8,
   },
+  plecoWebsiteButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 7,
+  },
   plecoButtonPressed: {
     opacity: 0.9,
   },
@@ -470,6 +601,10 @@ function createStyles(theme: Theme) {
     fontSize: 14,
     color: '#fff',
     fontWeight: '400',
+  },
+  plecoWebsiteButtonText: {
+    color: theme.textMuted,
+    fontSize: 12,
   },
   });
 }
