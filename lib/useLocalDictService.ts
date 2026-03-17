@@ -18,7 +18,7 @@ export async function fetchDictEntryByWord(chineseWord: string) {
     return dictEntry;
   } catch (err) {
     // TODO we can log this or offer the user to report as missing entry
-    console.error(`Dict lookup failed for "${chineseWord}":`, err);
+    console.warn(`Dict lookup warning for "${chineseWord}":`, err);
     return null;
   }
 }
@@ -37,6 +37,35 @@ export interface CompactRemoteDictEntry {
 
 export type ProgressCallback = (pct: number, loaded?: number, total?: number) => void;
 
+async function bulkInsertDictEntries(
+  sqliteDb: Awaited<ReturnType<typeof database.getLocalDatabase>>,
+  entries: CompactRemoteDictEntry[],
+  onProgress?: ProgressCallback
+) {
+  const perBatch = 500;
+  await sqliteDb.withExclusiveTransactionAsync(async (txn) => {
+    for (let i = 0; i < entries.length; i += perBatch) {
+      const batch = entries.slice(i, i + perBatch);
+      const placeholders = Array(batch.length).fill('(?,?,?,?,?)').join(',');
+      const sql = `INSERT INTO lcndict (id, simplified, traditional, pinyin, definitions) VALUES ${placeholders}`;
+      const params = batch.flatMap(ent => [
+        randomUUID(),
+        ent.s,
+        ent.t,
+        ent.p,
+        // map from raw ce-dict compact format
+        Array.isArray(ent.d) ? ent.d.join('; ') : String(ent.d ?? '')
+      ]);
+      await txn.runAsync(sql, params);
+      const loaded = i + batch.length;
+      onProgress?.(35 + (loaded / entries.length) * 65, loaded, entries.length);
+      if (i % 10000 === 0 && i > 0) {
+        await new Promise(r => setTimeout(r, 0)); // yield
+      }
+    }
+  });
+}
+
 export async function firstLoadLocalDictFromRemote(
   remoteDictUrl: string = envConfig.remoteBaseChineseEnglishDictUrl,
   onProgress?: ProgressCallback
@@ -47,35 +76,23 @@ export async function firstLoadLocalDictFromRemote(
     onProgress?.(35, 0, entries.length) // download completed, progress at 35%
 
     // lcndict assumed to not exist or already dropped if resetting with `resetLocalDict()`
-    const sqliteDb = await database.getLocalDatabase()
+    let sqliteDb = await database.getLocalDatabase()
     const exist = await database.checkIfLcnDictExist()
     if (!exist) {
       await database.ensureLcnDictTableExists(sqliteDb)
     }
+    // Re-acquire after potential reconnect during table setup.
+    sqliteDb = await database.getLocalDatabase()
 
-    // batch insert downloaded entries
-    const perBatch = 500;
-    await sqliteDb.withExclusiveTransactionAsync(async (txn) => {
-      for (let i = 0; i < entries.length; i += perBatch) {
-        const batch = entries.slice(i, i + perBatch);
-        const placeholders = Array(batch.length).fill('(?,?,?,?,?)').join(',');
-        const sql = `INSERT INTO lcndict (id, simplified, traditional, pinyin, definitions) VALUES ${placeholders}`;
-        const params = batch.flatMap(ent => [
-          randomUUID(),
-          ent.s,
-          ent.t,
-          ent.p,
-          // map from raw ce-dict compact format
-          Array.isArray(ent.d) ? ent.d.join('; ') : String(ent.d ?? '')
-        ]);
-        await txn.runAsync(sql, params);
-        const loaded = i + batch.length;
-        onProgress?.(35 + (loaded / entries.length) * 65, loaded, entries.length);
-        if (i % 10000 === 0 && i > 0) {
-          await new Promise(r => setTimeout(r, 0)); // yield
-        }
-      }
-    })
+    try {
+      await bulkInsertDictEntries(sqliteDb, entries, onProgress);
+    } catch (insertErr) {
+      console.warn('bulk insert failed once, reconnecting and retrying:', insertErr);
+      await database.closeLocalDatabase();
+      sqliteDb = await database.getLocalDatabase();
+      await database.ensureLcnDictTableExists(sqliteDb);
+      await bulkInsertDictEntries(sqliteDb, entries, onProgress);
+    }
     // creating indexes after bulk inserts for better performance
     await database.createLcnDictIndexes(sqliteDb)
 
@@ -125,14 +142,14 @@ export async function deleteLocalDict(): Promise<number> {
     await database.dropLcnDictTable()
     return 1;
   } catch (err) {
-    console.error('Error while deleting local dict table:', err)
-    return 0;
+    console.warn('Error while deleting local dict table:', err)
+    throw err;
   }
 }
 
 export async function resetLocalDict() {
-  const sqliteDb = await database.getLocalDatabase()
   await deleteLocalDict()
+  const sqliteDb = await database.getLocalDatabase()
   await database.ensureLcnDictTableExists(sqliteDb)
   return 1;
 }

@@ -2,5 +2,6 @@
   "cSpell.words": [
     "decomp",
     "lcnlocaldb"
-  ]
+  ],
+  "i18n-ally.localesPaths": "lib/i18n"
 }

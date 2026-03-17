@@ -35,7 +35,7 @@ export default function LocalDictSettingsScreen() {
   }, []);
 
   const refreshRandomEntry = useCallback(async () => {
-    const entry = await database.getRandomDictEntry();
+    const entry = await database.getRandomProverbOrChengyuEntry();
     setRandomEntry(entry);
   }, []);
 
@@ -182,9 +182,22 @@ export default function LocalDictSettingsScreen() {
 
           {randomEntry && (
             <View style={styles.randomEntryCard}>
-              <Text style={styles.randomEntryLabel}>
-                {t('randomEntrySample')}
-              </Text>
+              <View style={styles.randomEntryCardHeader}>
+                <Text style={styles.randomEntryLabel}>
+                  {t('randomEntrySample')}
+                </Text>
+                <Pressable
+                  onPress={refreshRandomEntry}
+                  style={({ pressed }) => [
+                    styles.randomEntryRefreshButton,
+                    pressed && styles.randomEntryRefreshButtonPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('showAnotherRandomEntry')}
+                >
+                  <Ionicons name="refresh-outline" size={18} color={theme.textMuted} />
+                </Pressable>
+              </View>
               <Text style={styles.randomEntryHanzi}>
                 {randomEntry.simplified}
                 {randomEntry.simplified !== randomEntry.traditional && (
@@ -325,11 +338,22 @@ function createStyles(theme: import('../../lib/theme').Theme) {
       width: '100%',
       maxWidth: 320,
     },
+    randomEntryCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    randomEntryRefreshButton: {
+      padding: 4,
+    },
+    randomEntryRefreshButtonPressed: {
+      opacity: 0.7,
+    },
     randomEntryLabel: {
       fontSize: 11,
       fontWeight: '600',
       color: theme.textMuted,
-      marginBottom: 8,
       textTransform: 'uppercase',
     },
     randomEntryHanzi: {
