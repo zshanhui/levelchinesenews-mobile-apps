@@ -71,7 +71,7 @@ const WordBlock = memo(function WordBlock({
       {showPinyin && pinyin ? (
         <Text style={[wordStyles.pinyin, chineseFontStyle]}>{pinyin}</Text>
       ) : null}
-      <Text style={[wordStyles.word, chineseFontStyle, { fontSize }]}>{text}</Text>
+      <Text style={[wordStyles.word, chineseFontStyle, { fontSize }]} selectable={true}>{text}</Text>
     </View>
   );
 });

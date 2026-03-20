@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
-import { useCallback, useLayoutEffect, useMemo } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import { generateArticleSummary } from '../../lib/api';
 import type { ArticleListItem } from '../../lib/types';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -16,6 +17,7 @@ import {
 import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import { SeedIndicator } from '../../lib/components/SeedIndicator';
+import { getReadStatesForArticleIds } from '../../lib/savedArticlesDb';
 import { useArticles } from '../../lib/useArticles';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
@@ -42,6 +44,38 @@ export default function ArticlesScreen() {
     loadMore,
     updateArticle,
   } = useArticles();
+
+  const [readByArticleId, setReadByArticleId] = useState<Record<string, boolean>>(
+    {},
+  );
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  const refreshReadStatesForCurrentItems = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      setReadByArticleId({});
+      return;
+    }
+    const ids = itemsRef.current.map((i) => i.id);
+    if (ids.length === 0) {
+      setReadByArticleId({});
+      return;
+    }
+    try {
+      const map = await getReadStatesForArticleIds(ids);
+      const next: Record<string, boolean> = {};
+      for (const [id, read] of map) {
+        next[id] = read;
+      }
+      setReadByArticleId(next);
+    } catch {
+      setReadByArticleId({});
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshReadStatesForCurrentItems();
+  }, [items, refreshReadStatesForCurrentItems]);
 
   const onRequestTranslation = useCallback(
     async (articleId: string): Promise<ArticleListItem | null> => {
@@ -80,7 +114,8 @@ export default function ArticlesScreen() {
   useFocusEffect(
     useCallback(() => {
       loadInitial();
-    }, [loadInitial]),
+      void refreshReadStatesForCurrentItems();
+    }, [loadInitial, refreshReadStatesForCurrentItems]),
   );
 
   if (loading && items.length === 0) {
@@ -113,6 +148,11 @@ export default function ArticlesScreen() {
         <ArticleCard
           item={item}
           index={index}
+          read={
+            Platform.OS === 'web'
+              ? undefined
+              : (readByArticleId[item.id] ?? false)
+          }
           onPress={() => router.push(`/article/${item.id}`)}
           onRequestTranslation={onRequestTranslation}
         />

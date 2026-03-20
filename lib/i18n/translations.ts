@@ -20,6 +20,7 @@ export const translations = {
     parse: 'parse',
     myArticles: 'my articles ({{count}})',
     noArticlesParseFirst: 'no articles yet — parse one first',
+    savedArticlesLoadFailed: "couldn't load saved articles",
     fetching: 'fetching…',
     indexing: 'indexing…',
     articleSaved: 'article saved',
@@ -33,6 +34,10 @@ export const translations = {
     parsesRemaining: '{{remaining}} of {{max}} parses remaining today',
     supportedSites: 'supported sites',
     parseArticleUrl: 'Parse article URL',
+    myArticlesFilterUnread: 'unread ({{count}})',
+    myArticlesFilterFinished: 'finished ({{count}})',
+    myArticlesFilterEmptyUnread: 'no unread articles',
+    myArticlesFilterEmptyRead: 'no finished articles yet',
 
     // Settings
     settings: 'settings',
@@ -62,6 +67,14 @@ export const translations = {
     noContentAvailable: 'no content available',
     openSettings: 'Open settings',
     openSourceArticle: 'open source article',
+    markRead: 'mark read',
+    markUnread: 'mark unread',
+    markedReadStatus: 'marked read',
+    saveToMyArticles: 'Save to my articles',
+    savedToMyArticles: 'Saved to my articles',
+    removeFromMyArticles: 'Remove from my articles',
+    removedFromMyArticles: 'Removed from my articles',
+    saveArticleFailed: 'Could not save article',
 
     // Not found
     notFound: 'oops! not found',
@@ -148,6 +161,7 @@ export const translations = {
     parse: 'analizar',
     myArticles: 'mis artículos ({{count}})',
     noArticlesParseFirst: 'aún no hay artículos — analiza uno primero',
+    savedArticlesLoadFailed: 'no se pudieron cargar los artículos guardados',
     fetching: 'obteniendo…',
     indexing: 'indexando…',
     articleSaved: 'artículo guardado',
@@ -161,6 +175,10 @@ export const translations = {
     parsesRemaining: '{{remaining}} de {{max}} análisis restantes hoy',
     supportedSites: 'sitios compatibles',
     parseArticleUrl: 'Analizar URL del artículo',
+    myArticlesFilterUnread: 'sin leer ({{count}})',
+    myArticlesFilterFinished: 'terminados ({{count}})',
+    myArticlesFilterEmptyUnread: 'no hay artículos sin leer',
+    myArticlesFilterEmptyRead: 'aún no hay artículos terminados',
 
     // Settings
     settings: 'ajustes',
@@ -190,6 +208,14 @@ export const translations = {
     noContentAvailable: 'no hay contenido disponible',
     openSettings: 'Abrir ajustes',
     openSourceArticle: 'abrir artículo fuente',
+    markRead: 'marcar como leído',
+    markUnread: 'marcar como no leído',
+    markedReadStatus: 'marcado como leído',
+    saveToMyArticles: 'Guardar en mis artículos',
+    savedToMyArticles: 'Guardado en mis artículos',
+    removeFromMyArticles: 'Quitar de mis artículos',
+    removedFromMyArticles: 'Eliminado de mis artículos',
+    saveArticleFailed: 'No se pudo guardar el artículo',
 
     // Not found
     notFound: '¡ups! no encontrado',
@@ -278,6 +304,7 @@ export const translations = {
     parse: 'hurai',
     myArticles: 'artikel saya ({{count}})',
     noArticlesParseFirst: 'belum ada artikel — hurai satu dahulu',
+    savedArticlesLoadFailed: 'gagal memuat artikel tersimpan',
     fetching: 'memuatkan…',
     indexing: 'mengindeks…',
     articleSaved: 'artikel disimpan',
@@ -291,6 +318,10 @@ export const translations = {
     parsesRemaining: '{{remaining}} daripada {{max}} huraian tinggal hari ini',
     supportedSites: 'laman web disokong',
     parseArticleUrl: 'Hurai URL artikel',
+    myArticlesFilterUnread: 'belum dibaca ({{count}})',
+    myArticlesFilterFinished: 'selesai ({{count}})',
+    myArticlesFilterEmptyUnread: 'tiada artikel yang belum dibaca',
+    myArticlesFilterEmptyRead: 'belum ada artikel selesai',
 
     // Settings
     settings: 'tetapan',
@@ -320,6 +351,14 @@ export const translations = {
     noContentAvailable: 'tiada kandungan tersedia',
     openSettings: 'Buka tetapan',
     openSourceArticle: 'buka artikel sumber',
+    markRead: 'tandai telah dibaca',
+    markUnread: 'tandai belum dibaca',
+    markedReadStatus: 'ditandai sebagai dibaca',
+    saveToMyArticles: 'Simpan ke artikel saya',
+    savedToMyArticles: 'Disimpan ke artikel saya',
+    removeFromMyArticles: 'Buang dari artikel saya',
+    removedFromMyArticles: 'Dibuang dari artikel saya',
+    saveArticleFailed: 'Tidak dapat menyimpan artikel',
 
     // Not found
     notFound: 'ops! tidak dijumpai',
@@ -408,6 +447,7 @@ export const translations = {
     parse: 'تحليل',
     myArticles: 'مقالاتي ({{count}})',
     noArticlesParseFirst: 'لا توجد مقالات — قم بتحليل واحدة أولاً',
+    savedArticlesLoadFailed: 'تعذّر تحميل المقالات المحفوظة',
     fetching: 'جاري الجلب…',
     indexing: 'جاري الفهرسة…',
     articleSaved: 'تم حفظ المقال',
@@ -421,6 +461,10 @@ export const translations = {
     parsesRemaining: '{{remaining}} من {{max}} تحليلات متبقية اليوم',
     supportedSites: 'المواقع المدعومة',
     parseArticleUrl: 'تحليل رابط المقال',
+    myArticlesFilterUnread: 'غير مقروء ({{count}})',
+    myArticlesFilterFinished: 'مكتمل ({{count}})',
+    myArticlesFilterEmptyUnread: 'لا توجد مقالات غير مقروءة',
+    myArticlesFilterEmptyRead: 'لا توجد مقالات مكتملة بعد',
 
     // Settings
     settings: 'الإعدادات',
@@ -450,6 +494,14 @@ export const translations = {
     noContentAvailable: 'لا يوجد محتوى متاح',
     openSettings: 'فتح الإعدادات',
     openSourceArticle: 'فتح المقال الأصلي',
+    markRead: 'تحديد كمقروء',
+    markUnread: 'إلغاء التحديد كمقروء',
+    markedReadStatus: 'مقروء',
+    saveToMyArticles: 'حفظ في مقالاتي',
+    savedToMyArticles: 'محفوظ في مقالاتي',
+    removeFromMyArticles: 'إزالة من مقالاتي',
+    removedFromMyArticles: 'أُزيل من مقالاتي',
+    saveArticleFailed: 'تعذّر حفظ المقال',
 
     // Not found
     notFound: 'عذراً! غير موجود',
@@ -537,6 +589,7 @@ export const translations = {
     parse: '解析',
     myArticles: '我的文章 ({{count}})',
     noArticlesParseFirst: '暂无文章 — 请先解析一篇',
+    savedArticlesLoadFailed: '无法加载已保存的文章',
     fetching: '获取中…',
     indexing: '索引中…',
     articleSaved: '文章已保存',
@@ -549,6 +602,10 @@ export const translations = {
     parsesRemaining: '今日剩余 {{remaining}}/{{max}} 次解析',
     supportedSites: '支持的网站',
     parseArticleUrl: '解析文章链接',
+    myArticlesFilterUnread: '未读 ({{count}})',
+    myArticlesFilterFinished: '已读完 ({{count}})',
+    myArticlesFilterEmptyUnread: '没有未读文章',
+    myArticlesFilterEmptyRead: '暂无已读完文章',
 
     // Settings
     settings: '设置',
@@ -578,6 +635,14 @@ export const translations = {
     noContentAvailable: '暂无内容',
     openSettings: '打开设置',
     openSourceArticle: '打开原文',
+    markRead: '标记已读',
+    markUnread: '标记未读',
+    markedReadStatus: '已读',
+    saveToMyArticles: '保存到我的文章',
+    savedToMyArticles: '已保存到我的文章',
+    removeFromMyArticles: '从我的文章移除',
+    removedFromMyArticles: '已从我的文章移除',
+    saveArticleFailed: '无法保存文章',
 
     // Not found
     notFound: '未找到页面',

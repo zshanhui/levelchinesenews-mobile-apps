@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   ActivityIndicator,
@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import {
@@ -26,8 +26,14 @@ import {
 } from '../../lib/api';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import {
+  listSavedArticles,
+  migrateFromAsyncStorageIfNeeded,
+  upsertSavedArticle,
+  type SavedArticleWithMeta,
+} from '../../lib/savedArticlesDb';
+import { showErrorFeedback } from '../../lib/showErrorFeedback';
+import {
   MAX_DAILY_PARSES,
-  STORAGE_KEY_ARTICLES,
   STORAGE_KEY_DAILY,
   SUPPORTED_URLS,
 } from '../../lib/constants';
@@ -61,6 +67,16 @@ async function incrementDailyCount(): Promise<number> {
 
 type TabKey = 'parse' | 'my-articles';
 
+type MyArticlesReadFilter = 'unread' | 'read';
+
+const MY_ARTICLES_FILTER_SEGMENTS: {
+  key: MyArticlesReadFilter;
+  labelKey: 'myArticlesFilterUnread' | 'myArticlesFilterFinished';
+}[] = [
+  { key: 'unread', labelKey: 'myArticlesFilterUnread' },
+  { key: 'read', labelKey: 'myArticlesFilterFinished' },
+];
+
 export default function CreateScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
@@ -71,24 +87,67 @@ export default function CreateScreen() {
   const [showIndexing, setShowIndexing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastParsed, setLastParsed] = useState<ScrapeResponse | null>(null);
-  const [myArticles, setMyArticles] = useState<ArticleListItem[]>([]);
+  const [myArticles, setMyArticles] = useState<SavedArticleWithMeta[]>([]);
+  const [myArticlesReadFilter, setMyArticlesReadFilter] =
+    useState<MyArticlesReadFilter>('unread');
+  const [savedArticlesLoadError, setSavedArticlesLoadError] = useState<string | null>(null);
   const [dailyCount, setDailyCount] = useState(0);
+
+  const { savedUnreadCount, savedFinishedCount } = useMemo(() => {
+    let unread = 0;
+    let finished = 0;
+    for (const a of myArticles) {
+      if (a.read) finished += 1;
+      else unread += 1;
+    }
+    return { savedUnreadCount: unread, savedFinishedCount: finished };
+  }, [myArticles]);
+
+  const filteredMyArticles = useMemo(
+    () =>
+      myArticlesReadFilter === 'unread'
+        ? myArticles.filter((a) => !a.read)
+        : myArticles.filter((a) => a.read),
+    [myArticles, myArticlesReadFilter],
+  );
+
+  const runSavedArticlesLoad = useCallback(
+    async (opts?: { ignoreIfCancelled?: () => boolean }) => {
+      if (Platform.OS === 'web') return;
+      setSavedArticlesLoadError(null);
+      try {
+        await migrateFromAsyncStorageIfNeeded();
+        const list = await listSavedArticles();
+        if (opts?.ignoreIfCancelled?.()) return;
+        setMyArticles(list);
+      } catch (e) {
+        if (opts?.ignoreIfCancelled?.()) return;
+        const message = e instanceof Error ? e.message : String(e);
+        setSavedArticlesLoadError(message);
+        showErrorFeedback(t('savedArticlesLoadFailed'), message);
+      }
+    },
+    [t],
+  );
 
   useEffect(() => {
     getDailyCount().then(setDailyCount);
-    AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
-      if (raw) {
-        try { setMyArticles(JSON.parse(raw)); } catch {}
-      }
-    });
   }, []);
 
-  const articlesLoaded = myArticles.length > 0 || dailyCount > 0;
-  useEffect(() => {
-    if (articlesLoaded) {
-      AsyncStorage.setItem(STORAGE_KEY_ARTICLES, JSON.stringify(myArticles));
-    }
-  }, [myArticles, articlesLoaded]);
+  const runSavedArticlesLoadRef = useRef(runSavedArticlesLoad);
+  runSavedArticlesLoadRef.current = runSavedArticlesLoad;
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === 'web') return;
+      let cancelled = false;
+      void runSavedArticlesLoadRef.current({
+        ignoreIfCancelled: () => cancelled,
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   const remaining = MAX_DAILY_PARSES - dailyCount;
   const limitReached = remaining <= 0;
@@ -119,10 +178,12 @@ export default function CreateScreen() {
         setDailyCount(newCount);
       }
       setLastParsed(result);
+      setSavedArticlesLoadError(null);
       setMyArticles((prev) => {
-        if (prev.some((a) => a.id === result.id)) return prev;
-        return [result, ...prev];
+        if (prev.some((a) => a.item.id === result.id)) return prev;
+        return [{ item: result, read: false }, ...prev];
       });
+      upsertSavedArticle(result);
     } catch (err: unknown) {
       setError(getUserFriendlyErrorMessage(err, t('somethingWentWrong')));
     } finally {
@@ -145,13 +206,16 @@ export default function CreateScreen() {
         try {
           const updated = await generateArticleSummary(articleId);
           setMyArticles((prev) =>
-            prev.map((a) => (a.id === articleId ? updated : a)),
+            prev.map((a) =>
+              a.item.id === articleId ? { ...a, item: updated } : a
+            ),
           );
           setLastParsed((prev) =>
             prev && prev.id === articleId
               ? { ...updated, existing: prev.existing }
               : prev,
           );
+          upsertSavedArticle(updated);
           return updated;
         } catch {
           return null;
@@ -166,9 +230,14 @@ export default function CreateScreen() {
     [],
   );
 
+  const tabs = useMemo<TabKey[]>(
+    () => (Platform.OS === 'web' ? ['parse'] : ['parse', 'my-articles']),
+    [],
+  );
+
   const renderTabBar = useCallback(() => (
     <View style={styles.tabBar}>
-      {(['parse', 'my-articles'] as const).map((tab) => (
+      {tabs.map((tab) => (
         <Pressable
           key={tab}
           style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -185,7 +254,7 @@ export default function CreateScreen() {
         </Pressable>
       ))}
     </View>
-  ), [activeTab, myArticles.length, styles]);
+  ), [activeTab, myArticles.length, styles, tabs, t]);
 
   if (activeTab === 'my-articles') {
     return (
@@ -193,27 +262,99 @@ export default function CreateScreen() {
         {renderTabBar()}
         {myArticles.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {t('noArticlesParseFirst')}
-            </Text>
+            {savedArticlesLoadError ? (
+              <>
+                <Text style={styles.savedArticlesErrorTitle}>
+                  {t('savedArticlesLoadFailed')}
+                </Text>
+                <Text style={styles.savedArticlesErrorDetail}>
+                  {savedArticlesLoadError}
+                </Text>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.retrySavedArticlesButton,
+                    pressed && styles.retrySavedArticlesButtonPressed,
+                  ]}
+                  onPress={() => void runSavedArticlesLoad()}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('retry')}
+                >
+                  <Text style={styles.retrySavedArticlesButtonText}>
+                    {t('retry')}
+                  </Text>
+                </Pressable>
+              </>
+            ) : (
+              <Text style={styles.emptyText}>
+                {t('noArticlesParseFirst')}
+              </Text>
+            )}
           </View>
         ) : (
-          <FlatList
-            style={styles.list}
-            contentContainerStyle={styles.listContent}
-            data={myArticles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => (
-              <ArticleCard
-                item={item}
-                index={index}
-                onPress={() => router.push(`/article/${item.id}`)}
-                onRequestTranslation={onRequestTranslation}
+          <>
+            <View
+              style={styles.savedArticlesFilterBar}
+              accessibilityRole="tablist"
+            >
+              {MY_ARTICLES_FILTER_SEGMENTS.map(({ key, labelKey }) => {
+                const selected = myArticlesReadFilter === key;
+                const count =
+                  key === 'unread' ? savedUnreadCount : savedFinishedCount;
+                const label = t(labelKey, { count });
+                return (
+                  <Pressable
+                    key={key}
+                    style={({ pressed }) => [
+                      styles.savedArticlesFilterChip,
+                      selected && styles.savedArticlesFilterChipActive,
+                      pressed && styles.savedArticlesFilterChipPressed,
+                    ]}
+                    onPress={() => setMyArticlesReadFilter(key)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={label}
+                  >
+                    <Text
+                      style={[
+                        styles.savedArticlesFilterChipLabel,
+                        selected && styles.savedArticlesFilterChipLabelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {filteredMyArticles.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {myArticlesReadFilter === 'unread'
+                    ? t('myArticlesFilterEmptyUnread')
+                    : t('myArticlesFilterEmptyRead')}
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                data={filteredMyArticles}
+                keyExtractor={(entry) => entry.item.id}
+                renderItem={({ item: entry, index }) => (
+                  <ArticleCard
+                    item={entry.item}
+                    index={index}
+                    read={entry.read}
+                    onPress={() => router.push(`/article/${entry.item.id}`)}
+                    onRequestTranslation={onRequestTranslation}
+                  />
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                showsVerticalScrollIndicator={false}
               />
             )}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            showsVerticalScrollIndicator={false}
-          />
+          </>
         )}
       </View>
     );
@@ -251,6 +392,7 @@ export default function CreateScreen() {
 
           <ArticleCard
             item={lastParsed}
+            read={Platform.OS === 'web' ? undefined : false}
             onPress={() => router.push(`/article/${lastParsed.id}`)}
             onRequestTranslation={onRequestTranslation}
           />
@@ -379,6 +521,45 @@ function createStyles(theme: Theme) {
     color: theme.textMuted,
   },
   tabTextActive: {
+    color: theme.accent,
+    fontWeight: '600',
+  },
+  savedArticlesFilterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  savedArticlesFilterChip: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  savedArticlesFilterChipActive: {
+    borderColor: theme.accent,
+    backgroundColor: theme.surface,
+  },
+  savedArticlesFilterChipPressed: {
+    opacity: 0.75,
+  },
+  savedArticlesFilterChipLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.textMuted,
+    textAlign: 'center',
+  },
+  savedArticlesFilterChipLabelActive: {
     color: theme.accent,
     fontWeight: '600',
   },
@@ -532,6 +713,34 @@ function createStyles(theme: Theme) {
     fontSize: 16,
     color: theme.textMuted,
     textAlign: 'center',
+  },
+  savedArticlesErrorTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.error,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  savedArticlesErrorDetail: {
+    fontSize: 13,
+    color: theme.textMuted,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retrySavedArticlesButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.accent,
+  },
+  retrySavedArticlesButtonPressed: {
+    backgroundColor: theme.surface,
+  },
+  retrySavedArticlesButtonText: {
+    fontSize: 15,
+    color: theme.accent,
+    fontWeight: '600',
   },
   });
 }

@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,21 +19,28 @@ import {
   SentenceStudyPanel,
 } from '../../lib/components/ArticleContent';
 import { resolveImageUrl } from '../../lib/api';
+import { showErrorFeedback, showSuccessFeedback } from '../../lib/showErrorFeedback';
+import {
+  articleDetailToListItem,
+  getReadState,
+  isSavedArticle,
+  removeSavedArticle,
+  setRead,
+  upsertArticleMarkedRead,
+  upsertSavedArticle,
+} from '../../lib/savedArticlesDb';
 import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
 
-function formatDateTime(iso: string | null): string {
+function formatPublishedDate(iso: string | null): string {
   if (!iso) return '';
   try {
     const d = new Date(iso);
-    return d.toLocaleString(undefined, {
+    return d.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
     });
   } catch {
     return '';
@@ -40,9 +48,17 @@ function formatDateTime(iso: string | null): string {
 }
 
 export default function ArticleDetailScreen() {
-  const { id, word: urlWord, wordKey: urlWordKey, sentenceKey: urlSentenceKey } = useLocalSearchParams<
-    { id: string; word?: string; wordKey?: string; sentenceKey?: string }
-  >();
+  const {
+    id,
+    word: urlWord,
+    wordKey: urlWordKey,
+    sentenceKey: urlSentenceKey,
+  } = useLocalSearchParams<{
+    id: string;
+    word?: string;
+    wordKey?: string;
+    sentenceKey?: string;
+  }>();
   const {
     article,
     loading,
@@ -52,6 +68,7 @@ export default function ArticleDetailScreen() {
     refetch,
   } = useArticle(id);
 
+  const navigation = useNavigation();
   const { theme } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -66,6 +83,8 @@ export default function ArticleDetailScreen() {
     return null;
   };
   const insets = useSafeAreaInsets();
+  const [inMyArticles, setInMyArticles] = useState<boolean | null>(null);
+  const [readState, setReadState] = useState(false);
   const [selectedWord, setSelectedWord] = useState<{ word: string; pinyin: string | null } | null>(null);
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
   const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
@@ -99,6 +118,57 @@ export default function ArticleDetailScreen() {
     []
   );
 
+  useEffect(() => {
+    if (Platform.OS === 'web' || !id) {
+      setReadState(false);
+      setInMyArticles(null);
+      return;
+    }
+    setReadState(false);
+    setInMyArticles(null);
+    let cancelled = false;
+    Promise.all([getReadState(id), isSavedArticle(id)]).then(([read, saved]) => {
+      if (!cancelled) {
+        setReadState(read);
+        setInMyArticles(saved);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const onToggleMyArticlesSave = useCallback(async () => {
+    if (!id || Platform.OS === 'web' || !article || inMyArticles === null) return;
+    try {
+      if (inMyArticles) {
+        await removeSavedArticle(id);
+        setInMyArticles(false);
+        setReadState(false);
+        showSuccessFeedback(t('removedFromMyArticles'));
+      } else {
+        await upsertSavedArticle(articleDetailToListItem(article));
+        setInMyArticles(true);
+        showSuccessFeedback(t('savedToMyArticles'));
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      showErrorFeedback(t('saveArticleFailed'), message);
+    }
+  }, [id, article, inMyArticles, t]);
+
+  const onMarkRead = useCallback(() => {
+    if (!id || Platform.OS === 'web' || !article) return;
+    void upsertArticleMarkedRead(articleDetailToListItem(article));
+    setReadState(true);
+    setInMyArticles(true);
+  }, [id, article]);
+
+  const onMarkUnread = useCallback(() => {
+    if (!id || Platform.OS === 'web') return;
+    void setRead(id, false).then(() => setReadState(false));
+  }, [id]);
+
   // Restore selection when app opens with return-from-Pleco deep link (e.g. app was killed)
   useEffect(() => {
     restoreSelectionFromParams({
@@ -129,6 +199,38 @@ export default function ArticleDetailScreen() {
     return () => subscription.remove();
   }, [id, restoreSelectionFromParams]);
 
+  const showSaveToMyArticles =
+    Platform.OS !== 'web' && article && inMyArticles !== null;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: article?.title ?? t('article'),
+      headerBackTitle: t('back'),
+      headerStyle: { backgroundColor: theme.surface },
+      headerTintColor: theme.text,
+      headerRight: () => (
+        <Pressable
+          onPress={() => router.push('/settings')}
+          hitSlop={12}
+          style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={t('openSettings')}
+        >
+          <Ionicons name="settings-outline" size={24} color={theme.textMuted} />
+        </Pressable>
+      ),
+    });
+  }, [
+    article?.title,
+    navigation,
+    t,
+    theme.surface,
+    theme.text,
+    theme.textMuted,
+    styles.headerButton,
+    styles.headerButtonPressed,
+  ]);
+
   return (
     <>
       <Stack.Screen
@@ -137,17 +239,6 @@ export default function ArticleDetailScreen() {
           headerBackTitle: t('back'),
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.text,
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/settings')}
-              hitSlop={12}
-              style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
-              accessibilityRole="button"
-              accessibilityLabel={t('openSettings')}
-            >
-              <Ionicons name="settings-outline" size={24} color={theme.textMuted} />
-            </Pressable>
-          ),
         }}
       />
       {loading && !article ? (
@@ -181,32 +272,56 @@ export default function ArticleDetailScreen() {
               onPress={selectedWord ? onClosePanel : undefined}
             >
               <Text style={styles.title}>{article.title}</Text>
-              <View style={styles.meta}>
-                {article.source && (
-                  <View style={styles.metaSource}>
-                    <Text style={styles.metaText}>{article.source}</Text>
-                    {article.source_url ? (
-                      <Pressable
-                        onPress={() => Linking.openURL(article.source_url!)}
-                        hitSlop={8}
-                        accessibilityRole="link"
-                        accessibilityLabel={t('openSourceArticle')}
-                      >
-                        <Ionicons name="open-outline" size={16} color={theme.accent} />
-                      </Pressable>
-                    ) : null}
-                  </View>
-                )}
-                {article.published_date ? (
-                  <View style={styles.metaDateRow}>
-                    <Text style={styles.metaText}>
-                      {formatDateTime(article.published_date)}
-                    </Text>
-                    {SourceLabel()}
-                  </View>
-                ) : (
-                  SourceLabel()
-                )}
+              <View style={styles.metaRow}>
+                <View style={styles.meta}>
+                  {article.source && (
+                    <View style={styles.metaSource}>
+                      <Text style={styles.metaText}>{article.source}</Text>
+                      {article.source_url ? (
+                        <Pressable
+                          onPress={() => Linking.openURL(article.source_url!)}
+                          hitSlop={8}
+                          accessibilityRole="link"
+                          accessibilityLabel={t('openSourceArticle')}
+                        >
+                          <Ionicons name="open-outline" size={16} color={theme.accent} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  )}
+                  {article.published_date ? (
+                    <View style={styles.metaDateRow}>
+                      <Text style={styles.metaText}>
+                        {formatPublishedDate(article.published_date)}
+                      </Text>
+                      {SourceLabel()}
+                    </View>
+                  ) : (
+                    SourceLabel()
+                  )}
+                </View>
+                {showSaveToMyArticles ? (
+                  <Pressable
+                    onPress={() => void onToggleMyArticlesSave()}
+                    hitSlop={12}
+                    style={({ pressed }) => [
+                      styles.metaSaveButton,
+                      pressed && styles.metaSaveButtonPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      inMyArticles
+                        ? t('removeFromMyArticles')
+                        : t('saveToMyArticles')
+                    }
+                  >
+                    <Ionicons
+                      name={inMyArticles ? 'cube' : 'cube-outline'}
+                      size={24}
+                      color={inMyArticles ? theme.accent : theme.textMuted}
+                    />
+                  </Pressable>
+                ) : null}
               </View>
               {((): React.ReactNode => {
                 const imageUri = resolveImageUrl(article.main_image);
@@ -234,6 +349,53 @@ export default function ArticleDetailScreen() {
                 <Text style={styles.emptyContent}>
                   {t('noContentAvailable')}
                 </Text>
+              )}
+              {Platform.OS !== 'web' && (
+                <View style={styles.markReadFooter}>
+                  {readState ? (
+                    <View style={styles.markUnreadRow}>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.markUnreadButton,
+                          pressed && styles.markUnreadButtonPressed,
+                        ]}
+                        onPress={onMarkUnread}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('markUnread')}
+                      >
+                        <Text style={styles.markUnreadButtonLabel}>
+                          {t('markUnread')}
+                        </Text>
+                      </Pressable>
+                      <View
+                        style={styles.markReadStateIcon}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={22}
+                          color={theme.accent}
+                        />
+                      </View>
+                    </View>
+                  ) : (
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.markReadButton,
+                        pressed && styles.markReadButtonPressed,
+                      ]}
+                      onPress={onMarkRead}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('markRead')}
+                    >
+                      <Text style={styles.markReadButtonLabel}>
+                        {t('markRead')}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
               )}
             </Pressable>
           </ScrollView>
@@ -295,7 +457,6 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.background,
   },
   scrollContent: {
-    flexGrow: 1,
     paddingBottom: 32,
   },
   content: {
@@ -308,10 +469,26 @@ function createStyles(theme: Theme) {
     color: theme.text,
     marginBottom: 8,
   },
-  meta: {
+  metaRow: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
     marginBottom: 16,
+    gap: 8,
+  },
+  meta: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 12,
+    minWidth: 0,
+  },
+  metaSaveButton: {
+    padding: 4,
+    flexShrink: 0,
+  },
+  metaSaveButtonPressed: {
+    opacity: 0.65,
   },
   metaSource: {
     flexDirection: 'row',
@@ -338,6 +515,51 @@ function createStyles(theme: Theme) {
     fontSize: 16,
     color: theme.textMuted,
     fontStyle: 'italic',
+  },
+  markReadFooter: {
+    marginTop: 10,
+    width: '100%',
+    alignItems: 'flex-end',
+  },
+  markReadButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.accent,
+  },
+  markReadButtonPressed: {
+    opacity: 0.55,
+  },
+  markReadButtonLabel: {
+    color: theme.accent,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  markUnreadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  markUnreadButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: theme.etchedBg,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  markReadStateIcon: {
+    justifyContent: 'center',
+  },
+  markUnreadButtonPressed: {
+    opacity: 0.6,
+  },
+  markUnreadButtonLabel: {
+    color: theme.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
   },
   headerButton: {
     padding: 8,

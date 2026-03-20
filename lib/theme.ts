@@ -12,6 +12,8 @@ export const lightTheme = {
   text: '#2c2419',
   textSecondary: '#5c5349',
   textMuted: '#8a8278',
+  /** Unread checkmark on article cards — light grey, lower contrast than textMuted */
+  readIndicatorMuted: '#c5c0b6',
 
   // Accent - dark bold red
   accent: '#8B1A1A',
@@ -47,6 +49,8 @@ export const darkTheme = {
   text: '#c8ffc8',
   textSecondary: '#88cc88',
   textMuted: '#5a8a5a',
+  /** Unread checkmark — subtle vs accent, still visible on dark cards */
+  readIndicatorMuted: '#3d5240',
 
   // Accent - neon green
   accent: '#00ff88',

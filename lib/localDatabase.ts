@@ -3,11 +3,13 @@ import { randomUUID } from './uuid';
 
 const LOCAL_DATABASE_NAME = 'lcnlocal';
 const lcnDictTableName = 'lcndict';
+export const userSavedArticlesTableName = 'user_saved_articles';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
 async function openFreshDatabase() {
   _db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME);
+  await runMigrations(_db);
   return _db;
 }
 
@@ -95,14 +97,39 @@ export async function dropLcnDictTable() {
 }
 
 export async function migrateLocalDatabaseIfNeeded(db: SQLite.SQLiteDatabase) {
-  const DATABASE_VERSION = 1;
   const result = await db.getFirstAsync<{ user_version: number }>(
     'PRAGMA user_version'
-  )
+  );
   const currentDbVersion = result?.user_version ?? 0;
-  if (currentDbVersion >= DATABASE_VERSION) return;
+  if (currentDbVersion >= 1) return;
+  await db.execAsync('PRAGMA user_version = 1');
+}
 
-  await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
+/** Runs all migrations; called on DB open. Idempotent. */
+export async function runMigrations(db: SQLite.SQLiteDatabase) {
+  const result = await db.getFirstAsync<{ user_version: number }>(
+    'PRAGMA user_version'
+  );
+  const current = result?.user_version ?? 0;
+
+  if (current < 1) {
+    await db.execAsync('PRAGMA user_version = 1');
+  }
+
+  // user_saved_articles: single migration (feature not shipped before this schema).
+  if (current < 2) {
+    await execWithReconnectRetry(`
+      CREATE TABLE IF NOT EXISTS ${userSavedArticlesTableName} (
+        id TEXT PRIMARY KEY,
+        article_list_item TEXT NOT NULL,
+        saved_datetime INTEGER NOT NULL,
+        marked_read_datetime INTEGER,
+        sentence_bookmarked TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_saved_articles_saved_datetime ON ${userSavedArticlesTableName} (saved_datetime DESC);
+    `, db);
+    await db.execAsync('PRAGMA user_version = 2');
+  }
 }
 
 export async function ensureLcnDictTableExists(db: SQLite.SQLiteDatabase) {

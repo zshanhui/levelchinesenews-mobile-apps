@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,8 @@ import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { envConfig } from '../../lib/api';
+import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
+import { userSavedArticlesTableName } from '../../lib/localDatabase';
 
 const LINE_SPACING_OPTIONS: {
   value: LineSpacingLevel;
@@ -52,6 +56,17 @@ export default function SettingsScreen() {
     fontSize,
     setFontSize,
   } = useFont();
+
+  const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
+    boolean | null
+  >(null);
+
+  useEffect(() => {
+    if (process.env.EXPO_PUBLIC_DEBUG !== '1' || Platform.OS === 'web') return;
+    AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
+      setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
+    });
+  }, []);
 
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -214,6 +229,19 @@ export default function SettingsScreen() {
                 `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
                 `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
                 `__DEV__=${__DEV__}`,
+                '',
+                Platform.OS === 'web'
+                  ? 'MY_ARTICLES_LIST=not persisted (web; SQLite not used)'
+                  : `MY_ARTICLES_LIST=SQLite table ${userSavedArticlesTableName}`,
+                ...(Platform.OS === 'web'
+                  ? []
+                  : [
+                      legacyMyArticlesKeyPresent === null
+                        ? 'MY_ARTICLES_LEGACY_ASYNCSTORAGE=checking…'
+                        : legacyMyArticlesKeyPresent
+                          ? `MY_ARTICLES_LEGACY_ASYNCSTORAGE=present (key ${STORAGE_KEY_ARTICLES}; open Create tab to migrate)`
+                          : 'MY_ARTICLES_LEGACY_ASYNCSTORAGE=absent (migrated or never used)',
+                    ]),
               ].join('\n')}
             </Text>
           </View>

@@ -21,16 +21,13 @@ import type { ArticleListItem } from '../types';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 
-function formatDateTime(iso: string | null): string {
+function formatPublishedDate(iso: string | null): string {
   if (!iso) return '';
   try {
     const d = new Date(iso);
-    return d.toLocaleString(undefined, {
+    return d.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
     });
   } catch {
     return '';
@@ -50,11 +47,13 @@ export function ArticleCard({
   onPress,
   onRequestTranslation,
   index = 0,
+  read,
 }: {
   item: ArticleListItem;
   onPress: () => void;
   onRequestTranslation?: (articleId: string) => Promise<ArticleListItem | null>;
   index?: number;
+  read?: boolean;
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
@@ -105,8 +104,37 @@ export function ArticleCard({
         )
       : THUMB_WIDTH;
 
+  /** Match `card` padding — anchor translate to thumbnail row, not card center (avoids shift when summary expands). */
+  const CARD_PADDING = 12;
+  const translateFromThumbCenter =
+    CARD_PADDING + thumbHeight / 2 - 13;
+  /** Keep clear space under `readCheckCorner` (top 8, icon 22). */
+  const READ_CORNER_TOP = 8;
+  const READ_ICON_SIZE = 22;
+  const CHECK_TO_TRANSLATE_GAP = 10;
+  const minTranslateTopBelowCheck =
+    READ_CORNER_TOP + READ_ICON_SIZE + CHECK_TO_TRANSLATE_GAP;
+  const showReadIndicator = read !== undefined;
+  const translateButtonTop = showReadIndicator
+    ? Math.max(translateFromThumbCenter, minTranslateTopBelowCheck)
+    : translateFromThumbCenter;
+
   return (
     <View style={styles.card}>
+      {showReadIndicator ? (
+        <View
+          style={styles.readCheckCorner}
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Ionicons
+            name={read ? 'checkmark-circle' : 'checkmark-circle-outline'}
+            size={22}
+            color={read ? theme.accent : theme.readIndicatorMuted}
+          />
+        </View>
+      ) : null}
       <Pressable
         onPress={onPress}
         style={({ pressed }) => [
@@ -115,7 +143,11 @@ export function ArticleCard({
           pressed && styles.thumbnailPressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={t('openArticle', { title: displayTitle })}
+        accessibilityLabel={
+          read === true
+            ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
+            : t('openArticle', { title: displayTitle })
+        }
       >
         {imageUri ? (
           <Image
@@ -136,13 +168,18 @@ export function ArticleCard({
         style={styles.cardContent}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={t('openArticle', { title: displayTitle })}
+        accessibilityLabel={
+          read === true
+            ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
+            : t('openArticle', { title: displayTitle })
+        }
       >
         <Text
           style={[
             styles.cardTitle,
             showTranslated && styles.cardTitleTranslated,
             index % 2 === 1 && styles.cardTitleAlt,
+            read === true && styles.cardTitleRead,
           ]}
           numberOfLines={showTranslated ? undefined : 2}
         >
@@ -150,18 +187,18 @@ export function ArticleCard({
         </Text>
         {(item.source || item.published_date) && (
           <View style={styles.cardMeta}>
-            {item.source && (
+            {item.source ? (
               <View style={styles.cardSourceWrapper}>
                 <Text style={styles.cardSource}>
                   {item.source}
                 </Text>
               </View>
-            )}
-            {item.published_date && (
+            ) : null}
+            {item.published_date ? (
               <Text style={styles.cardDate}>
-                {formatDateTime(item.published_date)}
+                {formatPublishedDate(item.published_date)}
               </Text>
-            )}
+            ) : null}
           </View>
         )}
         {displaySubtitle ? (
@@ -222,6 +259,7 @@ export function ArticleCard({
         hitSlop={8}
         style={({ pressed }) => [
           styles.translateButton,
+          { top: translateButtonTop },
           hasTranslation(item) && pressed && styles.translateButtonPressed,
         ]}
         accessibilityRole={hasTranslation(item) || (onRequestTranslation && !translating) ? 'button' : 'image'}
@@ -274,7 +312,16 @@ function createStyles(theme: Theme) {
     borderColor: theme.border,
     position: 'relative',
   },
+  readCheckCorner: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 2,
+    backgroundColor: theme.surfaceElevated,
+    borderRadius: 12,
+  },
   thumbnailWrapper: {
+    flexShrink: 0,
     width: 80,
     height: 80,
     borderRadius: 8,
@@ -288,6 +335,7 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.border,
   },
   thumbnailPlaceholder: {
+    flexShrink: 0,
     width: 80,
     height: 80,
     borderRadius: 8,
@@ -308,9 +356,9 @@ function createStyles(theme: Theme) {
   },
   translateButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    right: 8,
     padding: 4,
+    zIndex: 1,
   },
   translateButtonPressed: {
     opacity: 0.7,
@@ -336,12 +384,16 @@ function createStyles(theme: Theme) {
   cardTitleAlt: {
     color: theme.cardTitleAlt,
   },
+  cardTitleRead: {
+    opacity: 0.6,
+  },
   cardTitleTranslated: {
     fontSize: 14,
   },
   cardMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 4,
   },
