@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from './i18n';
 import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
-import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
+import {
+  ARTICLE_DETAIL_CACHE_TTL_MS,
+  ARTICLE_REQUEST_TIMEOUT_MS,
+} from './constants';
 import {
   loadArticleDetail,
   saveArticleDetail,
 } from './articleDetailCache';
 import type { ArticleDetail } from './types';
 
-// Seed article details for local dev when API is unavailable
-const seedArticleDetails: Record<string, ArticleDetail> = require('../assets/seed-article-details.json');
+function isCacheFresh(cachedAt: string): boolean {
+  const age = Date.now() - new Date(cachedAt).getTime();
+  return age < ARTICLE_DETAIL_CACHE_TTL_MS && age >= 0;
+}
 
 export function useArticle(id: string | undefined) {
   const { t } = useTranslation();
@@ -18,7 +23,6 @@ export function useArticle(id: string | undefined) {
   const [error, setError] = useState<string | null>(null);
   const [usingCache, setUsingCache] = useState(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
-  const [usingSeed, setUsingSeed] = useState(false);
 
   const fetchArticle = useCallback(async () => {
     if (!id) {
@@ -26,7 +30,6 @@ export function useArticle(id: string | undefined) {
       setError('No article ID');
       setUsingCache(false);
       setCachedAt(null);
-      setUsingSeed(false);
       return;
     }
     setLoading(true);
@@ -37,8 +40,12 @@ export function useArticle(id: string | undefined) {
       setArticle(cached.article);
       setUsingCache(true);
       setCachedAt(cached.cachedAt);
-      setUsingSeed(false);
       setLoading(false);
+
+      if (isCacheFresh(cached.cachedAt)) {
+        return;
+      }
+
       try {
         const url = apiReadUrl(`/articles/${id}`);
         const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
@@ -58,22 +65,12 @@ export function useArticle(id: string | undefined) {
       setArticle(data);
       setUsingCache(false);
       setCachedAt(null);
-      setUsingSeed(false);
       saveArticleDetail(id, data).catch(() => { });
     } catch (err) {
-      const seed = seedArticleDetails[id];
-      if (seed) {
-        setArticle(seed);
-        setUsingCache(false);
-        setCachedAt(null);
-        setUsingSeed(true);
-      } else {
-        setError(getUserFriendlyErrorMessage(err, t('articleNotFound')));
-        setArticle(null);
-        setUsingCache(false);
-        setCachedAt(null);
-        setUsingSeed(false);
-      }
+      setError(getUserFriendlyErrorMessage(err, t('articleNotFound')));
+      setArticle(null);
+      setUsingCache(false);
+      setCachedAt(null);
     } finally {
       setLoading(false);
     }
@@ -89,7 +86,6 @@ export function useArticle(id: string | undefined) {
     error,
     usingCache,
     cachedAt,
-    usingSeed,
     refetch: fetchArticle,
   };
 }

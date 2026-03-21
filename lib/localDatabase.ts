@@ -4,6 +4,7 @@ import { randomUUID } from './uuid';
 const LOCAL_DATABASE_NAME = 'lcnlocal';
 const lcnDictTableName = 'lcndict';
 export const userSavedArticlesTableName = 'user_saved_articles';
+export const articleDetailCacheTableName = 'article_detail_cache';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -129,6 +130,19 @@ export async function runMigrations(db: SQLite.SQLiteDatabase) {
       CREATE INDEX IF NOT EXISTS idx_user_saved_articles_saved_datetime ON ${userSavedArticlesTableName} (saved_datetime DESC);
     `, db);
     await db.execAsync('PRAGMA user_version = 2');
+  }
+
+  // article_detail_cache: SQLite-backed article detail cache for scaling.
+  if (current < 3) {
+    await execWithReconnectRetry(`
+      CREATE TABLE IF NOT EXISTS ${articleDetailCacheTableName} (
+        id TEXT PRIMARY KEY,
+        payload TEXT NOT NULL,
+        cached_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_article_detail_cache_cached_at ON ${articleDetailCacheTableName} (cached_at ASC);
+    `, db);
+    await db.execAsync('PRAGMA user_version = 3');
   }
 }
 

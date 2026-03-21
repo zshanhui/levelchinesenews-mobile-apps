@@ -13,7 +13,7 @@ export const ARTICLE_REQUEST_TIMEOUT_MS = 8000;
 export const PAGE_SIZE = 15;
 
 // Create tab / Parse
-export const SUPPORTED_URLS = ['https://www.zaobao.com'];
+export const SUPPORTED_URLS = ['https://www.zaobao.com', 'https://m.huanqiu.com'];
 export const MAX_DAILY_PARSES = 20;
 export const STORAGE_KEY_DAILY = 'daily_parse_count';
 export const STORAGE_KEY_ARTICLES = 'my_articles';
@@ -26,6 +26,9 @@ export const TRANSLATION_COUNTDOWN_SECONDS = 15;
 
 // Article detail
 export const STUDY_PANEL_HEIGHT = 150;
+export const MAX_CACHED_ARTICLE_DETAILS = 500;
+/** 1 week in ms; cached article details younger than this skip background revalidation. */
+export const ARTICLE_DETAIL_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Font / Settings storage
 export const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';

@@ -10,20 +10,6 @@ import {
 } from './articleListCache';
 import type { ArticleListItem, ArticleListResponse } from './types';
 
-// Seed data for local dev when API is unavailable
-const seedData: ArticleListResponse = require('../assets/seed-articles.json');
-
-function getSeedPage(pageNum: number): ArticleListResponse {
-  const start = (pageNum - 1) * PAGE_SIZE;
-  const pageItems = seedData.items.slice(start, start + PAGE_SIZE);
-  return {
-    items: pageItems,
-    total: seedData.total,
-    page: pageNum,
-    page_size: PAGE_SIZE,
-  };
-}
-
 export function useArticles() {
   const { t } = useTranslation();
   const [items, setItems] = useState<ArticleListItem[]>([]);
@@ -33,7 +19,6 @@ export function useArticles() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [usingSeed, setUsingSeed] = useState(false);
   const [usingCache, setUsingCache] = useState(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
 
@@ -57,7 +42,6 @@ export function useArticles() {
           url,
           ARTICLE_REQUEST_TIMEOUT_MS,
         );
-        setUsingSeed(false);
         setUsingCache(false);
         setCachedAt(null);
         const newItems = append
@@ -74,7 +58,6 @@ export function useArticles() {
         if (cached && cached.items.length > 0) {
           setUsingCache(true);
           setCachedAt(cached.cachedAt);
-          setUsingSeed(false);
           setItems(cached.items);
           setTotal(cached.total);
           setPage(Math.ceil(cached.items.length / PAGE_SIZE) || 1);
@@ -85,18 +68,7 @@ export function useArticles() {
             page_size: PAGE_SIZE,
           } as ArticleListResponse;
         }
-        const data = getSeedPage(pageNum);
-        setUsingSeed(true);
-        setUsingCache(false);
-        setCachedAt(null);
-        if (append) {
-          setItems((prev) => [...prev, ...data.items]);
-        } else {
-          setItems(data.items);
-        }
-        setTotal(data.total);
-        setPage(data.page);
-        return data;
+        throw new Error('No network and no cache');
       }
     },
     [],
@@ -155,7 +127,6 @@ export function useArticles() {
     loadingMore,
     error,
     hasMore,
-    usingSeed,
     usingCache,
     cachedAt,
     loadInitial,

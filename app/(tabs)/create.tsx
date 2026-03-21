@@ -8,13 +8,14 @@ import {
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useNavigation } from 'expo-router';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import {
@@ -81,6 +82,7 @@ export default function CreateScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const urlInputRef = useRef<TextInput>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('parse');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,6 +94,17 @@ export default function CreateScreen() {
     useState<MyArticlesReadFilter>('unread');
   const [savedArticlesLoadError, setSavedArticlesLoadError] = useState<string | null>(null);
   const [dailyCount, setDailyCount] = useState(0);
+  const [inputFocused, setInputFocused] = useState(false);
+
+  const navigation = useNavigation();
+  useEffect(() => {
+    const unsubscribe = (navigation as { addListener: (event: string, cb: () => void) => () => void })
+      .addListener('tabPress', () => {
+        setActiveTab('parse');
+        setLastParsed(null);
+      });
+    return unsubscribe;
+  }, [navigation]);
 
   const { savedUnreadCount, savedFinishedCount } = useMemo(() => {
     let unread = 0;
@@ -151,6 +164,7 @@ export default function CreateScreen() {
 
   const remaining = MAX_DAILY_PARSES - dailyCount;
   const limitReached = remaining <= 0;
+  const parseDisabled = limitReached || loading || !url.trim();
 
   useEffect(() => {
     if (!loading) {
@@ -361,59 +375,6 @@ export default function CreateScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        {renderTabBar()}
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>{t('fetching')}</Text>
-          {showIndexing && (
-            <Text style={styles.loadingText}>{t('indexing')}</Text>
-          )}
-        </View>
-      </View>
-    );
-  }
-
-  if (lastParsed) {
-    return (
-      <View style={styles.container}>
-        {renderTabBar()}
-        <View style={styles.resultContent}>
-          <Text style={styles.successTitle}>
-            {lastParsed.existing ? t('articleSaved') : t('newArticleCreated')}
-          </Text>
-
-          {lastParsed.existing && (
-            <Text style={styles.existingNote}>
-              {t('articleAlreadyCreated')}
-            </Text>
-          )}
-
-          <ArticleCard
-            item={lastParsed}
-            read={Platform.OS === 'web' ? undefined : false}
-            onPress={() => router.push(`/article/${lastParsed.id}`)}
-            onRequestTranslation={onRequestTranslation}
-          />
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.resetButton,
-              pressed && styles.resetButtonPressed,
-            ]}
-            onPress={handleReset}
-          >
-            <Text style={styles.resetButtonText}>
-              {t('fetchAnotherArticle')}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       {renderTabBar()}
@@ -421,62 +382,164 @@ export default function CreateScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.parseContent}>
-          <View style={styles.centerContent}>
-            <Text style={styles.parseSubtitle}>
-              {t('enterUrl')}
-            </Text>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.parseScrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.parseContent}>
+            <View style={styles.parsePanel}>
+              <Text style={styles.parseEyebrow}>{t('parse')}</Text>
+              <Text style={styles.parseTitle}>{t('enterUrl')}</Text>
+              <Text style={styles.parseSubtitle}>
+                {t('parseArticleUrl')}
+              </Text>
 
-            <View style={[styles.inputRow, limitReached && styles.inputRowDisabled]}>
-              <TextInput
-                style={styles.input}
-                placeholder={t('urlPlaceholder')}
-                placeholderTextColor={theme.textMuted}
-                value={url}
-                onChangeText={setUrl}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                editable={!limitReached}
-                multiline
-                numberOfLines={3}
-                blurOnSubmit
-                returnKeyType="done"
-              />
-              <Pressable
-                style={({ pressed }) => [
-                  styles.button,
-                  limitReached && styles.buttonDisabled,
-                  pressed && !limitReached && styles.buttonPressed,
-                ]}
-                onPress={handleFetch}
-                disabled={limitReached}
-                accessibilityLabel={t('parseArticleUrl')}
-              >
-                <Ionicons name="cloud-download-outline" size={24} color="#fff" />
-              </Pressable>
+              {lastParsed ? (
+                <View style={styles.resultSection}>
+                  <View style={styles.successBanner}>
+                    <Ionicons
+                      name={lastParsed.existing ? 'bookmark-outline' : 'checkmark-circle-outline'}
+                      size={18}
+                      color={theme.accent}
+                    />
+                    <Text style={styles.successTitle}>
+                      {lastParsed.existing ? t('articleSaved') : t('newArticleCreated')}
+                    </Text>
+                  </View>
+
+                  {lastParsed.existing && (
+                    <Text style={styles.existingNote}>
+                      {t('articleAlreadyCreated')}
+                    </Text>
+                  )}
+
+                  <ArticleCard
+                    item={lastParsed}
+                    read={Platform.OS === 'web' ? undefined : false}
+                    onPress={() => router.push(`/article/${lastParsed.id}`)}
+                    onRequestTranslation={onRequestTranslation}
+                  />
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.resetButton,
+                      pressed && styles.resetButtonPressed,
+                    ]}
+                    onPress={handleReset}
+                  >
+                    <Text style={styles.resetButtonText}>
+                      {t('fetchAnotherArticle')}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <>
+                  <Pressable
+                    style={[
+                      styles.inputShell,
+                      inputFocused && styles.inputShellFocused,
+                      (limitReached || loading) && styles.inputShellDisabled,
+                    ]}
+                    onPress={() => urlInputRef.current?.focus()}
+                    disabled={limitReached || loading}
+                  >
+                    <TextInput
+                      ref={urlInputRef}
+                      style={styles.input}
+                      placeholder={t('urlPlaceholder')}
+                      placeholderTextColor={theme.textMuted}
+                      value={url}
+                      onChangeText={setUrl}
+                      onFocus={() => setInputFocused(true)}
+                      onBlur={() => setInputFocused(false)}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                      editable={!limitReached && !loading}
+                      multiline
+                      numberOfLines={3}
+                      scrollEnabled={false}
+                      blurOnSubmit
+                      returnKeyType="done"
+                    />
+                  </Pressable>
+
+                  <Text
+                    style={[
+                      styles.dailyLimit,
+                      limitReached && styles.dailyLimitWarning,
+                    ]}
+                  >
+                    {limitReached
+                      ? t('dailyLimitReached')
+                      : t('parsesRemaining', { remaining, max: MAX_DAILY_PARSES })}
+                  </Text>
+
+                  {error && (
+                    <View style={styles.errorBanner}>
+                      <Ionicons
+                        name="alert-circle-outline"
+                        size={18}
+                        color={theme.error}
+                      />
+                      <Text style={styles.errorText}>{error}</Text>
+                    </View>
+                  )}
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.button,
+                      parseDisabled && styles.buttonDisabled,
+                      pressed && !parseDisabled && styles.buttonPressed,
+                    ]}
+                    onPress={handleFetch}
+                    disabled={parseDisabled}
+                    accessibilityLabel={t('parseArticleUrl')}
+                  >
+                    <Ionicons name="cloud-download-outline" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>
+                      {loading ? t('fetching') : t('parse')}
+                    </Text>
+                  </Pressable>
+
+                  {loading && (
+                    <View style={styles.loadingPanel}>
+                      <ActivityIndicator size="small" color={theme.accent} />
+                      <View style={styles.loadingCopy}>
+                        <Text style={styles.loadingTitle}>{t('fetching')}</Text>
+                        {showIndexing && (
+                          <Text style={styles.loadingText}>{t('indexing')}</Text>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </>
+              )}
             </View>
 
-            <Text style={styles.dailyLimit}>
-              {limitReached
-                ? t('dailyLimitReached')
-                : t('parsesRemaining', { remaining, max: MAX_DAILY_PARSES })}
-            </Text>
-
-            {error && (
-              <Text style={styles.errorText}>{error}</Text>
-            )}
+            <View style={styles.supportedCard}>
+              <Text style={styles.supportedLabel}>{t('supportedSites')}</Text>
+              <View style={styles.supportedLinks}>
+                {SUPPORTED_URLS.map((site) => (
+                  <Pressable
+                    key={site}
+                    style={({ pressed }) => [
+                      styles.supportedChip,
+                      pressed && styles.supportedChipPressed,
+                    ]}
+                    onPress={() => Linking.openURL(site)}
+                  >
+                    <Text style={styles.supportedUrl}>
+                      {site.replace(/^https?:\/\//, '')}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
           </View>
-
-          <View style={styles.supportedList}>
-            <Text style={styles.supportedLabel}>{t('supportedSites')}</Text>
-            {SUPPORTED_URLS.map((site) => (
-              <Pressable key={site} onPress={() => Linking.openURL(site)}>
-                <Text style={styles.supportedUrl}>{site}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -484,264 +547,353 @@ export default function CreateScreen() {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  parseContent: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  parseSubtitle: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    marginBottom: 24,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-    backgroundColor: theme.surface,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  tabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: theme.accent,
-  },
-  tabText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: theme.textMuted,
-  },
-  tabTextActive: {
-    color: theme.accent,
-    fontWeight: '600',
-  },
-  savedArticlesFilterBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-    backgroundColor: theme.surface,
-  },
-  savedArticlesFilterChip: {
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  savedArticlesFilterChipActive: {
-    borderColor: theme.accent,
-    backgroundColor: theme.surface,
-  },
-  savedArticlesFilterChipPressed: {
-    opacity: 0.75,
-  },
-  savedArticlesFilterChipLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: theme.textMuted,
-    textAlign: 'center',
-  },
-  savedArticlesFilterChipLabelActive: {
-    color: theme.accent,
-    fontWeight: '600',
-  },
-  centerContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    width: '100%',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: theme.textMuted,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    marginBottom: 24,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 480,
-    minHeight: 48,
-    paddingRight: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    overflow: 'hidden',
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-  },
-  inputRowDisabled: {
-    opacity: 0.5,
-  },
-  input: {
-    flex: 1,
-    minHeight: 80,
-    maxHeight: 120,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 13,
-    color: theme.text,
-    backgroundColor: 'transparent',
-  },
-  dailyLimit: {
-    fontSize: 13,
-    color: theme.textMuted,
-    marginBottom: 20,
-  },
-  supportedList: {
-    alignItems: 'center',
-    paddingBottom: 32,
-    paddingHorizontal: 24,
-  },
-  supportedLabel: {
-    fontSize: 12,
-    color: theme.textMuted,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  supportedUrl: {
-    fontSize: 14,
-    color: theme.accent,
-    paddingVertical: 2,
-  },
-  errorText: {
-    fontSize: 14,
-    color: theme.error,
-    textAlign: 'center',
-    marginBottom: 12,
-    maxWidth: 480,
-  },
-  button: {
-    height: 48,
-    minWidth: 48,
-    backgroundColor: theme.accent,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  buttonPressed: {
-    backgroundColor: theme.accentPressed,
-  },
-  buttonDisabled: {
-    backgroundColor: theme.textMuted,
-  },
-  resultContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    width: '100%',
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: theme.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  existingNote: {
-    fontSize: 14,
-    color: theme.textMuted,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  resetButton: {
-    marginTop: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.accent,
-  },
-  resetButtonPressed: {
-    backgroundColor: theme.surface,
-  },
-  resetButtonText: {
-    fontSize: 16,
-    color: theme.accent,
-    fontWeight: '600',
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 12,
-    paddingBottom: 24,
-  },
-  separator: {
-    height: 12,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: theme.textMuted,
-    textAlign: 'center',
-  },
-  savedArticlesErrorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.error,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  savedArticlesErrorDetail: {
-    fontSize: 13,
-    color: theme.textMuted,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retrySavedArticlesButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.accent,
-  },
-  retrySavedArticlesButtonPressed: {
-    backgroundColor: theme.surface,
-  },
-  retrySavedArticlesButtonText: {
-    fontSize: 15,
-    color: theme.accent,
-    fontWeight: '600',
-  },
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    parseScrollContent: {
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 32,
+    },
+    parseContent: {
+      width: '100%',
+      maxWidth: 680,
+      alignSelf: 'center',
+      gap: 18,
+    },
+    parsePanel: {
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.surfaceElevated,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: Platform.OS === 'ios' ? 0.08 : 0.18,
+      shadowRadius: 18,
+      elevation: 3,
+    },
+    parseEyebrow: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.accent,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      marginBottom: 8,
+    },
+    parseTitle: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 8,
+    },
+    parseSubtitle: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: theme.textSecondary,
+      marginBottom: 18,
+    },
+    tabBar: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+      backgroundColor: theme.surface,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    tabActive: {
+      borderBottomWidth: 2,
+      borderBottomColor: theme.accent,
+    },
+    tabText: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: theme.textMuted,
+    },
+    tabTextActive: {
+      color: theme.accent,
+      fontWeight: '600',
+    },
+    savedArticlesFilterBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+      backgroundColor: theme.surface,
+    },
+    savedArticlesFilterChip: {
+      width: '33%',
+      minWidth: 0,
+      paddingVertical: 8,
+      paddingHorizontal: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    savedArticlesFilterChipActive: {
+      borderColor: theme.accent,
+      backgroundColor: theme.surface,
+    },
+    savedArticlesFilterChipPressed: {
+      opacity: 0.75,
+    },
+    savedArticlesFilterChipLabel: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: theme.textMuted,
+      textAlign: 'center',
+    },
+    savedArticlesFilterChipLabelActive: {
+      color: theme.accent,
+      fontWeight: '600',
+    },
+    inputShell: {
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      marginBottom: 12,
+    },
+    inputShellFocused: {
+      borderColor: theme.accent,
+      shadowColor: theme.accent,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: Platform.OS === 'ios' ? 0.18 : 0,
+      shadowRadius: 0,
+      elevation: 0,
+    },
+    inputShellDisabled: {
+      opacity: 0.65,
+    },
+    input: {
+      minHeight: 92,
+      maxHeight: 128,
+      paddingVertical: 10,
+      fontSize: 16,
+      lineHeight: 24,
+      color: theme.text,
+      backgroundColor: 'transparent',
+      textAlignVertical: 'top',
+    },
+    dailyLimit: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: theme.textMuted,
+      marginBottom: 14,
+    },
+    dailyLimitWarning: {
+      color: theme.error,
+    },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.error,
+      backgroundColor: theme.surface,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 14,
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+      color: theme.error,
+    },
+    button: {
+      minHeight: 54,
+      borderRadius: 16,
+      backgroundColor: theme.accent,
+      paddingHorizontal: 18,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+    },
+    buttonPressed: {
+      backgroundColor: theme.accentPressed,
+    },
+    buttonDisabled: {
+      backgroundColor: theme.textMuted,
+    },
+    buttonText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: '#fff',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    loadingPanel: {
+      marginTop: 14,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    loadingCopy: {
+      flex: 1,
+    },
+    loadingTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.text,
+      marginBottom: 4,
+    },
+    loadingText: {
+      fontSize: 13,
+      color: theme.textMuted,
+    },
+    resultSection: {
+      gap: 14,
+    },
+    successBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.accent,
+      backgroundColor: theme.surface,
+    },
+    successTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.text,
+    },
+    existingNote: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: theme.textSecondary,
+    },
+    resetButton: {
+      marginTop: 4,
+      minHeight: 48,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surface,
+    },
+    resetButtonPressed: {
+      backgroundColor: theme.background,
+    },
+    resetButtonText: {
+      fontSize: 15,
+      color: theme.accent,
+      fontWeight: '700',
+    },
+    supportedCard: {
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      padding: 16,
+      opacity: 0.92,
+    },
+    supportedLabel: {
+      fontSize: 12,
+      color: theme.textMuted,
+      marginBottom: 10,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    supportedLinks: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    supportedChip: {
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      backgroundColor: theme.background,
+    },
+    supportedChipPressed: {
+      opacity: 0.75,
+    },
+    supportedUrl: {
+      fontSize: 13,
+      color: theme.textSecondary,
+    },
+    list: {
+      flex: 1,
+    },
+    listContent: {
+      padding: 12,
+      paddingBottom: 24,
+    },
+    separator: {
+      height: 12,
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: theme.textMuted,
+      textAlign: 'center',
+    },
+    savedArticlesErrorTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.error,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    savedArticlesErrorDetail: {
+      fontSize: 13,
+      color: theme.textMuted,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    retrySavedArticlesButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.accent,
+    },
+    retrySavedArticlesButtonPressed: {
+      backgroundColor: theme.surface,
+    },
+    retrySavedArticlesButtonText: {
+      fontSize: 15,
+      color: theme.accent,
+      fontWeight: '600',
+    },
   });
 }

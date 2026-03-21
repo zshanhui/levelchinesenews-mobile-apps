@@ -65,7 +65,6 @@ export default function ArticleDetailScreen() {
     loading,
     error,
     usingCache,
-    usingSeed,
     refetch,
   } = useArticle(id);
 
@@ -77,9 +76,6 @@ export default function ArticleDetailScreen() {
   const SourceLabel = () => {
     if (usingCache) {
       return <Text style={styles.metaText}>{t('cached')}</Text>;
-    }
-    if (usingSeed) {
-      return <Text style={styles.metaText}>{t('seed')}</Text>;
     }
     return null;
   };

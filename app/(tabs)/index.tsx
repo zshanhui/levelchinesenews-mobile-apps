@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
-import { SeedIndicator } from '../../lib/components/SeedIndicator';
 import { getReadStatesForArticleIds } from '../../lib/savedArticlesDb';
 import { useArticles } from '../../lib/useArticles';
 import type { Theme } from '../../lib/theme';
@@ -38,7 +37,6 @@ export default function ArticlesScreen() {
     hasMore,
     usingCache,
     cachedAt,
-    usingSeed,
     loadInitial,
     refresh,
     loadMore,
@@ -105,11 +103,9 @@ export default function ArticlesScreen() {
       headerRight: () =>
         usingCache && cachedAt ? (
           <CacheIndicator cachedAt={cachedAt} />
-        ) : usingSeed ? (
-          <SeedIndicator />
         ) : null,
     });
-  }, [navigation, usingCache, cachedAt, usingSeed]);
+  }, [navigation, usingCache, cachedAt]);
 
   useFocusEffect(
     useCallback(() => {
