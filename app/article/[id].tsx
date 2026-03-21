@@ -22,12 +22,13 @@ import { resolveImageUrl } from '../../lib/api';
 import { showErrorFeedback, showSuccessFeedback } from '../../lib/showErrorFeedback';
 import {
   articleDetailToListItem,
+  clearSentenceBookmark,
+  computeSentenceBookmarkDisplay,
   getReadState,
-  isSavedArticle,
-  removeSavedArticle,
+  getSentenceBookmark,
   setRead,
   upsertArticleMarkedRead,
-  upsertSavedArticle,
+  upsertSavedArticleWithSentenceBookmark,
 } from '../../lib/savedArticlesDb';
 import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
 import type { Theme } from '../../lib/theme';
@@ -83,13 +84,17 @@ export default function ArticleDetailScreen() {
     return null;
   };
   const insets = useSafeAreaInsets();
-  const [inMyArticles, setInMyArticles] = useState<boolean | null>(null);
+  const [bookmarkedSentenceKey, setBookmarkedSentenceKey] = useState<
+    string | null
+  >(null);
   const [readState, setReadState] = useState(false);
   const [selectedWord, setSelectedWord] = useState<{ word: string; pinyin: string | null } | null>(null);
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
   const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
+  const bookmarkedSentenceKeyRef = useRef<string | null>(null);
+  bookmarkedSentenceKeyRef.current = bookmarkedSentenceKey;
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
@@ -121,53 +126,73 @@ export default function ArticleDetailScreen() {
   useEffect(() => {
     if (Platform.OS === 'web' || !id) {
       setReadState(false);
-      setInMyArticles(null);
+      setBookmarkedSentenceKey(null);
       return;
     }
     setReadState(false);
-    setInMyArticles(null);
+    setBookmarkedSentenceKey(null);
     let cancelled = false;
-    Promise.all([getReadState(id), isSavedArticle(id)]).then(([read, saved]) => {
-      if (!cancelled) {
-        setReadState(read);
-        setInMyArticles(saved);
-      }
-    });
+    Promise.all([getReadState(id), getSentenceBookmark(id)]).then(
+      ([read, bookmarkIdx]) => {
+        if (!cancelled) {
+          setReadState(read);
+          setBookmarkedSentenceKey(
+            bookmarkIdx ? `${bookmarkIdx[0]}-${bookmarkIdx[1]}` : null,
+          );
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
   }, [id]);
 
-  const onToggleMyArticlesSave = useCallback(async () => {
-    if (!id || Platform.OS === 'web' || !article || inMyArticles === null) return;
-    try {
-      if (inMyArticles) {
-        await removeSavedArticle(id);
-        setInMyArticles(false);
-        setReadState(false);
-        showSuccessFeedback(t('removedFromMyArticles'));
-      } else {
-        await upsertSavedArticle(articleDetailToListItem(article));
-        setInMyArticles(true);
-        showSuccessFeedback(t('savedToMyArticles'));
-      }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      showErrorFeedback(t('saveArticleFailed'), message);
-    }
-  }, [id, article, inMyArticles, t]);
-
   const onMarkRead = useCallback(() => {
     if (!id || Platform.OS === 'web' || !article) return;
     void upsertArticleMarkedRead(articleDetailToListItem(article));
     setReadState(true);
-    setInMyArticles(true);
+    setBookmarkedSentenceKey(null);
   }, [id, article]);
 
   const onMarkUnread = useCallback(() => {
     if (!id || Platform.OS === 'web') return;
     void setRead(id, false).then(() => setReadState(false));
   }, [id]);
+
+  const onSentenceBookmarkPress = useCallback(
+    async (sentenceKey: string) => {
+      if (!id || Platform.OS === 'web' || !article) return;
+      const parts = sentenceKey.split('-');
+      if (parts.length !== 2) return;
+      const p = Number(parts[0]);
+      const s = Number(parts[1]);
+      if (!Number.isInteger(p) || !Number.isInteger(s)) return;
+      try {
+        if (bookmarkedSentenceKeyRef.current === sentenceKey) {
+          await clearSentenceBookmark(id);
+          setBookmarkedSentenceKey(null);
+          showSuccessFeedback(t('sentenceBookmarkRemoved'));
+        } else {
+          const display = computeSentenceBookmarkDisplay(
+            article.parsed_content,
+            p,
+            s,
+          );
+          await upsertSavedArticleWithSentenceBookmark(
+            articleDetailToListItem(article),
+            [p, s],
+            display,
+          );
+          setBookmarkedSentenceKey(sentenceKey);
+          showSuccessFeedback(t('sentenceBookmarkSaved'));
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        showErrorFeedback(t('sentenceBookmarkFailed'), message);
+      }
+    },
+    [id, article, t],
+  );
 
   // Restore selection when app opens with return-from-Pleco deep link (e.g. app was killed)
   useEffect(() => {
@@ -198,9 +223,6 @@ export default function ArticleDetailScreen() {
     });
     return () => subscription.remove();
   }, [id, restoreSelectionFromParams]);
-
-  const showSaveToMyArticles =
-    Platform.OS !== 'web' && article && inMyArticles !== null;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -300,28 +322,6 @@ export default function ArticleDetailScreen() {
                     SourceLabel()
                   )}
                 </View>
-                {showSaveToMyArticles ? (
-                  <Pressable
-                    onPress={() => void onToggleMyArticlesSave()}
-                    hitSlop={12}
-                    style={({ pressed }) => [
-                      styles.metaSaveButton,
-                      pressed && styles.metaSaveButtonPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      inMyArticles
-                        ? t('removeFromMyArticles')
-                        : t('saveToMyArticles')
-                    }
-                  >
-                    <Ionicons
-                      name={inMyArticles ? 'cube' : 'cube-outline'}
-                      size={24}
-                      color={inMyArticles ? theme.accent : theme.textMuted}
-                    />
-                  </Pressable>
-                ) : null}
               </View>
               {((): React.ReactNode => {
                 const imageUri = resolveImageUrl(article.main_image);
@@ -344,6 +344,9 @@ export default function ArticleDetailScreen() {
                   onClosePanel={onClosePanel}
                   scrollViewRef={scrollViewRef}
                   contentRef={contentRef}
+                  sentenceBookmarkEnabled={Platform.OS !== 'web'}
+                  bookmarkedSentenceKey={bookmarkedSentenceKey}
+                  onSentenceBookmarkPress={onSentenceBookmarkPress}
                 />
               ) : (
                 <Text style={styles.emptyContent}>
@@ -482,13 +485,6 @@ function createStyles(theme: Theme) {
     alignItems: 'center',
     gap: 12,
     minWidth: 0,
-  },
-  metaSaveButton: {
-    padding: 4,
-    flexShrink: 0,
-  },
-  metaSaveButtonPressed: {
-    opacity: 0.65,
   },
   metaSource: {
     flexDirection: 'row',

@@ -48,12 +48,15 @@ export function ArticleCard({
   onRequestTranslation,
   index = 0,
   read,
+  bookmarkSentencePosition,
 }: {
   item: ArticleListItem;
   onPress: () => void;
   onRequestTranslation?: (articleId: string) => Promise<ArticleListItem | null>;
   index?: number;
   read?: boolean;
+  /** Shown under read checkmark: bookmarked sentence index / total (my articles) */
+  bookmarkSentencePosition?: { n: number; t: number };
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
@@ -111,9 +114,16 @@ export function ArticleCard({
   /** Keep clear space under `readCheckCorner` (top 8, icon 22). */
   const READ_CORNER_TOP = 8;
   const READ_ICON_SIZE = 22;
+  const BOOKMARK_FRACTION_GAP = 2;
+  const BOOKMARK_FRACTION_TEXT_HEIGHT = 10;
+  const checkCornerStackHeight =
+    READ_ICON_SIZE +
+    (bookmarkSentencePosition != null
+      ? BOOKMARK_FRACTION_GAP + BOOKMARK_FRACTION_TEXT_HEIGHT
+      : 0);
   const CHECK_TO_TRANSLATE_GAP = 10;
   const minTranslateTopBelowCheck =
-    READ_CORNER_TOP + READ_ICON_SIZE + CHECK_TO_TRANSLATE_GAP;
+    READ_CORNER_TOP + checkCornerStackHeight + CHECK_TO_TRANSLATE_GAP;
   const showReadIndicator = read !== undefined;
   const translateButtonTop = showReadIndicator
     ? Math.max(translateFromThumbCenter, minTranslateTopBelowCheck)
@@ -133,6 +143,11 @@ export function ArticleCard({
             size={22}
             color={read ? theme.accent : theme.readIndicatorMuted}
           />
+          {bookmarkSentencePosition != null ? (
+            <Text style={styles.bookmarkSentenceFraction}>
+              {bookmarkSentencePosition.n}/{bookmarkSentencePosition.t}
+            </Text>
+          ) : null}
         </View>
       ) : null}
       <Pressable
@@ -317,8 +332,18 @@ function createStyles(theme: Theme) {
     top: 8,
     right: 8,
     zIndex: 2,
+    flexDirection: 'column',
+    alignItems: 'center',
     backgroundColor: theme.surfaceElevated,
     borderRadius: 12,
+    paddingBottom: 2,
+  },
+  bookmarkSentenceFraction: {
+    marginTop: 2,
+    fontSize: 9,
+    fontWeight: '600',
+    color: theme.textMuted,
+    fontVariant: ['tabular-nums'],
   },
   thumbnailWrapper: {
     flexShrink: 0,

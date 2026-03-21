@@ -75,6 +75,11 @@ export const translations = {
     removeFromMyArticles: 'Remove from my articles',
     removedFromMyArticles: 'Removed from my articles',
     saveArticleFailed: 'Could not save article',
+    bookmarkSentence: 'Bookmark sentence',
+    removeSentenceBookmark: 'Remove sentence bookmark',
+    sentenceBookmarkSaved: 'Sentence bookmark saved',
+    sentenceBookmarkRemoved: 'Sentence bookmark removed',
+    sentenceBookmarkFailed: 'Could not update sentence bookmark',
 
     // Not found
     notFound: 'oops! not found',
@@ -216,6 +221,11 @@ export const translations = {
     removeFromMyArticles: 'Quitar de mis artículos',
     removedFromMyArticles: 'Eliminado de mis artículos',
     saveArticleFailed: 'No se pudo guardar el artículo',
+    bookmarkSentence: 'Marcar frase',
+    removeSentenceBookmark: 'Quitar marcador de frase',
+    sentenceBookmarkSaved: 'Frase guardada como marcador',
+    sentenceBookmarkRemoved: 'Marcador de frase eliminado',
+    sentenceBookmarkFailed: 'No se pudo actualizar el marcador de frase',
 
     // Not found
     notFound: '¡ups! no encontrado',
@@ -359,6 +369,11 @@ export const translations = {
     removeFromMyArticles: 'Buang dari artikel saya',
     removedFromMyArticles: 'Dibuang dari artikel saya',
     saveArticleFailed: 'Tidak dapat menyimpan artikel',
+    bookmarkSentence: 'Tandai ayat',
+    removeSentenceBookmark: 'Buang penanda ayat',
+    sentenceBookmarkSaved: 'Ayat ditandai',
+    sentenceBookmarkRemoved: 'Penanda ayat dibuang',
+    sentenceBookmarkFailed: 'Tidak dapat mengemas kini penanda ayat',
 
     // Not found
     notFound: 'ops! tidak dijumpai',
@@ -502,6 +517,11 @@ export const translations = {
     removeFromMyArticles: 'إزالة من مقالاتي',
     removedFromMyArticles: 'أُزيل من مقالاتي',
     saveArticleFailed: 'تعذّر حفظ المقال',
+    bookmarkSentence: 'وضع إشارة على الجملة',
+    removeSentenceBookmark: 'إزالة إشارة الجملة',
+    sentenceBookmarkSaved: 'تم حفظ إشارة الجملة',
+    sentenceBookmarkRemoved: 'تمت إزالة إشارة الجملة',
+    sentenceBookmarkFailed: 'تعذّر تحديث إشارة الجملة',
 
     // Not found
     notFound: 'عذراً! غير موجود',
@@ -643,6 +663,11 @@ export const translations = {
     removeFromMyArticles: '从我的文章移除',
     removedFromMyArticles: '已从我的文章移除',
     saveArticleFailed: '无法保存文章',
+    bookmarkSentence: '收藏该句',
+    removeSentenceBookmark: '取消句子收藏',
+    sentenceBookmarkSaved: '已收藏该句',
+    sentenceBookmarkRemoved: '已取消句子收藏',
+    sentenceBookmarkFailed: '无法更新句子收藏',
 
     // Not found
     notFound: '未找到页面',

@@ -346,6 +346,7 @@ export default function CreateScreen() {
                     item={entry.item}
                     index={index}
                     read={entry.read}
+                    bookmarkSentencePosition={entry.bookmarkSentencePosition}
                     onPress={() => router.push(`/article/${entry.item.id}`)}
                     onRequestTranslation={onRequestTranslation}
                   />

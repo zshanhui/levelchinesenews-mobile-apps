@@ -43,6 +43,11 @@ export interface ArticleContentProps {
   onClosePanel?: () => void;
   scrollViewRef?: RefObject<ScrollView | null>;
   contentRef?: RefObject<View | null>;
+  /** Native: show sentence bookmark on the selected sentence (web hides) */
+  sentenceBookmarkEnabled?: boolean;
+  /** DB bookmark as "pIdx-sIdx", or null */
+  bookmarkedSentenceKey?: string | null;
+  onSentenceBookmarkPress?: (sentenceKey: string) => void;
 }
 
 const WordBlock = memo(function WordBlock({
@@ -118,9 +123,9 @@ export function SentenceStudyPanel({
   bottomInset: number;
 }) {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const { chineseFontStyle } = useFont();
   const [dictEntry, setDictEntry] = useState<{ definitions: string } | null>(null);
   const [lookupComplete, setLookupComplete] = useState(false);
@@ -309,6 +314,279 @@ const LINE_SPACING = {
   relaxed: { sentenceMarginBottom: 14, paragraphMarginBottom: 40 },
 };
 
+const STUDY_PANEL_SCROLL_RESERVE = 140;
+const BOOKMARK_ONLY_SCROLL_RESERVE = 32;
+
+/** Filled bookmark when sentence is saved — distinct red on light and dark themes */
+const BOOKMARK_SAVED_COLOR = '#c41e1a';
+
+const BOOKMARK_ICON_BOX = 24;
+
+const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon({
+  saved,
+  accentColor,
+}: {
+  saved: boolean;
+  accentColor: string;
+}) {
+  const progress = useRef(new Animated.Value(saved ? 1 : 0)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const prevSavedRef = useRef<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    if (prevSavedRef.current === undefined) {
+      prevSavedRef.current = saved;
+      progress.setValue(saved ? 1 : 0);
+      return;
+    }
+    if (prevSavedRef.current === saved) {
+      return;
+    }
+    prevSavedRef.current = saved;
+    scale.setValue(1);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(progress, {
+          toValue: saved ? 1 : 0,
+          duration: 240,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1.14,
+          friction: 6,
+          tension: 220,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 7,
+        tension: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [saved, progress, scale]);
+
+  const outlineOpacity = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.82, 0],
+  });
+  const fillOpacity = progress;
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <View
+        style={{
+          width: BOOKMARK_ICON_BOX,
+          height: BOOKMARK_ICON_BOX,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: outlineOpacity,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Ionicons name="bookmark-outline" size={22} color={accentColor} />
+        </Animated.View>
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: fillOpacity,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Ionicons name="bookmark" size={22} color={BOOKMARK_SAVED_COLOR} />
+        </Animated.View>
+      </View>
+    </Animated.View>
+  );
+});
+
+function scrollSentenceIntoScrollView(
+  sentenceNode: View,
+  contentRef: View,
+  scrollViewRef: RefObject<ScrollView | null>,
+  bottomReserve: number,
+) {
+  sentenceNode.measureLayout(
+    contentRef,
+    (_x, y, _w, height) => {
+      (scrollViewRef.current as unknown as View)?.measureInWindow(
+        (_sx, _sy, _sw, viewportHeight) => {
+          const visibleHeight = Math.max(100, viewportHeight - bottomReserve);
+          const targetY = Math.max(0, y + height / 2 - visibleHeight / 2);
+          scrollViewRef.current?.scrollTo({
+            y: targetY,
+            animated: true,
+          });
+        },
+      );
+    },
+    () => {},
+  );
+}
+
+type ArticleSentenceRowStyles = {
+  sentenceWrapper: object;
+  sentenceHighlightOverlay: object;
+  sentenceBookmarkButton: object;
+  sentenceBookmarkButtonSaved: object;
+  sentenceBookmarkButtonPressed: object;
+  sentence: object;
+  wordPressable: object;
+  wordPressablePressed: object;
+};
+
+const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
+  sentenceKey,
+  pIdx,
+  sIdx,
+  words,
+  isSelected,
+  isSentenceBookmarkedHere,
+  sentenceBookmarkEnabled,
+  highlightedWordIndex,
+  sentenceMarginBottom,
+  wrapperRef,
+  onWordPress,
+  onSentenceBookmarkPress,
+  showPinyin,
+  fontSize,
+  chineseFontStyle,
+  wordStyles,
+  accentColor,
+  bookmarkAccessibilityLabel,
+  rowStyles,
+}: {
+  sentenceKey: string;
+  pIdx: number;
+  sIdx: number;
+  words: WordSegment[];
+  isSelected: boolean;
+  isSentenceBookmarkedHere: boolean;
+  sentenceBookmarkEnabled: boolean;
+  highlightedWordIndex: number | null;
+  sentenceMarginBottom: number;
+  wrapperRef?: (node: View | null) => void;
+  onWordPress: (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => void;
+  onSentenceBookmarkPress?: (sentenceKey: string) => void;
+  showPinyin: boolean;
+  fontSize: number;
+  chineseFontStyle: { fontFamily?: string };
+  wordStyles: {
+    wordBlock: object;
+    wordBlockHighlightBg: object;
+    pinyin: object;
+    word: object;
+  };
+  accentColor: string;
+  bookmarkAccessibilityLabel: string;
+  rowStyles: ArticleSentenceRowStyles;
+}) {
+  const showBookmarkControl =
+    sentenceBookmarkEnabled && (isSelected || isSentenceBookmarkedHere);
+
+  const wrapperStyle = useMemo(
+    () => [
+      rowStyles.sentenceWrapper,
+      {
+        marginBottom: sentenceMarginBottom,
+      },
+    ],
+    [rowStyles.sentenceWrapper, sentenceMarginBottom],
+  );
+
+  const sentenceInnerStyle = useMemo(
+    () => [
+      rowStyles.sentence,
+      {
+        rowGap: sentenceMarginBottom,
+      },
+    ],
+    [rowStyles.sentence, sentenceMarginBottom],
+  );
+
+  return (
+    <View
+      ref={wrapperRef}
+      collapsable={false}
+      style={wrapperStyle}
+    >
+      {isSelected ? (
+        <SentenceHighlightOverlay overlayStyle={rowStyles.sentenceHighlightOverlay} />
+      ) : null}
+      {showBookmarkControl ? (
+        <Pressable
+          style={({ pressed }) => [
+            rowStyles.sentenceBookmarkButton,
+            isSentenceBookmarkedHere && rowStyles.sentenceBookmarkButtonSaved,
+            pressed && rowStyles.sentenceBookmarkButtonPressed,
+          ]}
+          onPress={() => onSentenceBookmarkPress?.(sentenceKey)}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={bookmarkAccessibilityLabel}
+        >
+          <SentenceBookmarkAnimatedIcon
+            saved={isSentenceBookmarkedHere}
+            accentColor={accentColor}
+          />
+        </Pressable>
+      ) : null}
+      <View style={sentenceInnerStyle}>
+        {words.map((word, wIdx) => {
+          const wordKey = `${pIdx}-${sIdx}-${wIdx}`;
+          const tappable = !isNumberOrPunctuation(word.t);
+          const highlighted = highlightedWordIndex === wIdx;
+          return tappable ? (
+            <Pressable
+              key={wIdx}
+              onPress={() => onWordPress(word.t, word.p ?? null, wordKey, sentenceKey)}
+              hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+              style={({ pressed }) => [
+                rowStyles.wordPressable,
+                pressed && rowStyles.wordPressablePressed,
+              ]}
+            >
+              <WordBlock
+                segment={word}
+                showPinyin={showPinyin}
+                highlighted={highlighted}
+                fontSize={fontSize}
+                chineseFontStyle={chineseFontStyle}
+                wordStyles={wordStyles}
+              />
+            </Pressable>
+          ) : (
+            <View key={wIdx} style={rowStyles.wordPressable}>
+              <WordBlock
+                segment={word}
+                showPinyin={showPinyin}
+                highlighted={false}
+                fontSize={fontSize}
+                chineseFontStyle={chineseFontStyle}
+                wordStyles={wordStyles}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+});
+
 export function ArticleContent({
   parsedContent,
   selectedWord = null,
@@ -318,37 +596,93 @@ export function ArticleContent({
   onClosePanel,
   scrollViewRef,
   contentRef,
+  sentenceBookmarkEnabled = false,
+  bookmarkedSentenceKey = null,
+  onSentenceBookmarkPress,
 }: ArticleContentProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const { t } = useTranslation();
   const { showPinyin, lineSpacing, articleFontSize, chineseFontStyle } = useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const spacing = LINE_SPACING[lineSpacing];
   const selectedSentenceRef = useRef<View | null>(null);
+  const bookmarkedSentenceRef = useRef<View | null>(null);
 
   useEffect(() => {
-    if (!highlightedSentenceKey || !scrollViewRef?.current || !contentRef?.current) return;
+    if (!highlightedSentenceKey) {
+      selectedSentenceRef.current = null;
+    }
+  }, [highlightedSentenceKey]);
+
+  useEffect(() => {
+    if (!bookmarkedSentenceKey) {
+      bookmarkedSentenceRef.current = null;
+    }
+  }, [bookmarkedSentenceKey]);
+
+  useEffect(() => {
+    if (!highlightedSentenceKey || !scrollViewRef?.current || !contentRef?.current) {
+      return;
+    }
+    const bottomReserve = selectedWord
+      ? STUDY_PANEL_SCROLL_RESERVE
+      : BOOKMARK_ONLY_SCROLL_RESERVE;
     const task = InteractionManager.runAfterInteractions(() => {
       const sentenceNode = selectedSentenceRef.current;
-      if (!sentenceNode) return;
-      sentenceNode.measureLayout(
-        contentRef.current!,
-        (_x, y, _w, height) => {
-          (scrollViewRef.current as unknown as View)?.measureInWindow((_sx, _sy, _sw, viewportHeight) => {
-            const panelOverlayHeight = 140;
-            const visibleHeight = Math.max(100, viewportHeight - panelOverlayHeight);
-            const targetY = Math.max(0, y + height / 2 - visibleHeight / 2);
-            scrollViewRef.current?.scrollTo({
-              y: targetY,
-              animated: true,
-            });
-          });
-        },
-        () => {}
+      const content = contentRef.current;
+      if (!sentenceNode || !content) return;
+      scrollSentenceIntoScrollView(
+        sentenceNode,
+        content,
+        scrollViewRef,
+        bottomReserve,
       );
     });
     return () => task.cancel();
-  }, [highlightedSentenceKey, scrollViewRef, contentRef]);
+  }, [
+    highlightedSentenceKey,
+    selectedWord,
+    scrollViewRef,
+    contentRef,
+  ]);
+
+  useEffect(() => {
+    if (
+      !bookmarkedSentenceKey ||
+      highlightedSentenceKey ||
+      !scrollViewRef?.current ||
+      !contentRef?.current
+    ) {
+      return;
+    }
+    const content = contentRef.current;
+    const tryScroll = () => {
+      const sentenceNode = bookmarkedSentenceRef.current;
+      if (!sentenceNode || !content) return;
+      scrollSentenceIntoScrollView(
+        sentenceNode,
+        content,
+        scrollViewRef,
+        BOOKMARK_ONLY_SCROLL_RESERVE,
+      );
+    };
+    let raf: number | null = null;
+    const task = InteractionManager.runAfterInteractions(() => {
+      tryScroll();
+      raf = requestAnimationFrame(tryScroll);
+    });
+    return () => {
+      task.cancel();
+      if (raf != null) cancelAnimationFrame(raf);
+    };
+  }, [
+    bookmarkedSentenceKey,
+    highlightedSentenceKey,
+    parsedContent,
+    scrollViewRef,
+    contentRef,
+  ]);
 
   const handleWordPress = useCallback(
     (wordText: string, pinyinText: string | null, wordKey: string, sentenceKey: string) => {
@@ -356,6 +690,55 @@ export function ArticleContent({
     },
     [onWordPress]
   );
+
+  const handleSentenceBookmarkPress = useCallback(
+    (sk: string) => {
+      onSentenceBookmarkPress?.(sk);
+    },
+    [onSentenceBookmarkPress],
+  );
+
+  const wordStylesBundle = useMemo(
+    () => ({
+      wordBlock: styles.wordBlock,
+      wordBlockHighlightBg: styles.wordBlockHighlightBg,
+      pinyin: styles.pinyin,
+      word: styles.word,
+    }),
+    [styles.wordBlock, styles.wordBlockHighlightBg, styles.pinyin, styles.word],
+  );
+
+  const sentenceRowStyles = useMemo(
+    (): ArticleSentenceRowStyles => ({
+      sentenceWrapper: styles.sentenceWrapper,
+      sentenceHighlightOverlay: styles.sentenceHighlightOverlay,
+      sentenceBookmarkButton: styles.sentenceBookmarkButton,
+      sentenceBookmarkButtonSaved: styles.sentenceBookmarkButtonSaved,
+      sentenceBookmarkButtonPressed: styles.sentenceBookmarkButtonPressed,
+      sentence: styles.sentence,
+      wordPressable: styles.wordPressable,
+      wordPressablePressed: styles.wordPressablePressed,
+    }),
+    [
+      styles.sentenceWrapper,
+      styles.sentenceHighlightOverlay,
+      styles.sentenceBookmarkButton,
+      styles.sentenceBookmarkButtonSaved,
+      styles.sentenceBookmarkButtonPressed,
+      styles.sentence,
+      styles.wordPressable,
+      styles.wordPressablePressed,
+    ],
+  );
+
+  const highlightedWordLocation = useMemo(() => {
+    if (!highlightedWordKey) return null;
+    const parts = highlightedWordKey.split('-');
+    if (parts.length !== 3) return null;
+    const wIdx = Number.parseInt(parts[2]!, 10);
+    if (!Number.isFinite(wIdx)) return null;
+    return { sentenceKey: `${parts[0]}-${parts[1]}`, wordIndex: wIdx };
+  }, [highlightedWordKey]);
 
   if (!parsedContent?.length) {
     return null;
@@ -371,73 +754,52 @@ export function ArticleContent({
           {paragraph.s.map((sentence, sIdx) => {
             const sentenceKey = `${pIdx}-${sIdx}`;
             const isSelected = highlightedSentenceKey === sentenceKey;
+            const isSentenceBookmarkedHere =
+              bookmarkedSentenceKey != null &&
+              bookmarkedSentenceKey === sentenceKey;
+            const needsScrollTarget = isSelected || isSentenceBookmarkedHere;
+            const highlightedWordIndex =
+              highlightedWordLocation?.sentenceKey === sentenceKey
+                ? highlightedWordLocation.wordIndex
+                : null;
             return (
-              <View
-                key={sIdx}
-                ref={isSelected ? (node) => { selectedSentenceRef.current = node; } : undefined}
-                collapsable={false}
-                style={[
-                  styles.sentenceWrapper,
-                  {
-                    marginBottom: spacing.sentenceMarginBottom,
-                  },
-                ]}
-              >
-                {isSelected ? (
-                  <SentenceHighlightOverlay overlayStyle={styles.sentenceHighlightOverlay} />
-                ) : null}
-                <View
-                  style={[
-                    styles.sentence,
-                    {
-                      rowGap: spacing.sentenceMarginBottom,
-                    },
-                  ]}
-                >
-                {sentence.w.map((word, wIdx) => {
-                  const wordKey = `${pIdx}-${sIdx}-${wIdx}`;
-                  const tappable = !isNumberOrPunctuation(word.t);
-                  return tappable ? (
-                    <Pressable
-                      key={wIdx}
-                      onPress={() => handleWordPress(word.t, word.p ?? null, wordKey, sentenceKey)}
-                      hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-                      style={({ pressed }) => [styles.wordPressable, pressed && styles.wordPressablePressed]}
-                    >
-                      <WordBlock
-                        segment={word}
-                        showPinyin={showPinyin}
-                        highlighted={highlightedWordKey === wordKey}
-                        fontSize={deferredFontSize}
-                        chineseFontStyle={chineseFontStyle}
-                        wordStyles={{
-                          wordBlock: styles.wordBlock,
-                          wordBlockHighlightBg: styles.wordBlockHighlightBg,
-                          pinyin: styles.pinyin,
-                          word: styles.word,
-                        }}
-                      />
-                    </Pressable>
-                  ) : (
-                    <View key={wIdx} style={styles.wordPressable}>
-                      <WordBlock
-                        segment={word}
-                        showPinyin={showPinyin}
-                        highlighted={false}
-                        fontSize={deferredFontSize}
-                        chineseFontStyle={chineseFontStyle}
-                        wordStyles={{
-                          wordBlock: styles.wordBlock,
-                          wordBlockHighlightBg: styles.wordBlockHighlightBg,
-                          pinyin: styles.pinyin,
-                          word: styles.word,
-                        }}
-                      />
-                    </View>
-                  );
-                })}
-                </View>
-              </View>
+              <MemoArticleSentenceRow
+                key={sentenceKey}
+                sentenceKey={sentenceKey}
+                pIdx={pIdx}
+                sIdx={sIdx}
+                words={sentence.w}
+                isSelected={isSelected}
+                isSentenceBookmarkedHere={isSentenceBookmarkedHere}
+                sentenceBookmarkEnabled={sentenceBookmarkEnabled}
+                highlightedWordIndex={highlightedWordIndex}
+                sentenceMarginBottom={spacing.sentenceMarginBottom}
+                wrapperRef={
+                  needsScrollTarget
+                    ? (node) => {
+                        if (isSelected) {
+                          selectedSentenceRef.current = node;
+                        }
+                        if (isSentenceBookmarkedHere) {
+                          bookmarkedSentenceRef.current = node;
+                        }
+                      }
+                    : undefined
+                }
+                onWordPress={handleWordPress}
+                onSentenceBookmarkPress={handleSentenceBookmarkPress}
+                showPinyin={showPinyin}
+                fontSize={deferredFontSize}
+                chineseFontStyle={chineseFontStyle}
+                wordStyles={wordStylesBundle}
+                accentColor={theme.accent}
+                bookmarkAccessibilityLabel={
+                  isSentenceBookmarkedHere
+                    ? t('removeSentenceBookmark')
+                    : t('bookmarkSentence')
+                }
+                rowStyles={sentenceRowStyles}
+              />
             );
           })}
         </View>
@@ -446,7 +808,17 @@ export function ArticleContent({
   );
 }
 
-function createStyles(theme: Theme) {
+function createStyles(theme: Theme, isDark: boolean) {
+  const bookmarkShadow =
+    Platform.OS === 'android'
+      ? { elevation: 6 }
+      : {
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.5 : 0.32,
+          shadowRadius: 3.5,
+        };
+
   return StyleSheet.create({
   container: {
     paddingVertical: 16,
@@ -460,12 +832,28 @@ function createStyles(theme: Theme) {
   },
   sentenceHighlightOverlay: {
     position: 'absolute',
+    zIndex: 0,
     top: -5,
     left: -10,
     right: -10,
     bottom: -5,
     backgroundColor: theme.highlightOverlay,
     borderRadius: 8,
+  },
+  sentenceBookmarkButton: {
+    position: 'absolute',
+    zIndex: 1,
+    top: -22,
+    right: -12,
+    padding: 2,
+    backgroundColor: 'transparent',
+    ...bookmarkShadow,
+  },
+  sentenceBookmarkButtonSaved: {
+    top: -17,
+  },
+  sentenceBookmarkButtonPressed: {
+    opacity: 0.65,
   },
   sentence: {
     flexDirection: 'row',
