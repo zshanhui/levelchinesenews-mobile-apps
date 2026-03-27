@@ -18,7 +18,9 @@ import { useFont } from '../FontContext';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
-import type { ParsedParagraph, WordSegment } from '../types';
+import type { ParsedParagraph, Sentence, WordSegment } from '../types';
+import { SentenceTranslatePanel } from './SentenceTranslatePanel';
+import { SentenceTranslateToggle } from './SentenceTranslateToggle';
 import { fetchDictEntryByWord } from '../useLocalDictService';
 
 const isWebLocalhost =
@@ -302,6 +304,10 @@ function SentenceHighlightOverlay({
   );
 }
 
+function sentenceFullText(sentence: Sentence): string {
+  return sentence.f;
+}
+
 /** Returns true if the segment should not be tappable (numbers, punctuation, whitespace) */
 function isNumberOrPunctuation(text: string): boolean {
   if (!text || !text.trim()) return true;
@@ -441,6 +447,8 @@ function scrollSentenceIntoScrollView(
 type ArticleSentenceRowStyles = {
   sentenceWrapper: object;
   sentenceHighlightOverlay: object;
+  sentenceTranslateButton: object;
+  sentenceTranslateButtonPressed: object;
   sentenceBookmarkButton: object;
   sentenceBookmarkButtonSaved: object;
   sentenceBookmarkButtonPressed: object;
@@ -462,12 +470,17 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   wrapperRef,
   onWordPress,
   onSentenceBookmarkPress,
+  sentenceChineseText,
+  sentenceTranslateExpanded,
+  onSentenceTranslatePress,
   showPinyin,
   fontSize,
   chineseFontStyle,
   wordStyles,
   accentColor,
+  textMutedColor,
   bookmarkAccessibilityLabel,
+  translateAccessibilityLabel,
   rowStyles,
 }: {
   sentenceKey: string;
@@ -482,6 +495,9 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   wrapperRef?: (node: View | null) => void;
   onWordPress: (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => void;
   onSentenceBookmarkPress?: (sentenceKey: string) => void;
+  sentenceChineseText: string;
+  sentenceTranslateExpanded: boolean;
+  onSentenceTranslatePress: () => void;
   showPinyin: boolean;
   fontSize: number;
   chineseFontStyle: { fontFamily?: string };
@@ -492,11 +508,15 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
     word: object;
   };
   accentColor: string;
+  textMutedColor: string;
   bookmarkAccessibilityLabel: string;
+  translateAccessibilityLabel: string;
   rowStyles: ArticleSentenceRowStyles;
 }) {
   const showBookmarkControl =
     sentenceBookmarkEnabled && (isSelected || isSentenceBookmarkedHere);
+
+  const showTranslateControl = isSelected;
 
   const wrapperStyle = useMemo(
     () => [
@@ -582,7 +602,21 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
             </View>
           );
         })}
+        {showTranslateControl ? (
+          <SentenceTranslateToggle
+            expanded={sentenceTranslateExpanded}
+            onPress={onSentenceTranslatePress}
+            accessibilityLabel={translateAccessibilityLabel}
+            accentColor={accentColor}
+            defaultColor={accentColor}
+            buttonStyle={rowStyles.sentenceTranslateButton}
+            buttonPressedStyle={rowStyles.sentenceTranslateButtonPressed}
+          />
+        ) : null}
       </View>
+      {isSelected && sentenceTranslateExpanded ? (
+        <SentenceTranslatePanel chineseText={sentenceChineseText} />
+      ) : null}
     </View>
   );
 });
@@ -608,6 +642,11 @@ export function ArticleContent({
   const spacing = LINE_SPACING[lineSpacing];
   const selectedSentenceRef = useRef<View | null>(null);
   const bookmarkedSentenceRef = useRef<View | null>(null);
+  const [sentenceTranslateExpanded, setSentenceTranslateExpanded] = useState(false);
+
+  useEffect(() => {
+    setSentenceTranslateExpanded(false);
+  }, [highlightedSentenceKey]);
 
   useEffect(() => {
     if (!highlightedSentenceKey) {
@@ -698,6 +737,10 @@ export function ArticleContent({
     [onSentenceBookmarkPress],
   );
 
+  const handleSentenceTranslatePress = useCallback(() => {
+    setSentenceTranslateExpanded((prev) => !prev);
+  }, []);
+
   const wordStylesBundle = useMemo(
     () => ({
       wordBlock: styles.wordBlock,
@@ -712,6 +755,8 @@ export function ArticleContent({
     (): ArticleSentenceRowStyles => ({
       sentenceWrapper: styles.sentenceWrapper,
       sentenceHighlightOverlay: styles.sentenceHighlightOverlay,
+      sentenceTranslateButton: styles.sentenceTranslateButton,
+      sentenceTranslateButtonPressed: styles.sentenceTranslateButtonPressed,
       sentenceBookmarkButton: styles.sentenceBookmarkButton,
       sentenceBookmarkButtonSaved: styles.sentenceBookmarkButtonSaved,
       sentenceBookmarkButtonPressed: styles.sentenceBookmarkButtonPressed,
@@ -722,6 +767,8 @@ export function ArticleContent({
     [
       styles.sentenceWrapper,
       styles.sentenceHighlightOverlay,
+      styles.sentenceTranslateButton,
+      styles.sentenceTranslateButtonPressed,
       styles.sentenceBookmarkButton,
       styles.sentenceBookmarkButtonSaved,
       styles.sentenceBookmarkButtonPressed,
@@ -788,15 +835,24 @@ export function ArticleContent({
                 }
                 onWordPress={handleWordPress}
                 onSentenceBookmarkPress={handleSentenceBookmarkPress}
+                sentenceChineseText={sentenceFullText(sentence)}
+                sentenceTranslateExpanded={isSelected && sentenceTranslateExpanded}
+                onSentenceTranslatePress={handleSentenceTranslatePress}
                 showPinyin={showPinyin}
                 fontSize={deferredFontSize}
                 chineseFontStyle={chineseFontStyle}
                 wordStyles={wordStylesBundle}
                 accentColor={theme.accent}
+                textMutedColor={theme.textSecondary}
                 bookmarkAccessibilityLabel={
                   isSentenceBookmarkedHere
                     ? t('removeSentenceBookmark')
                     : t('bookmarkSentence')
+                }
+                translateAccessibilityLabel={
+                  sentenceTranslateExpanded && isSelected
+                    ? 'Hide sentence translation'
+                    : 'Translate sentence'
                 }
                 rowStyles={sentenceRowStyles}
               />
@@ -819,6 +875,16 @@ function createStyles(theme: Theme, isDark: boolean) {
           shadowRadius: 3.5,
         };
 
+  const translateFabShadow =
+    Platform.OS === 'android'
+      ? { elevation: 2 }
+      : {
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.24 : 0.1,
+          shadowRadius: 3,
+        };
+
   return StyleSheet.create({
   container: {
     paddingVertical: 16,
@@ -839,6 +905,25 @@ function createStyles(theme: Theme, isDark: boolean) {
     bottom: -5,
     backgroundColor: theme.highlightOverlay,
     borderRadius: 8,
+  },
+  sentenceTranslateButton: {
+    marginLeft: 2,
+    alignSelf: 'flex-end',
+    marginTop: -10,
+    marginBottom: 2,
+    zIndex: 2,
+    width: 27,
+    height: 27,
+    borderRadius: 13.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.etchedBg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.border,
+    ...translateFabShadow,
+  },
+  sentenceTranslateButtonPressed: {
+    opacity: 0.65,
   },
   sentenceBookmarkButton: {
     position: 'absolute',

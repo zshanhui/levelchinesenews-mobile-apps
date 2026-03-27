@@ -35,7 +35,8 @@ export interface WordSegment {
 
 /** Sentence from parsed_content (API uses aliases f, w) */
 export interface Sentence {
-  f: string;  // full_text
+  /** Full sentence text */
+  f: string;
   w: WordSegment[];  // words
 }
 
