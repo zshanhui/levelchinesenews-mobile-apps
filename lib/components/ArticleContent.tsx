@@ -14,11 +14,13 @@ import {
   View,
 } from 'react-native';
 import type { ScrollView } from 'react-native';
+import type { NativeLanguage } from '../nativeLanguage';
 import { useFont } from '../FontContext';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
-import type { ParsedParagraph, Sentence, WordSegment } from '../types';
+import type { ArticleTranslationsResponse, ParsedParagraph, Sentence, WordSegment } from '../types';
+import { getCachedSentenceTranslationText } from '../useArticleTranslations';
 import { SentenceTranslatePanel } from './SentenceTranslatePanel';
 import { SentenceTranslateToggle } from './SentenceTranslateToggle';
 import { fetchDictEntryByWord } from '../useLocalDictService';
@@ -47,9 +49,13 @@ export interface ArticleContentProps {
   contentRef?: RefObject<View | null>;
   /** Native: show sentence bookmark on the selected sentence (web hides) */
   sentenceBookmarkEnabled?: boolean;
-  /** DB bookmark as "pIdx-sIdx", or null */
+  /** DB bookmark as `paragraph:sentence` (matches API sentence keys), or null */
   bookmarkedSentenceKey?: string | null;
   onSentenceBookmarkPress?: (sentenceKey: string) => void;
+  /** Cached sentence translations (GET /translations); used for translate icon color */
+  articleTranslations?: ArticleTranslationsResponse | null;
+  /** Must match the `lang` used when fetching `articleTranslations` */
+  translationLang?: NativeLanguage;
 }
 
 const WordBlock = memo(function WordBlock({
@@ -473,6 +479,8 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   sentenceChineseText,
   sentenceTranslateExpanded,
   onSentenceTranslatePress,
+  translateIconColor,
+  sentenceCachedTranslation,
   showPinyin,
   fontSize,
   chineseFontStyle,
@@ -498,6 +506,8 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   sentenceChineseText: string;
   sentenceTranslateExpanded: boolean;
   onSentenceTranslatePress: () => void;
+  translateIconColor: string;
+  sentenceCachedTranslation: string | null;
   showPinyin: boolean;
   fontSize: number;
   chineseFontStyle: { fontFamily?: string };
@@ -567,7 +577,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       ) : null}
       <View style={sentenceInnerStyle}>
         {words.map((word, wIdx) => {
-          const wordKey = `${pIdx}-${sIdx}-${wIdx}`;
+          const wordKey = `${pIdx}:${sIdx}:${wIdx}`;
           const tappable = !isNumberOrPunctuation(word.t);
           const highlighted = highlightedWordIndex === wIdx;
           return tappable ? (
@@ -607,15 +617,17 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
             expanded={sentenceTranslateExpanded}
             onPress={onSentenceTranslatePress}
             accessibilityLabel={translateAccessibilityLabel}
-            accentColor={accentColor}
-            defaultColor={accentColor}
+            iconColor={translateIconColor}
             buttonStyle={rowStyles.sentenceTranslateButton}
             buttonPressedStyle={rowStyles.sentenceTranslateButtonPressed}
           />
         ) : null}
       </View>
       {isSelected && sentenceTranslateExpanded ? (
-        <SentenceTranslatePanel chineseText={sentenceChineseText} />
+        <SentenceTranslatePanel
+          chineseText={sentenceChineseText}
+          translatedText={sentenceCachedTranslation}
+        />
       ) : null}
     </View>
   );
@@ -633,6 +645,8 @@ export function ArticleContent({
   sentenceBookmarkEnabled = false,
   bookmarkedSentenceKey = null,
   onSentenceBookmarkPress,
+  articleTranslations = null,
+  translationLang: translationLangProp,
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -780,11 +794,11 @@ export function ArticleContent({
 
   const highlightedWordLocation = useMemo(() => {
     if (!highlightedWordKey) return null;
-    const parts = highlightedWordKey.split('-');
+    const parts = highlightedWordKey.split(':');
     if (parts.length !== 3) return null;
     const wIdx = Number.parseInt(parts[2]!, 10);
     if (!Number.isFinite(wIdx)) return null;
-    return { sentenceKey: `${parts[0]}-${parts[1]}`, wordIndex: wIdx };
+    return { sentenceKey: `${parts[0]}:${parts[1]}`, wordIndex: wIdx };
   }, [highlightedWordKey]);
 
   if (!parsedContent?.length) {
@@ -799,7 +813,7 @@ export function ArticleContent({
           style={[styles.paragraph, { marginBottom: spacing.paragraphMarginBottom }]}
         >
           {paragraph.s.map((sentence, sIdx) => {
-            const sentenceKey = `${pIdx}-${sIdx}`;
+            const sentenceKey = `${pIdx}:${sIdx}`;
             const isSelected = highlightedSentenceKey === sentenceKey;
             const isSentenceBookmarkedHere =
               bookmarkedSentenceKey != null &&
@@ -809,6 +823,15 @@ export function ArticleContent({
               highlightedWordLocation?.sentenceKey === sentenceKey
                 ? highlightedWordLocation.wordIndex
                 : null;
+            const sentenceCachedTranslation = getCachedSentenceTranslationText(
+              articleTranslations,
+              translationLangProp,
+              sentenceKey,
+            );
+            const translationAvailable = sentenceCachedTranslation != null;
+            const translateIconColor = translationAvailable
+              ? theme.error
+              : theme.readIndicatorMuted;
             return (
               <MemoArticleSentenceRow
                 key={sentenceKey}
@@ -838,6 +861,8 @@ export function ArticleContent({
                 sentenceChineseText={sentenceFullText(sentence)}
                 sentenceTranslateExpanded={isSelected && sentenceTranslateExpanded}
                 onSentenceTranslatePress={handleSentenceTranslatePress}
+                translateIconColor={translateIconColor}
+                sentenceCachedTranslation={sentenceCachedTranslation}
                 showPinyin={showPinyin}
                 fontSize={deferredFontSize}
                 chineseFontStyle={chineseFontStyle}

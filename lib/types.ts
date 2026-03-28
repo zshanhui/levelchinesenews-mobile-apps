@@ -1,3 +1,5 @@
+import type { NativeLanguage } from './nativeLanguage';
+
 /** Article list item from GET /api/v1/articles */
 export interface ArticleListItem {
   id: string;
@@ -48,4 +50,38 @@ export interface ParsedParagraph {
 /** Article detail from GET /api/v1/articles/{id} (includes parsed_content) */
 export interface ArticleDetail extends ArticleListItem {
   parsed_content?: ParsedParagraph[] | null;
+}
+
+/** One cached sentence translation from GET /api/v1/translations */
+export interface StoredTranslationEntry {
+  translated_text: string;
+  source_text_hash: string;
+  provider: string;
+  created_at: string;
+}
+
+/** GET /api/v1/translations?article_id= — cached sentence translations per language */
+export interface ArticleTranslationsResponse {
+  article_id: string;
+  /** Map sentence key `paragraph_index:sentence_index` → target_lang → entry */
+  article_sentence: Record<string, Record<string, StoredTranslationEntry>>;
+}
+
+/** POST /api/v1/translations body discriminator; extend when adding request kinds. */
+export enum TranslationKind {
+  ArticleSentence = 'article_sentence',
+}
+
+/** POST /api/v1/translations */
+export interface TranslationResponse {
+  kind: TranslationKind;
+  article_id: string;
+  /** Set for `article_sentence`; null when another kind omits indices. */
+  paragraph_index: number | null;
+  /** Set for `article_sentence`; null when another kind omits indices. */
+  sentence_index: number | null;
+  target_lang: NativeLanguage;
+  translated_text: string;
+  cached: boolean;
+  provider?: string | null;
 }

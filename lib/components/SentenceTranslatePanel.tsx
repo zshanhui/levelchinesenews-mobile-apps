@@ -2,9 +2,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useFont } from '../FontContext';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+
+/** Shown when no cached translation exists (layout / style preview). */
+const PLACEHOLDER_LOREM =
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.';
 
 type SentenceTranslatePanelProps = {
   /** Full sentence text — use when wiring translate backend */
@@ -17,11 +20,10 @@ export function SentenceTranslatePanel({
   translatedText,
 }: SentenceTranslatePanelProps) {
   const { theme } = useTheme();
-  const { chineseFontStyle, articleFontSize } = useFont();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const normalizedChineseText = chineseText.trim();
   const showPlaceholderText = !translatedText;
-  const displayText = translatedText ?? normalizedChineseText;
+  const displayText = translatedText ?? PLACEHOLDER_LOREM;
 
   const openExternalTranslate = useCallback(() => {
     const q = encodeURIComponent(normalizedChineseText);
@@ -33,17 +35,10 @@ export function SentenceTranslatePanel({
       <Text
         style={
           showPlaceholderText
-            ? [
-                styles.placeholderTranslation,
-                chineseFontStyle,
-                {
-                  fontSize: articleFontSize,
-                  lineHeight: Math.round(articleFontSize * 1.4),
-                },
-              ]
+            ? [styles.placeholderTranslation, styles.placeholderLorem]
             : styles.translation
         }
-        selectable={showPlaceholderText}
+        selectable={showPlaceholderText || Boolean(translatedText?.trim())}
       >
         {displayText}
       </Text>
@@ -96,9 +91,14 @@ function createStyles(theme: Theme) {
       color: theme.textSecondary,
       lineHeight: 19,
     },
-    /** Source sentence standing in until backend translation is available */
+    /** Lorem stand-in until a cached translation is available */
     placeholderTranslation: {
       color: theme.textMuted,
+    },
+    placeholderLorem: {
+      fontSize: 13,
+      lineHeight: 19,
+      fontStyle: 'italic',
     },
   });
 }

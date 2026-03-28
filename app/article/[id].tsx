@@ -34,6 +34,7 @@ import { STUDY_PANEL_HEIGHT } from '../../lib/constants';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
+import { useArticleTranslations } from '../../lib/useArticleTranslations';
 
 function formatPublishedDate(iso: string | null): string {
   if (!iso) return '';
@@ -67,6 +68,11 @@ export default function ArticleDetailScreen() {
     usingCache,
     refetch,
   } = useArticle(id);
+
+  const { translations: articleTranslations, translationLang } = useArticleTranslations(
+    id,
+    Boolean(article),
+  );
 
   const navigation = useNavigation();
   const { theme } = useTheme();
@@ -133,7 +139,7 @@ export default function ArticleDetailScreen() {
         if (!cancelled) {
           setReadState(read);
           setBookmarkedSentenceKey(
-            bookmarkIdx ? `${bookmarkIdx[0]}-${bookmarkIdx[1]}` : null,
+            bookmarkIdx ? `${bookmarkIdx[0]}:${bookmarkIdx[1]}` : null,
           );
         }
       },
@@ -158,7 +164,7 @@ export default function ArticleDetailScreen() {
   const onSentenceBookmarkPress = useCallback(
     async (sentenceKey: string) => {
       if (!id || Platform.OS === 'web' || !article) return;
-      const parts = sentenceKey.split('-');
+      const parts = sentenceKey.split(':');
       if (parts.length !== 2) return;
       const p = Number(parts[0]);
       const s = Number(parts[1]);
@@ -343,6 +349,8 @@ export default function ArticleDetailScreen() {
                   sentenceBookmarkEnabled={Platform.OS !== 'web'}
                   bookmarkedSentenceKey={bookmarkedSentenceKey}
                   onSentenceBookmarkPress={onSentenceBookmarkPress}
+                  articleTranslations={articleTranslations}
+                  translationLang={translationLang}
                 />
               ) : (
                 <Text style={styles.emptyContent}>

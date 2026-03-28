@@ -8,8 +8,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { NativeLanguage } from '../FontContext';
-import { useFont } from '../FontContext';
+import { NativeLanguage } from '../nativeLanguage';
+import { useNativeLanguage } from '../NativeLanguageContext';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 
@@ -17,17 +17,17 @@ const NATIVE_LANGUAGE_OPTIONS: {
   value: NativeLanguage;
   labelKey: string;
 }[] = [
-  { value: 'en', labelKey: 'langEnglish' },
-  { value: 'zh', labelKey: 'langChinese' },
-  { value: 'es', labelKey: 'langSpanish' },
-  { value: 'ms', labelKey: 'langMalay' },
-  { value: 'ar', labelKey: 'langArabic' },
+  { value: NativeLanguage.EN, labelKey: 'langEnglish' },
+  { value: NativeLanguage.ZH, labelKey: 'langChinese' },
+  { value: NativeLanguage.ES, labelKey: 'langSpanish' },
+  { value: NativeLanguage.MS, labelKey: 'langMalay' },
+  { value: NativeLanguage.AR, labelKey: 'langArabic' },
 ];
 
 export function NativeLanguageSelector() {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const { nativeLanguage, setNativeLanguage } = useFont();
+  const { nativeLanguage, setNativeLanguage } = useNativeLanguage();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [modalVisible, setModalVisible] = useState(false);
 

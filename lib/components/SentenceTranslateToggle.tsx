@@ -5,8 +5,8 @@ type SentenceTranslateToggleProps = {
   expanded: boolean;
   onPress: () => void;
   accessibilityLabel: string;
-  accentColor: string;
-  defaultColor: string;
+  /** Red when a cached translation exists; faded grey when not. */
+  iconColor: string;
   buttonStyle: object;
   buttonPressedStyle: object;
 };
@@ -15,8 +15,7 @@ export function SentenceTranslateToggle({
   expanded,
   onPress,
   accessibilityLabel,
-  accentColor,
-  defaultColor,
+  iconColor,
   buttonStyle,
   buttonPressedStyle,
 }: SentenceTranslateToggleProps) {
@@ -40,7 +39,7 @@ export function SentenceTranslateToggle({
         <Ionicons
           name="language-outline"
           size={12.75}
-          color={expanded ? accentColor : defaultColor}
+          color={iconColor}
         />
       </View>
     </Pressable>

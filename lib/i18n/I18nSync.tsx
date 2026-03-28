@@ -1,23 +1,16 @@
 import { useEffect } from 'react';
-import { useFont } from '../FontContext';
+import { useNativeLanguage } from '../NativeLanguageContext';
 import { i18n } from './index';
 
 /**
  * Syncs i18n language with the native language from settings.
- * Renders nothing; must be used inside FontProvider.
+ * Renders nothing; must be used inside NativeLanguageProvider.
  */
 export function I18nSync() {
-  const { nativeLanguage } = useFont();
+  const { nativeLanguage } = useNativeLanguage();
 
   useEffect(() => {
-    const langMap: Record<typeof nativeLanguage, string> = {
-      en: 'en',
-      es: 'es',
-      ms: 'ms',
-      ar: 'ar',
-      zh: 'zh',
-    };
-    i18n.changeLanguage(langMap[nativeLanguage]);
+    i18n.changeLanguage(nativeLanguage);
   }, [nativeLanguage]);
 
   return null;
