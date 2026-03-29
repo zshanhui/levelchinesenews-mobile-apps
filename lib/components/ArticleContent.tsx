@@ -1,10 +1,19 @@
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import type { RefObject } from 'react';
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { i18n, useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
+  ActivityIndicator,
   Animated,
   InteractionManager,
   Platform,
@@ -14,13 +23,20 @@ import {
   View,
 } from 'react-native';
 import type { ScrollView } from 'react-native';
-import type { NativeLanguage } from '../nativeLanguage';
+import { NativeLanguage } from '../nativeLanguage';
 import { useFont } from '../FontContext';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
-import type { ArticleTranslationsResponse, ParsedParagraph, Sentence, WordSegment } from '../types';
+import type {
+  ArticleTranslationsResponse,
+  ParsedParagraph,
+  Sentence,
+  TranslationResponse,
+  WordSegment,
+} from '../types';
 import { getCachedSentenceTranslationText } from '../useArticleTranslations';
+import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
 import { SentenceTranslatePanel } from './SentenceTranslatePanel';
 import { SentenceTranslateToggle } from './SentenceTranslateToggle';
 import { fetchDictEntryByWord } from '../useLocalDictService';
@@ -56,6 +72,12 @@ export interface ArticleContentProps {
   articleTranslations?: ArticleTranslationsResponse | null;
   /** Must match the `lang` used when fetching `articleTranslations` */
   translationLang?: NativeLanguage;
+  /** Article UUID — required for on-demand POST /translations when cache misses */
+  articleId?: string;
+  /** Merge POST result into `articleTranslations` without refetching GET */
+  mergeTranslationFromPost?: (res: TranslationResponse) => void;
+  /** True while GET /translations is in flight — translate control shows a loader */
+  articleTranslationsLoading?: boolean;
 }
 
 const WordBlock = memo(function WordBlock({
@@ -386,15 +408,16 @@ const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon(
   const fillOpacity = progress;
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <View
-        style={{
-          width: BOOKMARK_ICON_BOX,
-          height: BOOKMARK_ICON_BOX,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+    <View style={{ opacity: 0.7 }}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <View
+          style={{
+            width: BOOKMARK_ICON_BOX,
+            height: BOOKMARK_ICON_BOX,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
         <Animated.View
           style={[
             StyleSheet.absoluteFillObject,
@@ -421,8 +444,9 @@ const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon(
         >
           <Ionicons name="bookmark" size={22} color={BOOKMARK_SAVED_COLOR} />
         </Animated.View>
-      </View>
-    </Animated.View>
+        </View>
+      </Animated.View>
+    </View>
   );
 });
 
@@ -454,6 +478,7 @@ type ArticleSentenceRowStyles = {
   sentenceWrapper: object;
   sentenceHighlightOverlay: object;
   sentenceTranslateButton: object;
+  sentenceTranslateButtonFace: object;
   sentenceTranslateButtonPressed: object;
   sentenceBookmarkButton: object;
   sentenceBookmarkButtonSaved: object;
@@ -490,6 +515,11 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   bookmarkAccessibilityLabel,
   translateAccessibilityLabel,
   rowStyles,
+  sentenceTranslateLoading,
+  articleTranslationsGetLoading,
+  articleTranslationsLoadingAccessibilityLabel,
+  sentenceTranslatePanelErrorMessage,
+  translationLang,
 }: {
   sentenceKey: string;
   pIdx: number;
@@ -508,6 +538,16 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   onSentenceTranslatePress: () => void;
   translateIconColor: string;
   sentenceCachedTranslation: string | null;
+  /** POST /translations in flight for this sentence — toggle shows spinner */
+  sentenceTranslateLoading: boolean;
+  /** GET /translations in flight — toggle shows spinner until cache is ready */
+  articleTranslationsGetLoading: boolean;
+  /** a11y label for GET translations loader (e.g. `t('loading')`) */
+  articleTranslationsLoadingAccessibilityLabel: string;
+  /** Last POST failure for this sentence (e.g. offline); shown in panel */
+  sentenceTranslatePanelErrorMessage: string | null;
+  /** Learner target language — Google Translate link `tl=` */
+  translationLang: NativeLanguage;
   showPinyin: boolean;
   fontSize: number;
   chineseFontStyle: { fontFamily?: string };
@@ -613,20 +653,46 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
           );
         })}
         {showTranslateControl ? (
-          <SentenceTranslateToggle
-            expanded={sentenceTranslateExpanded}
-            onPress={onSentenceTranslatePress}
-            accessibilityLabel={translateAccessibilityLabel}
-            iconColor={translateIconColor}
-            buttonStyle={rowStyles.sentenceTranslateButton}
-            buttonPressedStyle={rowStyles.sentenceTranslateButtonPressed}
-          />
+          sentenceTranslateLoading ? (
+            <View
+              style={rowStyles.sentenceTranslateButton}
+              accessibilityRole="progressbar"
+              accessibilityLabel="Translating"
+            >
+              <View style={rowStyles.sentenceTranslateButtonFace}>
+                <ActivityIndicator size="small" color={accentColor} />
+              </View>
+            </View>
+          ) : articleTranslationsGetLoading ? (
+            <View
+              style={rowStyles.sentenceTranslateButton}
+              accessibilityRole="progressbar"
+              accessibilityLabel={articleTranslationsLoadingAccessibilityLabel}
+            >
+              <View style={rowStyles.sentenceTranslateButtonFace}>
+                <ActivityIndicator size="small" color={accentColor} />
+              </View>
+            </View>
+          ) : (
+            <SentenceTranslateToggle
+              expanded={sentenceTranslateExpanded}
+              onPress={onSentenceTranslatePress}
+              accessibilityLabel={translateAccessibilityLabel}
+              iconColor={translateIconColor}
+              hitStyle={rowStyles.sentenceTranslateButton}
+              faceStyle={rowStyles.sentenceTranslateButtonFace}
+              facePressedStyle={rowStyles.sentenceTranslateButtonPressed}
+            />
+          )
         ) : null}
       </View>
       {isSelected && sentenceTranslateExpanded ? (
         <SentenceTranslatePanel
           chineseText={sentenceChineseText}
           translatedText={sentenceCachedTranslation}
+          isTranslating={sentenceTranslateLoading}
+          errorMessage={sentenceTranslatePanelErrorMessage}
+          targetLang={translationLang}
         />
       ) : null}
     </View>
@@ -647,6 +713,9 @@ export function ArticleContent({
   onSentenceBookmarkPress,
   articleTranslations = null,
   translationLang: translationLangProp,
+  articleId,
+  mergeTranslationFromPost,
+  articleTranslationsLoading = false,
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -656,11 +725,19 @@ export function ArticleContent({
   const spacing = LINE_SPACING[lineSpacing];
   const selectedSentenceRef = useRef<View | null>(null);
   const bookmarkedSentenceRef = useRef<View | null>(null);
-  const [sentenceTranslateExpanded, setSentenceTranslateExpanded] = useState(false);
-
-  useEffect(() => {
-    setSentenceTranslateExpanded(false);
-  }, [highlightedSentenceKey]);
+  const {
+    sentenceTranslateExpanded,
+    translatingSentenceKey,
+    sentenceTranslateError,
+    onSentenceTranslatePress: handleSentenceTranslatePress,
+  } = useSentenceTranslationOnExpand({
+    parsedContent,
+    highlightedSentenceKey,
+    articleTranslations,
+    translationLang: translationLangProp,
+    articleId,
+    mergeTranslationFromPost,
+  });
 
   useEffect(() => {
     if (!highlightedSentenceKey) {
@@ -751,10 +828,6 @@ export function ArticleContent({
     [onSentenceBookmarkPress],
   );
 
-  const handleSentenceTranslatePress = useCallback(() => {
-    setSentenceTranslateExpanded((prev) => !prev);
-  }, []);
-
   const wordStylesBundle = useMemo(
     () => ({
       wordBlock: styles.wordBlock,
@@ -770,6 +843,7 @@ export function ArticleContent({
       sentenceWrapper: styles.sentenceWrapper,
       sentenceHighlightOverlay: styles.sentenceHighlightOverlay,
       sentenceTranslateButton: styles.sentenceTranslateButton,
+      sentenceTranslateButtonFace: styles.sentenceTranslateButtonFace,
       sentenceTranslateButtonPressed: styles.sentenceTranslateButtonPressed,
       sentenceBookmarkButton: styles.sentenceBookmarkButton,
       sentenceBookmarkButtonSaved: styles.sentenceBookmarkButtonSaved,
@@ -782,6 +856,7 @@ export function ArticleContent({
       styles.sentenceWrapper,
       styles.sentenceHighlightOverlay,
       styles.sentenceTranslateButton,
+      styles.sentenceTranslateButtonFace,
       styles.sentenceTranslateButtonPressed,
       styles.sentenceBookmarkButton,
       styles.sentenceBookmarkButtonSaved,
@@ -879,6 +954,13 @@ export function ArticleContent({
                     ? 'Hide sentence translation'
                     : 'Translate sentence'
                 }
+                sentenceTranslateLoading={translatingSentenceKey === sentenceKey}
+                articleTranslationsGetLoading={articleTranslationsLoading}
+                articleTranslationsLoadingAccessibilityLabel={t('loading')}
+                sentenceTranslatePanelErrorMessage={
+                  isSelected ? sentenceTranslateError : null
+                }
+                translationLang={translationLangProp ?? NativeLanguage.EN}
                 rowStyles={sentenceRowStyles}
               />
             );
@@ -931,6 +1013,7 @@ function createStyles(theme: Theme, isDark: boolean) {
     backgroundColor: theme.highlightOverlay,
     borderRadius: 8,
   },
+  /** 27×27 touch target; visual circle is smaller (see `sentenceTranslateButtonFace`) */
   sentenceTranslateButton: {
     marginLeft: 2,
     alignSelf: 'flex-end',
@@ -939,7 +1022,14 @@ function createStyles(theme: Theme, isDark: boolean) {
     zIndex: 2,
     width: 27,
     height: 27,
-    borderRadius: 13.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  /** ~80% of hit area — visible FAB + icon */
+  sentenceTranslateButtonFace: {
+    width: 27 * 0.8,
+    height: 27 * 0.8,
+    borderRadius: (27 * 0.8) / 2,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.etchedBg,

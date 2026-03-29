@@ -21,6 +21,14 @@ const LEGACY_STORAGE_MAP: Record<string, NativeLanguage> = {
 /** All supported ISO codes (for storage validation, etc.). */
 export const NATIVE_LANGUAGE_CODES = new Set<string>(Object.values(NativeLanguage));
 
+/**
+ * Google Translate URL `tl=` code for the learner’s target language.
+ * Simplified Chinese uses `zh-CN` in Google’s UI; other codes match our API.
+ */
+export function googleTranslateTargetLangCode(lang: NativeLanguage): string {
+  return lang === NativeLanguage.ZH ? 'zh-CN' : lang;
+}
+
 /** Resolve AsyncStorage value to a known code, or null. */
 export function parseStoredNativeLanguage(stored: string | null): NativeLanguage | null {
   if (!stored) return null;

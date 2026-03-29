@@ -80,6 +80,7 @@ export const translations = {
     sentenceBookmarkSaved: 'Sentence bookmark saved',
     sentenceBookmarkRemoved: 'Sentence bookmark removed',
     sentenceBookmarkFailed: 'Could not update sentence bookmark',
+    aiTranslatedWithDeepseek: 'AI translated with DeepSeek',
 
     // Not found
     notFound: 'oops! not found',
@@ -141,6 +142,7 @@ export const translations = {
     requestTimedOut: 'Request timed out. Please try again.',
     unableToConnect:
       'Unable to connect. Please check your internet connection.',
+    networkUnstableOrOff: 'Your network connection is unstable or off.',
     serverError: 'Server error. Please try again later.',
     errorNotFound: 'Not found.',
     articleNotFound: 'Article not found',
@@ -226,6 +228,7 @@ export const translations = {
     sentenceBookmarkSaved: 'Frase guardada como marcador',
     sentenceBookmarkRemoved: 'Marcador de frase eliminado',
     sentenceBookmarkFailed: 'No se pudo actualizar el marcador de frase',
+    aiTranslatedWithDeepseek: 'Traducido con IA (DeepSeek)',
 
     // Not found
     notFound: '¡ups! no encontrado',
@@ -289,6 +292,8 @@ export const translations = {
     requestTimedOut: 'La solicitud expiró. Inténtalo de nuevo.',
     unableToConnect:
       'No se puede conectar. Comprueba tu conexión a internet.',
+    networkUnstableOrOff:
+      'Tu conexión de red es inestable o está desactivada.',
     serverError: 'Error del servidor. Inténtalo más tarde.',
     errorNotFound: 'No encontrado.',
     articleNotFound: 'Artículo no encontrado',
@@ -374,6 +379,7 @@ export const translations = {
     sentenceBookmarkSaved: 'Ayat ditandai',
     sentenceBookmarkRemoved: 'Penanda ayat dibuang',
     sentenceBookmarkFailed: 'Tidak dapat mengemas kini penanda ayat',
+    aiTranslatedWithDeepseek: 'Diterjemahkan AI dengan DeepSeek',
 
     // Not found
     notFound: 'ops! tidak dijumpai',
@@ -437,6 +443,8 @@ export const translations = {
     requestTimedOut: 'Permintaan tamat masa. Sila cuba lagi.',
     unableToConnect:
       'Tidak dapat bersambung. Sila semak sambungan internet anda.',
+    networkUnstableOrOff:
+      'Sambungan rangkaian anda tidak stabil atau terputus.',
     serverError: 'Ralat pelayan. Sila cuba lagi nanti.',
     errorNotFound: 'Tidak dijumpai.',
     articleNotFound: 'Artikel tidak dijumpai',
@@ -522,6 +530,7 @@ export const translations = {
     sentenceBookmarkSaved: 'تم حفظ إشارة الجملة',
     sentenceBookmarkRemoved: 'تمت إزالة إشارة الجملة',
     sentenceBookmarkFailed: 'تعذّر تحديث إشارة الجملة',
+    aiTranslatedWithDeepseek: 'ترجمة بالذكاء الاصطناعي عبر DeepSeek',
 
     // Not found
     notFound: 'عذراً! غير موجود',
@@ -585,6 +594,8 @@ export const translations = {
     requestTimedOut: 'انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.',
     unableToConnect:
       'تعذر الاتصال. يرجى التحقق من اتصالك بالإنترنت.',
+    networkUnstableOrOff:
+      'اتصالك بالشبكة غير مستقر أو غير متوفر.',
     serverError: 'خطأ في الخادم. يرجى المحاولة لاحقاً.',
     errorNotFound: 'غير موجود.',
     articleNotFound: 'المقال غير موجود',
@@ -668,6 +679,7 @@ export const translations = {
     sentenceBookmarkSaved: '已收藏该句',
     sentenceBookmarkRemoved: '已取消句子收藏',
     sentenceBookmarkFailed: '无法更新句子收藏',
+    aiTranslatedWithDeepseek: '由 DeepSeek AI 翻译',
 
     // Not found
     notFound: '未找到页面',
@@ -725,6 +737,7 @@ export const translations = {
     somethingWentWrong: '出错了，请重试。',
     requestTimedOut: '请求超时，请重试。',
     unableToConnect: '无法连接，请检查网络。',
+    networkUnstableOrOff: '网络连接不稳定或已断开。',
     serverError: '服务器错误，请稍后重试。',
     errorNotFound: '未找到。',
     articleNotFound: '文章未找到',

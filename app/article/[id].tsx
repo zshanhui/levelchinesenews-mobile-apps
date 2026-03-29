@@ -4,9 +4,9 @@ import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
-  ActivityIndicator,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +18,7 @@ import {
   ArticleContent,
   SentenceStudyPanel,
 } from '../../lib/components/ArticleContent';
+import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { resolveImageUrl } from '../../lib/api';
 import { showErrorFeedback, showSuccessFeedback } from '../../lib/showErrorFeedback';
 import {
@@ -35,6 +36,8 @@ import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
 import { useArticleTranslations } from '../../lib/useArticleTranslations';
+
+const ARTICLE_REFRESH_MIN_OVERLAY_MS = 500;
 
 function formatPublishedDate(iso: string | null): string {
   if (!iso) return '';
@@ -67,12 +70,16 @@ export default function ArticleDetailScreen() {
     error,
     usingCache,
     refetch,
+    refresh,
   } = useArticle(id);
 
-  const { translations: articleTranslations, translationLang } = useArticleTranslations(
-    id,
-    Boolean(article),
-  );
+  const {
+    translations: articleTranslations,
+    translationLang,
+    mergeTranslationFromPost,
+    loading: articleTranslationsLoading,
+    refetch: refetchArticleTranslations,
+  } = useArticleTranslations(id, Boolean(article));
 
   const navigation = useNavigation();
   const { theme } = useTheme();
@@ -93,6 +100,7 @@ export default function ArticleDetailScreen() {
   const [selectedWord, setSelectedWord] = useState<{ word: string; pinyin: string | null } | null>(null);
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
   const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
+  const [refreshOverlayVisible, setRefreshOverlayVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
   const bookmarkedSentenceKeyRef = useRef<string | null>(null);
@@ -112,6 +120,20 @@ export default function ArticleDetailScreen() {
     setHighlightedWordKey(null);
     setHighlightedSentenceKey(null);
   }, []);
+
+  const onRefreshArticle = useCallback(async () => {
+    setRefreshOverlayVisible(true);
+    const started = Date.now();
+    try {
+      await refresh();
+      await refetchArticleTranslations();
+    } finally {
+      const elapsed = Date.now() - started;
+      const remain = Math.max(0, ARTICLE_REFRESH_MIN_OVERLAY_MS - elapsed);
+      await new Promise<void>((resolve) => setTimeout(resolve, remain));
+      setRefreshOverlayVisible(false);
+    }
+  }, [refresh, refetchArticleTranslations]);
 
   const restoreSelectionFromParams = useCallback(
     (params: { word?: string; wordKey?: string; sentenceKey?: string }) => {
@@ -266,9 +288,8 @@ export default function ArticleDetailScreen() {
         }}
       />
       {loading && !article ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>{t('loading')}</Text>
+        <View style={styles.articleContainer}>
+          <ArticleSkeleton />
         </View>
       ) : error && !article ? (
         <View style={styles.center}>
@@ -288,6 +309,13 @@ export default function ArticleDetailScreen() {
               selectedWord ? { paddingBottom: 32 + STUDY_PANEL_HEIGHT } : null,
             ]}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshOverlayVisible}
+                onRefresh={onRefreshArticle}
+                tintColor={theme.accent}
+              />
+            }
           >
             <Pressable
               ref={contentRef}
@@ -351,6 +379,9 @@ export default function ArticleDetailScreen() {
                   onSentenceBookmarkPress={onSentenceBookmarkPress}
                   articleTranslations={articleTranslations}
                   translationLang={translationLang}
+                  articleTranslationsLoading={articleTranslationsLoading}
+                  articleId={id}
+                  mergeTranslationFromPost={mergeTranslationFromPost}
                 />
               ) : (
                 <Text style={styles.emptyContent}>
@@ -406,7 +437,7 @@ export default function ArticleDetailScreen() {
               )}
             </Pressable>
           </ScrollView>
-          {selectedWord ? (
+          {selectedWord && !refreshOverlayVisible ? (
             <View style={styles.studyPanelOverlay} pointerEvents="box-none">
               <SentenceStudyPanel
                 word={selectedWord.word}
@@ -416,6 +447,15 @@ export default function ArticleDetailScreen() {
                 highlightedSentenceKey={highlightedSentenceKey ?? ''}
                 bottomInset={insets.bottom}
               />
+            </View>
+          ) : null}
+          {refreshOverlayVisible ? (
+            <View
+              style={[StyleSheet.absoluteFillObject, styles.refreshOverlay]}
+              accessibilityViewIsModal
+              accessibilityLabel={t('loading')}
+            >
+              <ArticleSkeleton />
             </View>
           ) : null}
         </View>
@@ -432,11 +472,6 @@ function createStyles(theme: Theme) {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: theme.textSecondary,
   },
   errorText: {
     marginTop: 12,
@@ -458,6 +493,10 @@ function createStyles(theme: Theme) {
   },
   articleContainer: {
     flex: 1,
+  },
+  refreshOverlay: {
+    backgroundColor: theme.background,
+    zIndex: 10,
   },
   scroll: {
     flex: 1,

@@ -4,7 +4,41 @@ import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api
 import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
 import { NativeLanguage } from './nativeLanguage';
 import { useNativeLanguage } from './NativeLanguageContext';
-import type { ArticleTranslationsResponse } from './types';
+import type {
+  ArticleTranslationsResponse,
+  StoredTranslationEntry,
+  TranslationResponse,
+} from './types';
+
+/** Merge a POST /translations response into the GET-shaped cache (no full refetch). */
+export function mergeTranslationResponseIntoArticleTranslations(
+  prev: ArticleTranslationsResponse | null,
+  res: TranslationResponse,
+): ArticleTranslationsResponse {
+  if (res.paragraph_index == null || res.sentence_index == null) {
+    return prev ?? { article_id: res.article_id, article_sentence: {} };
+  }
+  const sentenceKey = `${res.paragraph_index}:${res.sentence_index}`;
+  const entry: StoredTranslationEntry = {
+    translated_text: res.translated_text,
+    /** POST body omits hash; GET merges use this for display-only rows. */
+    source_text_hash: '',
+    provider: res.provider ?? 'api',
+    created_at: new Date().toISOString(),
+  };
+  const base = prev ?? { article_id: res.article_id, article_sentence: {} };
+  const prevInner = base.article_sentence[sentenceKey] ?? {};
+  return {
+    article_id: res.article_id,
+    article_sentence: {
+      ...base.article_sentence,
+      [sentenceKey]: {
+        ...prevInner,
+        [res.target_lang]: entry,
+      },
+    },
+  };
+}
 
 /** Cached translation for the learner’s target language, or null. `sentenceKey` is `p:s` (API shape). */
 export function getCachedSentenceTranslationText(
@@ -79,6 +113,10 @@ export function useArticleTranslations(
     }
   }, [articleId, enabled, translationLang, t]);
 
+  const mergeTranslationFromPost = useCallback((res: TranslationResponse) => {
+    setTranslations((prev) => mergeTranslationResponseIntoArticleTranslations(prev, res));
+  }, []);
+
   useEffect(() => {
     void fetchTranslations();
   }, [fetchTranslations]);
@@ -89,5 +127,6 @@ export function useArticleTranslations(
     loading,
     error,
     refetch: fetchTranslations,
+    mergeTranslationFromPost,
   };
 }

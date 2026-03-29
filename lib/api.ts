@@ -51,6 +51,17 @@ export function getUserFriendlyErrorMessage(err: unknown, fallback?: string): st
   return fb;
 }
 
+/** True when the failure is likely offline, unstable network, or timeout (vs HTTP/API body errors). */
+export function isOfflineOrNetworkFailure(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  if (err instanceof Error && err.name === 'AbortError') return true;
+  if (lower.includes('abort')) return true;
+  if (err instanceof TypeError && lower.includes('fetch')) return true;
+  if (lower.includes('failed to fetch') || lower.includes('network request failed')) return true;
+  return false;
+}
+
 export function apiReadUrl(path: string, params?: Record<string, string | number | boolean>): string {
   const url = `${envConfig.apiBaseUrl}${API_PREFIX}${path}`;
   if (!params) return url;

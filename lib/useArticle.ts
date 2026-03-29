@@ -20,6 +20,7 @@ export function useArticle(id: string | undefined) {
   const { t } = useTranslation();
   const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usingCache, setUsingCache] = useState(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
@@ -80,12 +81,33 @@ export function useArticle(id: string | undefined) {
     fetchArticle();
   }, [fetchArticle]);
 
+  /** Pull-to-refresh: always fetch from network (same idea as article list refresh). */
+  const refresh = useCallback(async () => {
+    if (!id) return;
+    setRefreshing(true);
+    setError(null);
+    try {
+      const url = apiReadUrl(`/articles/${id}`);
+      const data = await fetchWithTimeout<ArticleDetail>(url, ARTICLE_REQUEST_TIMEOUT_MS);
+      setArticle(data);
+      setUsingCache(false);
+      setCachedAt(null);
+      saveArticleDetail(id, data).catch(() => {});
+    } catch (err) {
+      setError(getUserFriendlyErrorMessage(err, t('failedToRefresh')));
+    } finally {
+      setRefreshing(false);
+    }
+  }, [id, t]);
+
   return {
     article,
     loading,
+    refreshing,
     error,
     usingCache,
     cachedAt,
     refetch: fetchArticle,
+    refresh,
   };
 }
