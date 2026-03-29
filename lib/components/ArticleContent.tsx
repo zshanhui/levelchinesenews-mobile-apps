@@ -48,7 +48,6 @@ export interface ArticleContentProps {
   highlightedWordKey?: string | null;
   highlightedSentenceKey?: string | null;
   onWordPress?: (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => void;
-  onClosePanel?: () => void;
   scrollViewRef?: RefObject<ScrollView | null>;
   contentRef?: RefObject<View | null>;
   /** Native: show sentence bookmark on the selected sentence (web hides) */
@@ -493,7 +492,6 @@ export function ArticleContent({
   highlightedWordKey = null,
   highlightedSentenceKey = null,
   onWordPress,
-  onClosePanel,
   scrollViewRef,
   contentRef,
   sentenceBookmarkEnabled = false,
