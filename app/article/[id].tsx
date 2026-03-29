@@ -16,9 +16,9 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArticleContent,
-  SentenceStudyPanel,
 } from '../../lib/components/ArticleContent';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
+import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { resolveImageUrl } from '../../lib/api';
 import { showErrorFeedback, showSuccessFeedback } from '../../lib/showErrorFeedback';
 import {
