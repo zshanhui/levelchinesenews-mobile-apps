@@ -1,0 +1,45 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Learn Chinese by reading native-level news with learner tools." } =
+  Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav inner">
+        <a class="logo" href="/">LevelChineseNews</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/about">About</a>
+        </div>
+      </nav>
+    </header>
+    <slot />
+    <footer class="site-footer">
+      <div class="inner footer-inner">
+        <p class="copyright">© 2026 WuweiLabs</p>
+        <p class="footer-links">
+          <a href="#">Privacy</a>
+          <span aria-hidden="true"> · </span>
+          <a href="#">Contact</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

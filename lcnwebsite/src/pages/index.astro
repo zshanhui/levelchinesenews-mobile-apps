@@ -1,0 +1,120 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const expoUrl = "#"; // TODO: Expo download / project link
+const githubUrl = "#"; // TODO: public repo URL
+
+const features = [
+  {
+    title: "Real news, most content",
+    body: "We only support real news sites from genuine sources and current events.",
+  },
+  {
+    title: "Best Chinese reader for learners",
+    body: "Light/dark mode, adjustable font sizes and spacing—crafted for Chinese language learners.",
+  },
+  {
+    title: "Local dictionary",
+    body: "Built-in offline-first dictionary and Pleco integration support.",
+  },
+  {
+    title: "Pinyin and segmentation",
+    body: "Segmentation and pinyin support you can turn on or off.",
+  },
+  {
+    title: "Sentence-level translations",
+    body: "High-quality translations for every sentence in English, Spanish, Indonesian Malay, Russian, and Arabic.",
+  },
+  {
+    title: "Place bookmarks",
+    body: "Bookmark the exact sentence and return to where you left off in long articles.",
+  },
+  {
+    title: "Offline and privacy first",
+    body: "Built as a tool, not a platform—articles and most features work offline; your data stays on your device.",
+  },
+  {
+    title: "No ads, free and open",
+    body: "No ads; most features stay free. The app is open source.",
+  },
+];
+
+const planned = [
+  {
+    title: "Simplify articles (coming soon)",
+    body: "Use AI to simplify news articles 1× and 2× for easier reading around HSK4–6.",
+  },
+  {
+    title: "Anki integration (coming soon)",
+    body: "Export words with sentence context and definitions to Anki in one click.",
+  },
+  {
+    title: "Article vocab preview",
+    body: "Review new vocabulary—including people, places, and organizations—before reading.",
+  },
+  {
+    title: "High-quality audio",
+    body: "Read-along audio for selected articles, in progress.",
+  },
+];
+---
+
+<BaseLayout
+  title="LevelChineseNews — Learn Chinese by reading native-level content"
+  description="Real news, dictionary, pinyin, segmentation, sentence translations, offline-first. Android, iOS, and Web."
+>
+  <main class="inner">
+    <section class="hero">
+      <h1>Learn Chinese by reading native-level content</h1>
+      <p class="sub">
+        With built-in tools such as dictionary, pinyin, and AI simplify (coming soon).
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href={expoUrl}>Get the app (Expo)</a>
+        <a class="btn" href={githubUrl}>Source on GitHub</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="features-heading">
+      <h2 id="features-heading" class="section-title">Key features</h2>
+      <ul class="feature-list">
+        {
+          features.map((f) => (
+            <li>
+              <strong>{f.title}</strong>
+              <p>{f.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="planned" aria-labelledby="planned-heading">
+      <h2 id="planned-heading" class="section-title">Planned</h2>
+      <ul class="feature-list">
+        {
+          planned.map((f) => (
+            <li>
+              <strong>{f.title}</strong>
+              <p>{f.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-heading">
+      <h2 id="faq-heading" class="section-title">FAQ</h2>
+      <div class="faq-item">
+        <strong>What platforms are supported?</strong>
+        <p>LevelChineseNews is built for Android, iOS, and Web.</p>
+      </div>
+      <div class="faq-item">
+        <strong>What news sources are supported?</strong>
+        <p>
+          We source articles from major outlets such as Zaobao and Huaqiu, and we add more over time.
+        </p>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
