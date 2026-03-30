@@ -1,6 +1,8 @@
-import { defineConfig } from "astro/config";
+// @ts-check
+import { defineConfig } from 'astro/config';
 
-// Set to your production URL for canonical links / RSS later
+// https://astro.build/config
 export default defineConfig({
-  site: "https://learnchinese.news",
+  site: 'https://learnchinese.news',
+  output: 'static',
 });

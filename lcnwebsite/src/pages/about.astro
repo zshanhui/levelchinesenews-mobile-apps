@@ -1,32 +1,68 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout
-  title="About — LevelChineseNews"
-  description="Why we built LevelChineseNews: bridging intermediate reading and native-level Chinese news."
+  title={`About ${siteConfig.brandName}`}
+  description="How LearnChineseNews started, and why we are building better reading tools for intermediate Chinese learners."
 >
-  <main class="inner prose">
-    <h1>About</h1>
-    <p>
-      Hi, thanks for your interest in our little project. I started learning Chinese in 2021; the first
-      couple hundred vocabulary words came easily from a frequency list. I am heritage Chinese, so I had
-      exposure to spoken language, but reading required active study. I set out to read Chinese at a
-      native level within five years. After the basics, there is a real gap between native-level books
-      and articles and what intermediate (HSK4/5) learners can read without looking up every other
-      sentence.
-    </p>
-    <p>
-      I decided to build LevelChineseNews to bridge that gap—starting around Chinese New Year 2026. The
-      first version had pinyin and segmentation, a basic CEDICT, and Pleco integration. Simple tools made
-      even complex native-level articles feel approachable. Since then I have added sentence-level
-      translations, AI-assisted learning features, and more media sources so I can read what I already
-      care about.
-    </p>
-    <p>
-      We are preparing for internal beta with a few dozen users. If you are an intermediate Chinese
-      learner and want to try new tools while reading real, native content, I would love your feedback on
-      what to build next. Reach me at <a href="mailto:shanhui.dev@proton.me">shanhui.dev@proton.me</a>.
-    </p>
-  </main>
+  <section class="container about-wrap">
+    <h1>About {siteConfig.brandName}</h1>
+    <article class="card">
+      <p>
+        Hi, thanks for your interest in our little project. I started learning Chinese in 2021 and picking up the
+        first couple hundred vocab words was easy. I found a frequency list and learned the first few hundred words.
+        I am a heritage Chinese learner, so I always had some exposure to spoken Chinese, but I was never able to
+        read Chinese because literacy takes active study.
+      </p>
+      <p>
+        I decided to learn to read Chinese at a native level within five years, but after the basics there is a real
+        gap between native books and articles and what intermediate learners (HSK4 and HSK5) can read without looking
+        up every other sentence. So I decided to build LearnChineseNews around Chinese New Year 2026 to bridge that
+        gap. I built a simple version with pinyin and segmentation, then added a basic CEDICT and Pleco integration.
+      </p>
+      <p>
+        What I realized is that a few practical tools can make even complex native-level articles approachable.
+        Eventually I added sentence-level translations, AI-assisted study tools, and more media sources so I could
+        always find content I already wanted to read.
+      </p>
+      <p>
+        Now we are getting ready for internal beta testing with a few dozen users. If you are an intermediate Chinese
+        learner and want to try new tools for learning by reading real native content, I would love your feedback so
+        we can decide our next development path.
+      </p>
+      <p class="contact-line">
+        Reach me at
+        <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>
+      </p>
+    </article>
+  </section>
 </BaseLayout>
+
+<style>
+  .about-wrap {
+    max-width: 820px;
+  }
+
+  h1 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+  }
+
+  article p {
+    margin: 0 0 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  .contact-line {
+    margin-bottom: 0;
+    color: var(--text);
+  }
+
+  .contact-line a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+</style>

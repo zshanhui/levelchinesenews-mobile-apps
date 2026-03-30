@@ -1,14 +1,17 @@
 {
-  "name": "lcnwebsite",
+  "name": "learnchinesenews-site",
   "type": "module",
   "version": "0.0.1",
-  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.7.0"
+    "astro": "^6.1.1"
   }
 }
