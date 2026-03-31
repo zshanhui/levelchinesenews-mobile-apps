@@ -150,95 +150,107 @@ export function ArticleCard({
           ) : null}
         </View>
       ) : null}
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          imageUri ? styles.thumbnailWrapper : styles.thumbnailPlaceholder,
-          { width: THUMB_WIDTH, height: thumbHeight },
-          pressed && styles.thumbnailPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={
-          read === true
-            ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
-            : t('openArticle', { title: displayTitle })
-        }
-      >
-        {imageUri ? (
-          <Image
-            source={{ uri: imageUri }}
-            style={[styles.thumbnail, { width: THUMB_WIDTH, height: thumbHeight }]}
-            contentFit="cover"
-            onLoad={(e) => {
-              const { width, height } = e.source;
-              if (width && height) setAspectRatio(width / height);
-            }}
-            accessibilityIgnoresInvertColors
-          />
-        ) : (
-          <Ionicons name="newspaper-outline" size={32} color={theme.textMuted} />
-        )}
-      </Pressable>
-      <Pressable
-        style={styles.cardContent}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={
-          read === true
-            ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
-            : t('openArticle', { title: displayTitle })
-        }
-      >
-        <Text
-          style={[
-            styles.cardTitle,
-            showTranslated && styles.cardTitleTranslated,
-            index % 2 === 1 && styles.cardTitleAlt,
-            read === true && styles.cardTitleRead,
+      <View style={styles.cardTopRow}>
+        <Pressable
+          onPress={onPress}
+          style={({ pressed }) => [
+            imageUri ? styles.thumbnailWrapper : styles.thumbnailPlaceholder,
+            { width: THUMB_WIDTH, height: thumbHeight },
+            pressed && styles.thumbnailPressed,
           ]}
-          numberOfLines={showTranslated ? undefined : 2}
+          accessibilityRole="button"
+          accessibilityLabel={
+            read === true
+              ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
+              : t('openArticle', { title: displayTitle })
+          }
         >
-          {displayTitle}
-        </Text>
-        {(item.source || item.published_date) && (
-          <View style={styles.cardMeta}>
-            {item.source ? (
-              <View style={styles.cardSourceWrapper}>
-                <Text style={styles.cardSource}>
-                  {item.source}
-                </Text>
-              </View>
-            ) : null}
-            {item.published_date ? (
-              <Text style={styles.cardDate}>
-                {formatPublishedDate(item.published_date)}
-              </Text>
-            ) : null}
-          </View>
-        )}
-        {displaySubtitle ? (
-          fullSummary!.length > 100 ? (
-            <Pressable
-              onPress={() => setSummaryExpanded((prev) => !prev)}
-              style={styles.summaryPressable}
-            >
-              <Text
-                style={styles.cardSummary}
-                numberOfLines={summaryExpanded ? undefined : 2}
-              >
-                {displaySubtitle}
-              </Text>
-            </Pressable>
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              style={[styles.thumbnail, { width: THUMB_WIDTH, height: thumbHeight }]}
+              contentFit="cover"
+              onLoad={(e) => {
+                const { width, height } = e.source;
+                if (width && height) setAspectRatio(width / height);
+              }}
+              accessibilityIgnoresInvertColors
+            />
           ) : (
+            <Ionicons name="newspaper-outline" size={32} color={theme.textMuted} />
+          )}
+        </Pressable>
+        <Pressable
+          style={styles.cardContent}
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={
+            read === true
+              ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
+              : t('openArticle', { title: displayTitle })
+          }
+        >
+          <Text
+            style={[
+              styles.cardTitle,
+              showTranslated && styles.cardTitleTranslated,
+              index % 2 === 1 && styles.cardTitleAlt,
+              read === true && styles.cardTitleRead,
+            ]}
+            numberOfLines={showTranslated ? undefined : 2}
+          >
+            {displayTitle}
+          </Text>
+          {(item.source || item.published_date) && (
+            <View style={styles.cardMeta}>
+              {item.source ? (
+                <View style={styles.cardSourceWrapper}>
+                  <Text style={styles.cardSource}>
+                    {item.source}
+                  </Text>
+                </View>
+              ) : null}
+              {item.published_date ? (
+                <Text style={styles.cardDate}>
+                  {formatPublishedDate(item.published_date)}
+                </Text>
+              ) : null}
+            </View>
+          )}
+        </Pressable>
+      </View>
+      {displaySubtitle ? (
+        fullSummary!.length > 100 ? (
+          <Pressable
+            onPress={() => setSummaryExpanded((prev) => !prev)}
+            style={styles.summaryPressable}
+            accessibilityRole="button"
+            accessibilityLabel={
+              summaryExpanded ? 'Show less summary' : 'Show more summary'
+            }
+          >
             <Text
               style={styles.cardSummary}
-              numberOfLines={2}
+              numberOfLines={summaryExpanded ? undefined : 6}
             >
               {displaySubtitle}
             </Text>
-          )
-        ) : null}
-      </Pressable>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={styles.summaryPressable}
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={
+              read === true
+                ? `${t('openArticle', { title: displayTitle })}, ${t('markedReadStatus')}`
+                : t('openArticle', { title: displayTitle })
+            }
+          >
+            <Text style={styles.cardSummary}>{displaySubtitle}</Text>
+          </Pressable>
+        )
+      ) : null}
       <Pressable
         onPress={
           hasTranslation(item)
@@ -316,8 +328,8 @@ export function ArticleCard({
 function createStyles(theme: Theme) {
   return StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     backgroundColor: theme.surfaceElevated,
     borderRadius: 12,
     overflow: 'hidden',
@@ -326,6 +338,11 @@ function createStyles(theme: Theme) {
     borderWidth: 1,
     borderColor: theme.border,
     position: 'relative',
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%',
   },
   readCheckCorner: {
     position: 'absolute',
@@ -376,7 +393,7 @@ function createStyles(theme: Theme) {
     marginLeft: 12,
     marginRight: 12,
     paddingRight: '10%',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     minWidth: 0,
   },
   translateButton: {
@@ -399,7 +416,11 @@ function createStyles(theme: Theme) {
     textAlign: 'center',
   },
   summaryPressable: {
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
+    width: '100%',
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   cardTitle: {
     fontSize: 16,
@@ -440,7 +461,7 @@ function createStyles(theme: Theme) {
   cardSummary: {
     fontSize: 13,
     color: theme.textSecondary,
-    marginTop: 4,
+    width: '100%',
   },
   });
 }
