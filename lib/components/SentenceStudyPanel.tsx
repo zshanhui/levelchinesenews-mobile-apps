@@ -36,7 +36,7 @@ function buildPlecoUrl(
   const returnParams = new URLSearchParams({ word, wordKey, sentenceKey });
   const xSuccess = `lcn://article/${articleId}?${returnParams.toString()}`;
 
-  const useSearch = word.length >= 3;
+  const useSearch = word.length >= 2;
   const baseParams: Record<string, string> = {
     'x-source': i18n.t('plecoSource'),
     'x-success': xSuccess,
