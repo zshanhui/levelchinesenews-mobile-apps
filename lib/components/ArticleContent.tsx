@@ -10,7 +10,6 @@ import {
 import { useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
-  ActivityIndicator,
   Animated,
   InteractionManager,
   Platform,
@@ -123,10 +122,15 @@ function sentenceFullText(sentence: Sentence): string {
   return sentence.f;
 }
 
-/** Returns true if the segment should not be tappable (numbers, punctuation, whitespace) */
-function isNumberOrPunctuation(text: string): boolean {
+/**
+ * True when the segment should not open the study panel: whitespace, numbers, punctuation,
+ * and tokens that are only Latin script (English / loanwords), including apostrophes and hyphens.
+ */
+function isNonTappableSegment(text: string): boolean {
   if (!text || !text.trim()) return true;
-  return /^[\d０-９\s\p{P}\p{S}]+$/u.test(text);
+  const t = text.trim();
+  if (/^[\d０-９\s\p{P}\p{S}]+$/u.test(t)) return true;
+  return /^[\p{Script=Latin}]+(?:['’\-][\p{Script=Latin}]+)*$/u.test(t);
 }
 
 const LINE_SPACING = {
@@ -405,7 +409,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       <View style={sentenceInnerStyle}>
         {words.map((word, wIdx) => {
           const wordKey = `${pIdx}:${sIdx}:${wIdx}`;
-          const tappable = !isNumberOrPunctuation(word.t);
+          const tappable = !isNonTappableSegment(word.t);
           const highlighted = highlightedWordIndex === wIdx;
           return tappable ? (
             <Pressable
@@ -427,7 +431,13 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
               />
             </Pressable>
           ) : (
-            <View key={wIdx} style={rowStyles.wordPressable}>
+            <Pressable
+              key={wIdx}
+              style={rowStyles.wordPressable}
+              onPress={() => {}}
+              accessible={false}
+              android_ripple={null}
+            >
               <WordBlock
                 segment={word}
                 showPinyin={showPinyin}
@@ -436,41 +446,25 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
                 chineseFontStyle={chineseFontStyle}
                 wordStyles={wordStyles}
               />
-            </View>
+            </Pressable>
           );
         })}
         {showTranslateControl ? (
-          sentenceTranslateLoading ? (
-            <View
-              style={rowStyles.sentenceTranslateButton}
-              accessibilityRole="progressbar"
-              accessibilityLabel="Translating"
-            >
-              <View style={rowStyles.sentenceTranslateButtonFace}>
-                <ActivityIndicator size="small" color={accentColor} />
-              </View>
-            </View>
-          ) : articleTranslationsGetLoading ? (
-            <View
-              style={rowStyles.sentenceTranslateButton}
-              accessibilityRole="progressbar"
-              accessibilityLabel={articleTranslationsLoadingAccessibilityLabel}
-            >
-              <View style={rowStyles.sentenceTranslateButtonFace}>
-                <ActivityIndicator size="small" color={accentColor} />
-              </View>
-            </View>
-          ) : (
-            <SentenceTranslateToggle
-              expanded={sentenceTranslateExpanded}
-              onPress={onSentenceTranslatePress}
-              accessibilityLabel={translateAccessibilityLabel}
-              iconColor={translateIconColor}
-              hitStyle={rowStyles.sentenceTranslateButton}
-              faceStyle={rowStyles.sentenceTranslateButtonFace}
-              facePressedStyle={rowStyles.sentenceTranslateButtonPressed}
-            />
-          )
+          <SentenceTranslateToggle
+            expanded={sentenceTranslateExpanded}
+            onPress={onSentenceTranslatePress}
+            accessibilityLabel={
+              sentenceTranslateLoading || articleTranslationsGetLoading
+                ? articleTranslationsLoadingAccessibilityLabel
+                : translateAccessibilityLabel
+            }
+            iconColor={translateIconColor}
+            accentColor={accentColor}
+            loading={sentenceTranslateLoading || articleTranslationsGetLoading}
+            hitStyle={rowStyles.sentenceTranslateButton}
+            faceStyle={rowStyles.sentenceTranslateButtonFace}
+            facePressedStyle={rowStyles.sentenceTranslateButtonPressed}
+          />
         ) : null}
       </View>
       {isSelected && sentenceTranslateExpanded ? (
@@ -514,6 +508,7 @@ export function ArticleContent({
   const {
     sentenceTranslateExpanded,
     translatingSentenceKey,
+    translateSentenceHookLoading,
     sentenceTranslateError,
     onSentenceTranslatePress: handleSentenceTranslatePress,
   } = useSentenceTranslationOnExpand({
@@ -563,6 +558,8 @@ export function ArticleContent({
     contentRef,
   ]);
 
+  // Scroll to bookmarked sentence when there is no word selection. Use `parsedContent.length`
+  // only in deps — a new `parsed_content` array reference (e.g. after refetch) must not re-run this.
   useEffect(() => {
     if (
       !bookmarkedSentenceKey ||
@@ -595,7 +592,7 @@ export function ArticleContent({
   }, [
     bookmarkedSentenceKey,
     highlightedSentenceKey,
-    parsedContent,
+    parsedContent.length,
     scrollViewRef,
     contentRef,
   ]);
@@ -740,7 +737,10 @@ export function ArticleContent({
                     ? 'Hide sentence translation'
                     : 'Translate sentence'
                 }
-                sentenceTranslateLoading={translatingSentenceKey === sentenceKey}
+                sentenceTranslateLoading={
+                  isSelected &&
+                  (translatingSentenceKey === sentenceKey || translateSentenceHookLoading)
+                }
                 articleTranslationsGetLoading={articleTranslationsLoading}
                 articleTranslationsLoadingAccessibilityLabel={t('loading')}
                 sentenceTranslatePanelErrorMessage={

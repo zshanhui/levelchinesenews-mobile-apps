@@ -47,7 +47,7 @@ export function useSentenceTranslationOnExpand({
   const [sentenceTranslateError, setSentenceTranslateError] = useState<string | null>(null);
   /** Incremented when the user closes the panel or starts a new request — older POSTs must no-op. */
   const requestGenerationRef = useRef(0);
-  const { translateSentence } = useTranslateSentence();
+  const { translateSentence, loading: translateSentenceHookLoading } = useTranslateSentence();
 
   // New sentence selection → close translate panel and clear POST error
   useEffect(() => {
@@ -134,12 +134,16 @@ export function useSentenceTranslationOnExpand({
   ]);
 
   const onSentenceTranslatePress = useCallback(() => {
+    if (translatingSentenceKey !== null || translateSentenceHookLoading) {
+      return;
+    }
     setSentenceTranslateExpanded((prev) => !prev);
-  }, []);
+  }, [translatingSentenceKey, translateSentenceHookLoading]);
 
   return {
     sentenceTranslateExpanded,
     translatingSentenceKey,
+    translateSentenceHookLoading,
     sentenceTranslateError,
     onSentenceTranslatePress,
   };

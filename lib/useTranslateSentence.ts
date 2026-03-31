@@ -1,10 +1,13 @@
 import { useCallback, useState } from 'react';
 import { apiWriteUrl, envConfig, getUserFriendlyErrorMessage, postWithTimeout } from './api';
-import { POST_TIMEOUT_MS } from './constants';
+import { TRANSLATION_POST_TIMEOUT_MS } from './constants';
 import { useNativeLanguage } from './NativeLanguageContext';
 import { useTranslation } from './i18n';
 import { TranslationKind, type TranslationResponse } from './types';
 import { translationLangForNative } from './useArticleTranslations';
+
+/** Serialize POST `/translations` so only one request runs at a time (queued). */
+let translationPostLockTail = Promise.resolve();
 
 export type TranslateSentenceParams = {
   articleId: string;
@@ -31,7 +34,6 @@ export function useTranslateSentence() {
       if (!trimmed) {
         throw new Error('sourceText is empty');
       }
-      setLoading(true);
       setError(null);
       const url = apiWriteUrl('/translations');
       const headers: Record<string, string> = {};
@@ -47,18 +49,28 @@ export function useTranslateSentence() {
         target_lang: targetLang,
       };
       try {
-        return await postWithTimeout<TranslationResponse>(
-          url,
-          body,
-          POST_TIMEOUT_MS,
-          Object.keys(headers).length ? headers : undefined,
-        );
+        const prev = translationPostLockTail;
+        let releaseLock!: () => void;
+        translationPostLockTail = new Promise<void>((r) => {
+          releaseLock = r;
+        });
+        await prev;
+        setLoading(true);
+        try {
+          return await postWithTimeout<TranslationResponse>(
+            url,
+            body,
+            TRANSLATION_POST_TIMEOUT_MS,
+            Object.keys(headers).length ? headers : undefined,
+          );
+        } finally {
+          releaseLock();
+          setLoading(false);
+        }
       } catch (err) {
         const message = getUserFriendlyErrorMessage(err, t('somethingWentWrong'));
         setError(message);
         throw err instanceof Error ? err : new Error(message);
-      } finally {
-        setLoading(false);
       }
     },
     [targetLang, t],
