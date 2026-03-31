@@ -147,6 +147,9 @@ const BOOKMARK_SAVED_COLOR = '#c41e1a';
 
 const BOOKMARK_ICON_BOX = 24;
 
+/** Reserve horizontal space so wrapped text does not sit under the absolutely positioned translate FAB. */
+const SENTENCE_TRANSLATE_FAB_RESERVE = 12;
+
 const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon({
   saved,
   accentColor,
@@ -374,9 +377,12 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       rowStyles.sentence,
       {
         rowGap: sentenceMarginBottom,
+        ...(showTranslateControl
+          ? { paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE }
+          : {}),
       },
     ],
-    [rowStyles.sentence, sentenceMarginBottom],
+    [rowStyles.sentence, sentenceMarginBottom, showTranslateControl],
   );
 
   return (
@@ -799,12 +805,11 @@ function createStyles(theme: Theme, isDark: boolean) {
     backgroundColor: theme.highlightOverlay,
     borderRadius: 8,
   },
-  /** 27×27 touch target; visual circle is smaller (see `sentenceTranslateButtonFace`) */
+  /** 27×27 touch target; anchored to bottom-right of sentence row (does not participate in flex wrap). */
   sentenceTranslateButton: {
-    marginLeft: 2,
-    alignSelf: 'flex-end',
-    marginTop: -10,
-    marginBottom: 2,
+    position: 'absolute',
+    right: -5,
+    bottom: 0,
     zIndex: 2,
     width: 27,
     height: 27,
@@ -842,6 +847,7 @@ function createStyles(theme: Theme, isDark: boolean) {
     opacity: 0.65,
   },
   sentence: {
+    position: 'relative',
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-end',
