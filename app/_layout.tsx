@@ -1,10 +1,16 @@
+import {
+  navigationIntegration,
+  Sentry,
+  sentryEnabled,
+} from '../lib/sentryInit';
 import '../lib/i18n';
 import { FontProvider } from '../lib/FontContext';
 import { NativeLanguageProvider } from '../lib/NativeLanguageContext';
 import { I18nSync } from '../lib/i18n/I18nSync';
 import { ThemeProvider, useTheme } from '../lib/ThemeContext';
-import { Stack } from 'expo-router';
+import { Stack, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
 function RootContent() {
   const { isDark } = useTheme();
@@ -27,10 +33,20 @@ function RootContent() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
+  const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    if (sentryEnabled && navigationRef && navigationIntegration) {
+      navigationIntegration.registerNavigationContainer(navigationRef);
+    }
+  }, [navigationRef]);
+
   return (
     <ThemeProvider>
       <RootContent />
     </ThemeProvider>
   );
 }
+
+export default sentryEnabled ? Sentry.wrap(RootLayout) : RootLayout;

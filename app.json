@@ -39,6 +39,14 @@
           "enableFTS": true,
           "useSQLCipher": false
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "lcn-mobile-apps",
+          "organization": "wuweilabs"
+        }
       ]
     ],
     "extra": {

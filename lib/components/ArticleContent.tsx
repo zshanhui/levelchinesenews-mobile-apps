@@ -253,16 +253,24 @@ function scrollSentenceIntoScrollView(
   sentenceNode.measureLayout(
     contentRef,
     (_x, y, _w, height) => {
-      (scrollViewRef.current as unknown as View)?.measureInWindow(
-        (_sx, _sy, _sw, viewportHeight) => {
-          const visibleHeight = Math.max(100, viewportHeight - bottomReserve);
+      const scrollView = scrollViewRef.current as unknown as View | null;
+      if (!scrollView) return;
+      sentenceNode.measureInWindow((_wx, wy, _ww, _wh) => {
+        scrollView.measureInWindow((_sx, sy, _sw, sh) => {
+          const scrollY = y - (wy - sy);
+          const visibleHeight = Math.max(100, sh - bottomReserve);
+          const readableBottom = scrollY + visibleHeight;
+          const needsScroll = y < scrollY || y + height > readableBottom;
+          if (!needsScroll) {
+            return;
+          }
           const targetY = Math.max(0, y + height / 2 - visibleHeight / 2);
           scrollViewRef.current?.scrollTo({
             y: targetY,
             animated: true,
           });
-        },
-      );
+        });
+      });
     },
     () => {},
   );
@@ -377,12 +385,10 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       rowStyles.sentence,
       {
         rowGap: sentenceMarginBottom,
-        ...(showTranslateControl
-          ? { paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE }
-          : {}),
+        paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE,
       },
     ],
-    [rowStyles.sentence, sentenceMarginBottom, showTranslateControl],
+    [rowStyles.sentence, sentenceMarginBottom],
   );
 
   return (
@@ -834,9 +840,9 @@ function createStyles(theme: Theme, isDark: boolean) {
   sentenceBookmarkButton: {
     position: 'absolute',
     zIndex: 1,
-    top: -22,
-    right: -12,
-    padding: 2,
+    top: -16,
+    right: -5,
+    padding: 0,
     backgroundColor: 'transparent',
     ...bookmarkShadow,
   },
