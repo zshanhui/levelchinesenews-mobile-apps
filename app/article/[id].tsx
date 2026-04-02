@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
 import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,7 +41,46 @@ import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
 import { useArticleTranslations } from '../../lib/useArticleTranslations';
 
-const ARTICLE_REFRESH_MIN_OVERLAY_MS = 500;
+const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
+
+/** Space below the transparent header before the article title and metadata. */
+const ARTICLE_SCROLL_TOP_EXTRA = 75;
+
+/** Extra inset below the header for skeleton (list load + pull-to-refresh). */
+const SKELETON_TOP_EXTRA = 20;
+
+type ArticleSkeletonLayerStyles = {
+  refreshOverlay: ViewStyle;
+  skeletonFrame: ViewStyle;
+};
+
+/** Same layout for initial navigation load and pull-to-refresh overlay (absolute fill + inset). */
+function ArticleSkeletonLoadingLayer({
+  styles,
+  headerHeight,
+  accessibilityLabel,
+}: {
+  styles: ArticleSkeletonLayerStyles;
+  headerHeight: number;
+  accessibilityLabel: string;
+}) {
+  return (
+    <View
+      style={[StyleSheet.absoluteFillObject, styles.refreshOverlay]}
+      accessibilityViewIsModal
+      accessibilityLabel={accessibilityLabel}
+    >
+      <View
+        style={[
+          styles.skeletonFrame,
+          { paddingTop: headerHeight + SKELETON_TOP_EXTRA },
+        ]}
+      >
+        <ArticleSkeleton centerContent />
+      </View>
+    </View>
+  );
+}
 
 function formatPublishedDate(iso: string | null): string {
   if (!iso) return '';
@@ -84,6 +125,7 @@ export default function ArticleDetailScreen() {
   } = useArticleTranslations(id, Boolean(article));
 
   const navigation = useNavigation();
+  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -262,49 +304,75 @@ export default function ArticleDetailScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: article?.title ?? t('article'),
-      headerBackTitle: t('back'),
-      headerStyle: { backgroundColor: theme.surface },
+      title: '',
+      headerTransparent: true,
+      headerShadowVisible: false,
+      headerStyle: { backgroundColor: 'transparent' },
       headerTintColor: theme.text,
+      headerLeft: () => (
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.headerIconBackdrop,
+            pressed && styles.headerIconBackdropPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={t('back')}
+        >
+          <Ionicons
+            name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
+            size={24}
+            color={theme.text}
+          />
+        </Pressable>
+      ),
       headerRight: () => (
         <Pressable
           onPress={() => router.push('/settings')}
-          hitSlop={12}
-          style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.headerIconBackdrop,
+            pressed && styles.headerIconBackdropPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={t('openSettings')}
         >
-          <Ionicons name="settings-outline" size={24} color={theme.textMuted} />
+          <Ionicons name="settings-outline" size={22} color={theme.text} />
         </Pressable>
       ),
     });
   }, [
-    article?.title,
     navigation,
     t,
-    theme.surface,
     theme.text,
-    theme.textMuted,
-    styles.headerButton,
-    styles.headerButtonPressed,
+    styles.headerIconBackdrop,
+    styles.headerIconBackdropPressed,
   ]);
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: article?.title ?? t('article'),
-          headerBackTitle: t('back'),
-          headerStyle: { backgroundColor: theme.surface },
+          title: '',
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: 'transparent' },
           headerTintColor: theme.text,
         }}
       />
       {loading && !article ? (
         <View style={styles.articleContainer}>
-          <ArticleSkeleton />
+          <ArticleSkeletonLoadingLayer
+            styles={styles}
+            headerHeight={headerHeight}
+            accessibilityLabel={t('loading')}
+          />
         </View>
       ) : error && !article ? (
-        <View style={styles.center}>
+        <View
+          style={[styles.center, { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA }]}
+        >
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryButton} onPress={refetch}>
@@ -319,6 +387,7 @@ export default function ArticleDetailScreen() {
             style={styles.scroll}
             contentContainerStyle={[
               styles.scrollContent,
+              { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA },
               selectedWord ? { paddingBottom: 32 + STUDY_PANEL_HEIGHT } : null,
             ]}
             showsVerticalScrollIndicator={false}
@@ -462,13 +531,11 @@ export default function ArticleDetailScreen() {
             </View>
           ) : null}
           {refreshOverlayVisible ? (
-            <View
-              style={[StyleSheet.absoluteFillObject, styles.refreshOverlay]}
-              accessibilityViewIsModal
+            <ArticleSkeletonLoadingLayer
+              styles={styles}
+              headerHeight={headerHeight}
               accessibilityLabel={t('loading')}
-            >
-              <ArticleSkeleton />
-            </View>
+            />
           ) : null}
         </View>
       ) : null}
@@ -510,6 +577,10 @@ function createStyles(theme: Theme) {
   refreshOverlay: {
     backgroundColor: theme.background,
     zIndex: 10,
+  },
+  /** Same inset + flex shell for list→article load and pull-to-refresh overlay. */
+  skeletonFrame: {
+    flex: 1,
   },
   scroll: {
     flex: 1,
@@ -613,11 +684,31 @@ function createStyles(theme: Theme) {
     fontSize: 14,
     fontWeight: '500',
   },
-  headerButton: {
-    padding: 8,
+  headerIconBackdrop: {
+    width: 30,
+    height: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 2,
+    backgroundColor: `${theme.surfaceElevated}E8`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.18,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
   },
-  headerButtonPressed: {
-    opacity: 0.6,
+  headerIconBackdropPressed: {
+    opacity: 0.88,
   },
   studyPanelOverlay: {
     position: 'absolute',

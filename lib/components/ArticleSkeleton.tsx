@@ -1,8 +1,12 @@
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from '../i18n';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+
+const PULSE_MIN = 0.42;
+const PULSE_MAX = 1;
+const PULSE_DURATION_MS = 850;
 
 /** Width strings for body-line skeleton bars (mimics wrapped paragraph text). */
 const BODY_BLOCKS: string[][] = [
@@ -24,9 +28,16 @@ function createStyles(theme: Theme) {
     scrollContent: {
       paddingBottom: 32,
     },
+    scrollContentCentered: {
+      flexGrow: 1,
+      justifyContent: 'center',
+    },
     pad: {
       paddingHorizontal: 20,
       paddingTop: 16,
+    },
+    padWhenCentered: {
+      paddingTop: 0,
     },
     titleLine1: {
       ...bar(24),
@@ -75,23 +86,62 @@ function createStyles(theme: Theme) {
   });
 }
 
+type ArticleSkeletonProps = {
+  /**
+   * When true, vertically centers the skeleton block when it fits in the viewport
+   * (initial load and pull-to-refresh overlay).
+   */
+  centerContent?: boolean;
+};
+
 /**
  * Article-shaped skeleton (title, meta, hero block, body lines) for initial load and refresh.
  */
-export function ArticleSkeleton() {
+export function ArticleSkeleton({ centerContent = false }: ArticleSkeletonProps) {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const pulseOpacity = useRef(new Animated.Value(PULSE_MIN)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseOpacity, {
+          toValue: PULSE_MAX,
+          duration: PULSE_DURATION_MS,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseOpacity, {
+          toValue: PULSE_MIN,
+          duration: PULSE_DURATION_MS,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseOpacity]);
 
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[
+        styles.scrollContent,
+        centerContent && styles.scrollContentCentered,
+      ]}
       showsVerticalScrollIndicator={false}
       accessibilityRole="progressbar"
       accessibilityLabel={t('loading')}
     >
-      <View style={styles.pad}>
+      <Animated.View
+        style={[
+          styles.pad,
+          centerContent && styles.padWhenCentered,
+          { opacity: pulseOpacity },
+        ]}
+      >
         <View style={styles.titleLine1} />
         <View style={styles.titleLine2} />
         <View style={styles.metaRow}>
@@ -109,7 +159,7 @@ export function ArticleSkeleton() {
             ))}
           </View>
         ))}
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }
