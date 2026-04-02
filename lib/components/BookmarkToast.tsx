@@ -11,6 +11,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 
+/** Space below safe area for the toast (includes ~20px shift down from earlier layout). */
+const TOAST_TOP_BUFFER = 52;
+
 /** Positive px: bubble starts off-screen to the right, then slides in. */
 const SLIDE_IN_OFFSET = 160;
 const AUTO_DISMISS_MS = 2200;
@@ -54,7 +57,7 @@ export function BookmarkToast({ toast, onDismiss }: BookmarkToastProps) {
 
   return (
     <View
-      style={[styles.host, { paddingTop: insets.top + 8 }]}
+      style={[styles.host, { paddingTop: insets.top + TOAST_TOP_BUFFER }]}
       pointerEvents="none"
       accessibilityLiveRegion="polite"
       accessibilityRole="text"
