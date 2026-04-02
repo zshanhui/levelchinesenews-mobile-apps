@@ -139,6 +139,20 @@ const LINE_SPACING = {
   relaxed: { sentenceMarginBottom: 14, paragraphMarginBottom: 40 },
 };
 
+/** Matches `styles.pinyin` fontSize in WordBlock. */
+const WORD_PINYIN_FONT_SIZE = 11;
+
+/**
+ * Minimum height for a sentence row so the top-right bookmark control and bottom-right
+ * translate FAB (both absolutely positioned) stay vertically separated on short sentences.
+ * Uses ~2× one flex line of body text (pinyin + hanzi when pinyin is on, else hanzi only).
+ */
+function minSentenceRowHeight(fontSize: number, showPinyin: boolean): number {
+  const chineseLine = Math.ceil(fontSize * 1.28);
+  const pinyinLine = showPinyin ? Math.ceil(WORD_PINYIN_FONT_SIZE * 1.25) : 0;
+  return 2 * (pinyinLine + chineseLine);
+}
+
 const STUDY_PANEL_SCROLL_RESERVE = 140;
 const BOOKMARK_ONLY_SCROLL_RESERVE = 32;
 
@@ -370,6 +384,11 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
 
   const showTranslateControl = isSelected;
 
+  const sentenceMinHeight = useMemo(
+    () => minSentenceRowHeight(fontSize, showPinyin),
+    [fontSize, showPinyin],
+  );
+
   const wrapperStyle = useMemo(
     () => [
       rowStyles.sentenceWrapper,
@@ -386,9 +405,10 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       {
         rowGap: sentenceMarginBottom,
         paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE,
+        minHeight: sentenceMinHeight,
       },
     ],
-    [rowStyles.sentence, sentenceMarginBottom],
+    [rowStyles.sentence, sentenceMarginBottom, sentenceMinHeight],
   );
 
   return (
@@ -520,7 +540,6 @@ export function ArticleContent({
   const {
     sentenceTranslateExpanded,
     translatingSentenceKey,
-    translateSentenceHookLoading,
     sentenceTranslateError,
     onSentenceTranslatePress: handleSentenceTranslatePress,
   } = useSentenceTranslationOnExpand({
@@ -750,8 +769,7 @@ export function ArticleContent({
                     : 'Translate sentence'
                 }
                 sentenceTranslateLoading={
-                  isSelected &&
-                  (translatingSentenceKey === sentenceKey || translateSentenceHookLoading)
+                  isSelected && translatingSentenceKey === sentenceKey
                 }
                 articleTranslationsGetLoading={articleTranslationsLoading}
                 articleTranslationsLoadingAccessibilityLabel={t('loading')}

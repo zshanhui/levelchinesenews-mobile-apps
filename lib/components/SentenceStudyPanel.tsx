@@ -252,7 +252,7 @@ export function SentenceStudyPanel({
   );
 }
 
-function createStyles(theme: Theme, _isDark: boolean) {
+function createStyles(theme: Theme, isDark: boolean) {
   return StyleSheet.create({
     panel: {
       backgroundColor: theme.surface,
@@ -297,8 +297,8 @@ function createStyles(theme: Theme, _isDark: boolean) {
     },
     panelWord: {
       fontSize: 22,
-      color: '#6a0000',
       fontWeight: '700',
+      color: isDark ? theme.text : theme.accent,
     },
     panelDefinition: {
       paddingTop: 8,

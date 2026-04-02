@@ -14,13 +14,15 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArticleContent } from '../../lib/components/ArticleContent';
 import {
-  ArticleContent,
-} from '../../lib/components/ArticleContent';
+  BookmarkToast,
+  type BookmarkToastState,
+} from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { resolveImageUrl } from '../../lib/api';
-import { showErrorFeedback, showSuccessFeedback } from '../../lib/showErrorFeedback';
+import { showErrorFeedback } from '../../lib/showErrorFeedback';
 import {
   articleDetailToListItem,
   clearSentenceBookmark,
@@ -93,6 +95,10 @@ export default function ArticleDetailScreen() {
     return null;
   };
   const insets = useSafeAreaInsets();
+  const [bookmarkToast, setBookmarkToast] = useState<BookmarkToastState | null>(
+    null,
+  );
+  const dismissBookmarkToast = useCallback(() => setBookmarkToast(null), []);
   const [bookmarkedSentenceKey, setBookmarkedSentenceKey] = useState<
     string | null
   >(null);
@@ -195,7 +201,10 @@ export default function ArticleDetailScreen() {
         if (bookmarkedSentenceKeyRef.current === sentenceKey) {
           await clearSentenceBookmark(id);
           setBookmarkedSentenceKey(null);
-          showSuccessFeedback(t('sentenceBookmarkRemoved'));
+          setBookmarkToast((prev) => ({
+            message: 'bookmark removed',
+            key: (prev?.key ?? 0) + 1,
+          }));
         } else {
           const display = computeSentenceBookmarkDisplay(
             article.parsed_content,
@@ -208,7 +217,10 @@ export default function ArticleDetailScreen() {
             display,
           );
           setBookmarkedSentenceKey(sentenceKey);
-          showSuccessFeedback(t('sentenceBookmarkSaved'));
+          setBookmarkToast((prev) => ({
+            message: 'bookmark saved',
+            key: (prev?.key ?? 0) + 1,
+          }));
         }
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
@@ -301,6 +313,7 @@ export default function ArticleDetailScreen() {
         </View>
       ) : article ? (
         <View style={styles.articleContainer}>
+          <BookmarkToast toast={bookmarkToast} onDismiss={dismissBookmarkToast} />
           <ScrollView
             ref={scrollViewRef}
             style={styles.scroll}
@@ -371,7 +384,6 @@ export default function ArticleDetailScreen() {
                   highlightedWordKey={highlightedWordKey}
                   highlightedSentenceKey={highlightedSentenceKey}
                   onWordPress={onWordPress}
-                  onClosePanel={onClosePanel}
                   scrollViewRef={scrollViewRef}
                   contentRef={contentRef}
                   sentenceBookmarkEnabled={Platform.OS !== 'web'}
@@ -493,6 +505,7 @@ function createStyles(theme: Theme) {
   },
   articleContainer: {
     flex: 1,
+    position: 'relative',
   },
   refreshOverlay: {
     backgroundColor: theme.background,

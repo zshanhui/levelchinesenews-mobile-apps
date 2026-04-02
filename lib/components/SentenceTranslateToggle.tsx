@@ -35,7 +35,10 @@ export function SentenceTranslateToggle({
   return (
     <Pressable
       style={hitStyle}
-      onPress={onPress}
+      onPress={() => {
+        if (loading) return;
+        onPress();
+      }}
       disabled={loading}
       hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
       accessibilityRole={loading ? 'progressbar' : 'button'}

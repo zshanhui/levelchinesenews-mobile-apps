@@ -39,7 +39,6 @@ export function useTranslateSentence() {
   const { t } = useTranslation();
   const { nativeLanguage } = useNativeLanguage();
   const targetLang = translationLangForNative(nativeLanguage);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const translateSentence = useCallback(
@@ -69,7 +68,6 @@ export function useTranslateSentence() {
           releaseLock = r;
         });
         await prev;
-        setLoading(true);
         try {
           return await postWithTimeout<TranslationResponse>(
             url,
@@ -79,7 +77,6 @@ export function useTranslateSentence() {
           );
         } finally {
           releaseLock();
-          setLoading(false);
         }
       } catch (err) {
         const message = getUserFriendlyErrorMessage(err, t('somethingWentWrong'));
@@ -111,7 +108,6 @@ export function useTranslateSentence() {
   return {
     translateSentence,
     targetLang,
-    loading,
     error,
     clearError,
   };

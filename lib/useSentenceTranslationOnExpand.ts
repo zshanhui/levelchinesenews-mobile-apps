@@ -30,8 +30,9 @@ export type UseSentenceTranslationOnExpandParams = {
 };
 
 /**
- * Sentence translate panel open state + POST /translations on cache miss when expanded,
- * with stale-request guards and `translatingSentenceKey` for row-level loading UI.
+ * Sentence translate panel open state + POST /translations on cache miss when expanded.
+ * Successful POST responses always merge into the article translation cache (even if the user
+ * navigated away) so the toggle reflects cached translations. Errors use a stale-request guard.
  */
 export function useSentenceTranslationOnExpand({
   parsedContent,
@@ -47,7 +48,7 @@ export function useSentenceTranslationOnExpand({
   const [sentenceTranslateError, setSentenceTranslateError] = useState<string | null>(null);
   /** Incremented when the user closes the panel or starts a new request — older POSTs must no-op. */
   const requestGenerationRef = useRef(0);
-  const { translateSentence, loading: translateSentenceHookLoading } = useTranslateSentence();
+  const { translateSentence } = useTranslateSentence();
 
   // New sentence selection → close translate panel and clear POST error
   useEffect(() => {
@@ -105,7 +106,6 @@ export function useSentenceTranslationOnExpand({
           sentenceIndex,
           sourceText: sentenceSourceText(sentence),
         });
-        if (!stillCurrent()) return;
         merge(res);
       } catch (err) {
         if (!stillCurrent()) return;
@@ -134,16 +134,18 @@ export function useSentenceTranslationOnExpand({
   ]);
 
   const onSentenceTranslatePress = useCallback(() => {
-    if (translatingSentenceKey !== null || translateSentenceHookLoading) {
+    if (
+      translatingSentenceKey !== null &&
+      translatingSentenceKey === highlightedSentenceKey
+    ) {
       return;
     }
     setSentenceTranslateExpanded((prev) => !prev);
-  }, [translatingSentenceKey, translateSentenceHookLoading]);
+  }, [translatingSentenceKey, highlightedSentenceKey]);
 
   return {
     sentenceTranslateExpanded,
     translatingSentenceKey,
-    translateSentenceHookLoading,
     sentenceTranslateError,
     onSentenceTranslatePress,
   };
