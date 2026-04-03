@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "react-native-apps-lcn",
+    "name": "LevelChineseNews",
     "slug": "react-native-apps-lcn",
     "scheme": "lcn",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/lcnicon-cnflag/ios/1024.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/lcnicons/android/512.png",
         "backgroundColor": "#f5f0e8"
       },
       "edgeToEdgeEnabled": true,
@@ -30,7 +30,7 @@
       "package": "com.wuweilabs.levelchinesenews"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/lcnicons/web/icon-192.png"
     },
     "plugins": [
       [

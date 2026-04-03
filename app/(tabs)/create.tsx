@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   View,
+  type TextInputKeyPressEvent,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
@@ -83,6 +84,9 @@ export default function CreateScreen() {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const urlInputRef = useRef<TextInput>(null);
+  const urlRef = useRef('');
+  const urlBackspaceClearPendingRef = useRef(false);
+  const urlBackspaceClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('parse');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -142,10 +146,62 @@ export default function CreateScreen() {
     },
     [t],
   );
-
+ 
   useEffect(() => {
     getDailyCount().then(setDailyCount);
   }, []);
+
+  useEffect(() => {
+    urlRef.current = url;
+  }, [url]);
+
+  useEffect(
+    () => () => {
+      if (urlBackspaceClearTimerRef.current) {
+        clearTimeout(urlBackspaceClearTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const scheduleUrlBackspacePendingReset = useCallback(() => {
+    if (urlBackspaceClearTimerRef.current) {
+      clearTimeout(urlBackspaceClearTimerRef.current);
+    }
+    urlBackspaceClearTimerRef.current = setTimeout(() => {
+      urlBackspaceClearTimerRef.current = null;
+      urlBackspaceClearPendingRef.current = false;
+    }, 100);
+  }, []);
+
+  const handleUrlChangeText = useCallback((text: string) => {
+    if (urlBackspaceClearPendingRef.current) {
+      urlBackspaceClearPendingRef.current = false;
+      if (urlBackspaceClearTimerRef.current) {
+        clearTimeout(urlBackspaceClearTimerRef.current);
+        urlBackspaceClearTimerRef.current = null;
+      }
+      setUrl('');
+      return;
+    }
+    setUrl(text);
+  }, []);
+
+  const handleUrlKeyPress = useCallback(
+    (e: TextInputKeyPressEvent) => {
+      const key = e.nativeEvent.key;
+      if (
+        (key === 'Backspace' || key === '\b') &&
+        urlRef.current.length > 0
+      ) {
+        urlBackspaceClearPendingRef.current = true;
+        scheduleUrlBackspacePendingReset();
+        setUrl('');
+        e.preventDefault?.();
+      }
+    },
+    [scheduleUrlBackspacePendingReset],
+  );
 
   const runSavedArticlesLoadRef = useRef(runSavedArticlesLoad);
   runSavedArticlesLoadRef.current = runSavedArticlesLoad;
@@ -451,7 +507,8 @@ export default function CreateScreen() {
                       placeholder={t('urlPlaceholder')}
                       placeholderTextColor={theme.textMuted}
                       value={url}
-                      onChangeText={setUrl}
+                      onChangeText={handleUrlChangeText}
+                      onKeyPress={handleUrlKeyPress}
                       onFocus={() => setInputFocused(true)}
                       onBlur={() => setInputFocused(false)}
                       autoCapitalize="none"

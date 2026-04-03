@@ -1,13 +1,14 @@
 {
-  "name": "react-native-apps-lcn",
+  "name": "mobile-apps-levelchinesenews",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+    "eas:preview": "eas build --platform android --profile preview"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans-sc": "^0.4.2",
