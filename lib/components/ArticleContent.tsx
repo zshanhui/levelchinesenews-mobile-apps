@@ -301,6 +301,8 @@ type ArticleSentenceRowStyles = {
   sentenceBookmarkButtonPressed: object;
   sentence: object;
   wordPressable: object;
+  /** No margin between segments — used when pinyin is hidden so text reads continuously. */
+  wordPressableTight: object;
   wordPressablePressed: object;
 };
 
@@ -382,7 +384,9 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   const showBookmarkControl =
     sentenceBookmarkEnabled && (isSelected || isSentenceBookmarkedHere);
 
-  const showTranslateControl = isSelected;
+  /** Sentences with few segments are too short for sentence-level translate in the UI. */
+  const sentenceTranslateEligible = words.length > 5;
+  const showTranslateControl = isSelected && sentenceTranslateEligible;
 
   const sentenceMinHeight = useMemo(
     () => minSentenceRowHeight(fontSize, showPinyin),
@@ -404,11 +408,11 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       rowStyles.sentence,
       {
         rowGap: sentenceMarginBottom,
-        paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE,
+        paddingRight: showTranslateControl ? SENTENCE_TRANSLATE_FAB_RESERVE : 0,
         minHeight: sentenceMinHeight,
       },
     ],
-    [rowStyles.sentence, sentenceMarginBottom, sentenceMinHeight],
+    [rowStyles.sentence, sentenceMarginBottom, sentenceMinHeight, showTranslateControl],
   );
 
   return (
@@ -443,13 +447,16 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
           const wordKey = `${pIdx}:${sIdx}:${wIdx}`;
           const tappable = !isNonTappableSegment(word.t);
           const highlighted = highlightedWordIndex === wIdx;
+          const wordPressableLayout = showPinyin
+            ? rowStyles.wordPressable
+            : rowStyles.wordPressableTight;
           return tappable ? (
             <Pressable
               key={wIdx}
               onPress={() => onWordPress(word.t, word.p ?? null, wordKey, sentenceKey)}
               hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
               style={({ pressed }) => [
-                rowStyles.wordPressable,
+                wordPressableLayout,
                 pressed && rowStyles.wordPressablePressed,
               ]}
             >
@@ -465,7 +472,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
           ) : (
             <Pressable
               key={wIdx}
-              style={rowStyles.wordPressable}
+              style={wordPressableLayout}
               onPress={() => {}}
               accessible={false}
               android_ripple={null}
@@ -499,7 +506,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
           />
         ) : null}
       </View>
-      {isSelected && sentenceTranslateExpanded ? (
+      {isSelected && sentenceTranslateEligible && sentenceTranslateExpanded ? (
         <SentenceTranslatePanel
           chineseText={sentenceChineseText}
           translatedText={sentenceCachedTranslation}
@@ -664,6 +671,7 @@ export function ArticleContent({
       sentenceBookmarkButtonPressed: styles.sentenceBookmarkButtonPressed,
       sentence: styles.sentence,
       wordPressable: styles.wordPressable,
+      wordPressableTight: styles.wordPressableTight,
       wordPressablePressed: styles.wordPressablePressed,
     }),
     [
@@ -677,6 +685,7 @@ export function ArticleContent({
       styles.sentenceBookmarkButtonPressed,
       styles.sentence,
       styles.wordPressable,
+      styles.wordPressableTight,
       styles.wordPressablePressed,
     ],
   );
@@ -878,6 +887,9 @@ function createStyles(theme: Theme, isDark: boolean) {
   },
   wordPressable: {
     marginRight: 4,
+  },
+  wordPressableTight: {
+    marginRight: 0,
   },
   wordPressablePressed: {
     opacity: 0.7,
