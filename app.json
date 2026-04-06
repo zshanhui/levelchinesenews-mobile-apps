@@ -5,11 +5,11 @@
     "scheme": "lcn",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/lcnicon-cnflag/ios/1024.png",
+    "icon": "./assets/lcnicons-v4/ios/m1024.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/lcnicons-v4/ios/m1024.png",
       "resizeMode": "contain",
       "backgroundColor": "#f5f0e8"
     },
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/lcnicons/android/512.png",
+        "foregroundImage": "./assets/lcnicons-v4/android/512.png",
         "backgroundColor": "#f5f0e8"
       },
       "edgeToEdgeEnabled": true,
@@ -30,7 +30,7 @@
       "package": "com.wuweilabs.levelchinesenews"
     },
     "web": {
-      "favicon": "./assets/lcnicons/web/icon-192.png"
+      "favicon": "./assets/lcnicons-v4/web/icon-192.png"
     },
     "plugins": [
       [

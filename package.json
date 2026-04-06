@@ -8,12 +8,15 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
-    "eas:preview": "eas build --platform android --profile preview"
+    "eas:preview": "eas build --platform android --profile preview",
+    "eas:production": "eas build --platform android --profile production",
+    "eas:local": "eas build --platform android --profile preview --local"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans-sc": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/elements": "^2.9.5",
     "@sentry/react-native": "~7.2.0",
     "expo": "~54.0.33",
     "expo-constants": "^18.0.13",

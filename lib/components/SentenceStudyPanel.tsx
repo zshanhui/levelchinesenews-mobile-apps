@@ -16,6 +16,7 @@ const isWebLocalhost =
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 const showPlecoButton = Platform.OS !== 'web' || isWebLocalhost;
+const useOptimisticPlecoOpen = true;
 
 export type SentenceStudyPanelProps = {
   word: string;
@@ -103,32 +104,16 @@ export function SentenceStudyPanel({
   }, [word]);
 
   useEffect(() => {
-    let cancelled = false;
     if (!showPlecoButton) {
       setIsPlecoInstalled(false);
-      return () => {
-        cancelled = true;
-      };
+      return;
     }
-    const checkPlecoAvailability = async () => {
-      try {
-        const available = await Linking.canOpenURL('plecoapi://');
-        if (!cancelled) {
-          setIsPlecoInstalled(available);
-        }
-      } catch {
-        if (!cancelled) {
-          setIsPlecoInstalled(false);
-        }
-      }
-    };
-    void checkPlecoAvailability();
-    return () => {
-      cancelled = true;
+    if (useOptimisticPlecoOpen) {
+      setIsPlecoInstalled(true);
     };
   }, []);
 
-  const openInPleco = useCallback(() => {
+  const openInPleco = useCallback(async () => {
     const url = buildPlecoUrl(
       word,
       pinyin,
@@ -136,12 +121,12 @@ export function SentenceStudyPanel({
       highlightedWordKey,
       highlightedSentenceKey
     );
-    Linking.openURL(url);
+    try {
+      await Linking.openURL(url);
+    } catch {
+      await Linking.openURL('https://www.pleco.com?from=levelchinesenews.app');
+    }
   }, [word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey]);
-
-  const openPlecoWebsite = useCallback(() => {
-    Linking.openURL('https://www.pleco.com?from=levelchinesenews.app');
-  }, []);
 
   const openLocalDictSettings = useCallback(() => {
     router.push('/settings/localdict');
@@ -172,7 +157,9 @@ export function SentenceStudyPanel({
         <View style={styles.panelHeaderRight}>
           {showPlecoButton ? (
             <Pressable
-              onPress={isPlecoInstalled ? openInPleco : openPlecoWebsite}
+              onPress={() => {
+                void openInPleco();
+              }}
               style={({ pressed }) => [
                 styles.plecoButton,
                 !isPlecoInstalled ? styles.plecoWebsiteButton : null,
