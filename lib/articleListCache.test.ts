@@ -21,6 +21,7 @@ function makeItem(id: string, title = 'Article'): ArticleListItem {
     id,
     title,
     source: null,
+    word_count: null,
     source_url: null,
     main_image: null,
     published_date: null,

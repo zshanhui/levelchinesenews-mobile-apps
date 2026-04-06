@@ -2,11 +2,11 @@
  * Light parchment-inspired theme with dark bold red accents.
  */
 export const lightTheme = {
-  // Backgrounds - paper parchment tones
-  background: '#f5f0e8',
-  surface: '#faf8f4',
-  surfaceElevated: '#fffdf9',
-  border: '#e8e2d8',
+  // Backgrounds - paper parchment tones (lifted toward white vs older parchment)
+  background: '#faf7f0',
+  surface: '#fcfbf7',
+  surfaceElevated: '#ffffff',
+  border: '#ebe6dc',
 
   // Text
   text: '#2c2419',
@@ -26,9 +26,9 @@ export const lightTheme = {
   cardTitleAlt: '#1a1a1a',
 
   // Etched section (parchment recess)
-  etchedBg: '#ebe5dc',
-  etchedBorderLight: '#f0ebe2',
-  etchedBorderDark: '#ddd6cc',
+  etchedBg: '#f2ede6',
+  etchedBorderLight: '#f5f0e8',
+  etchedBorderDark: '#e5dfd4',
 
   // Highlights (sentence/word selection)
   highlightOverlay: 'rgba(139, 26, 26, 0.06)',

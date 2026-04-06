@@ -229,7 +229,7 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.background,
   },
   separator: {
-    height: 12,
+    height: 2,
   },
   emptyContainer: {
     flex: 1,

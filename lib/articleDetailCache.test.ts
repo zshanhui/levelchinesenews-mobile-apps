@@ -10,6 +10,7 @@ function makeArticleDetail(id: string, title = 'Article'): ArticleDetail {
     id,
     title,
     source: null,
+    word_count: null,
     source_url: null,
     main_image: null,
     published_date: null,

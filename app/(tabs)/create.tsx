@@ -911,7 +911,7 @@ function createStyles(theme: Theme) {
       paddingBottom: 24,
     },
     separator: {
-      height: 12,
+      height: 6,
     },
     emptyContainer: {
       flex: 1,

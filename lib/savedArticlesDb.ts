@@ -38,6 +38,10 @@ function parseArticleListItemJson(raw: string | null): ArticleListItem | null {
       id: o.id,
       title: typeof o.title === 'string' ? o.title : '',
       source: o.source ?? null,
+      word_count:
+        typeof o.word_count === 'number' && Number.isFinite(o.word_count)
+          ? o.word_count
+          : null,
       source_url: o.source_url ?? null,
       main_image: o.main_image ?? null,
       published_date: o.published_date ?? null,
@@ -244,6 +248,7 @@ export function articleDetailToListItem(article: ArticleDetail): ArticleListItem
     id: article.id,
     title: article.title,
     source: article.source,
+    word_count: article.word_count,
     source_url: article.source_url,
     main_image: article.main_image,
     published_date: article.published_date,

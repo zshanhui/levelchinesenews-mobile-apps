@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -42,6 +43,13 @@ function truncate(str: string, maxLen: number): string {
 const hasTranslation = (item: ArticleListItem) =>
   Boolean(item.title_translated_en && item.summary_generated_en);
 
+/** Match `SentenceTranslateToggle` / sentence row, then shrink 20% for the list card */
+const TRANSLATE_LIST_SCALE = 0.8;
+const TRANSLATE_FAB_HIT = 27 * TRANSLATE_LIST_SCALE;
+const TRANSLATE_FAB_FACE = TRANSLATE_FAB_HIT * 0.8;
+/** Same base as `SentenceTranslateToggle`, scaled for the list */
+const TRANSLATE_ICON_SIZE = 12.75 * 0.8 * TRANSLATE_LIST_SCALE;
+
 export function ArticleCard({
   item,
   onPress,
@@ -58,9 +66,9 @@ export function ArticleCard({
   /** Shown under read checkmark: bookmarked sentence index / total (my articles) */
   bookmarkSentencePosition?: { n: number; t: number };
 }) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
   const translatingRef = useRef(false);
@@ -107,8 +115,8 @@ export function ArticleCard({
         )
       : THUMB_WIDTH;
 
-  /** Match `card` padding — anchor translate to thumbnail row, not card center (avoids shift when summary expands). */
-  const CARD_PADDING = 12;
+  /** Match `card` paddingTop — anchor translate to thumbnail row, not card center (avoids shift when summary expands). */
+  const CARD_PADDING = 8;
   const translateFromThumbCenter =
     CARD_PADDING + thumbHeight / 2 - 13;
   /** Keep clear space under `readCheckCorner` (top 8, icon 22). */
@@ -201,18 +209,44 @@ export function ArticleCard({
           >
             {displayTitle}
           </Text>
-          {(item.source || item.published_date) && (
+          {(item.source ||
+            item.published_date ||
+            (item.word_count != null && item.word_count > 0)) && (
             <View style={styles.cardMeta}>
               {item.source ? (
                 <View style={styles.cardSourceWrapper}>
-                  <Text style={styles.cardSource}>
-                    {item.source}
-                  </Text>
+                  <Text style={styles.cardSource}>{item.source}</Text>
                 </View>
+              ) : null}
+              {item.source &&
+              (item.published_date ||
+                (item.word_count != null && item.word_count > 0)) ? (
+                <Text style={styles.metaDivider} accessible={false}>
+                  |
+                </Text>
               ) : null}
               {item.published_date ? (
                 <Text style={styles.cardDate}>
                   {formatPublishedDate(item.published_date)}
+                </Text>
+              ) : null}
+              {item.published_date &&
+              item.word_count != null &&
+              item.word_count > 0 ? (
+                <Text style={styles.metaDivider} accessible={false}>
+                  |
+                </Text>
+              ) : null}
+              {item.word_count != null && item.word_count > 0 ? (
+                <Text
+                  style={styles.cardWordCount}
+                  accessibilityLabel={t('articleWordCount', {
+                    count: item.word_count,
+                  })}
+                >
+                  {t('articleWordCount', {
+                    count: item.word_count,
+                  })}
                 </Text>
               ) : null}
             </View>
@@ -283,12 +317,8 @@ export function ArticleCard({
                 }
               : undefined
         }
-        hitSlop={8}
-        style={({ pressed }) => [
-          styles.translateButton,
-          { top: translateButtonTop },
-          hasTranslation(item) && pressed && styles.translateButtonPressed,
-        ]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={[styles.translateButtonHit, { top: translateButtonTop }]}
         accessibilityRole={hasTranslation(item) || (onRequestTranslation && !translating) ? 'button' : 'image'}
         accessibilityLabel={
           translating
@@ -300,32 +330,52 @@ export function ArticleCard({
               : t('requestTranslation')
         }
       >
-        {translating ? (
-          countdown !== null && countdown > 0 ? (
-            <Text style={styles.countdownText}>{countdown}</Text>
-          ) : (
-            <ActivityIndicator size="small" color={theme.accent} />
-          )
-        ) : (
-          <Ionicons
-            name="language-outline"
-            size={18}
-            color={
-              hasTranslation(item)
-                ? showTranslated
-                  ? theme.accent
-                  : theme.textMuted
-                : theme.textMuted
-            }
-            style={!hasTranslation(item) && styles.translateIconUnavailable}
-          />
+        {({ pressed }) => (
+          <View
+            style={[
+              styles.translateButtonFace,
+              hasTranslation(item) && pressed && !translating && styles.translateButtonFacePressed,
+              translating && styles.translateButtonFaceLoading,
+            ]}
+          >
+            {translating ? (
+              countdown !== null && countdown > 0 ? (
+                <Text style={styles.countdownText}>{countdown}</Text>
+              ) : (
+                <ActivityIndicator size="small" color={theme.accent} />
+              )
+            ) : (
+              <Ionicons
+                name="language-outline"
+                size={TRANSLATE_ICON_SIZE}
+                color={
+                  hasTranslation(item)
+                    ? showTranslated
+                      ? theme.accent
+                      : theme.textMuted
+                    : theme.textMuted
+                }
+                style={!hasTranslation(item) && styles.translateIconUnavailable}
+              />
+            )}
+          </View>
         )}
       </Pressable>
     </View>
   );
 }
 
-function createStyles(theme: Theme) {
+function createStyles(theme: Theme, isDark: boolean) {
+  const translateFabShadow =
+    Platform.OS === 'android'
+      ? { elevation: 2 }
+      : {
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.24 : 0.1,
+          shadowRadius: 3,
+        };
+
   return StyleSheet.create({
   card: {
     flexDirection: 'column',
@@ -333,7 +383,8 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.surfaceElevated,
     borderRadius: 12,
     overflow: 'hidden',
-    padding: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     minHeight: 96,
     borderWidth: 1,
     borderColor: theme.border,
@@ -396,30 +447,49 @@ function createStyles(theme: Theme) {
     justifyContent: 'flex-start',
     minWidth: 0,
   },
-  translateButton: {
+  translateButtonHit: {
     position: 'absolute',
     right: 8,
-    padding: 4,
     zIndex: 1,
+    width: TRANSLATE_FAB_HIT,
+    height: TRANSLATE_FAB_HIT,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  translateButtonPressed: {
-    opacity: 0.7,
+  translateButtonFace: {
+    width: TRANSLATE_FAB_FACE,
+    height: TRANSLATE_FAB_FACE,
+    borderRadius: TRANSLATE_FAB_FACE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.etchedBg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.border,
+    ...translateFabShadow,
+  },
+  translateButtonFacePressed: {
+    opacity: 0.65,
+  },
+  translateButtonFaceLoading: {
+    opacity: 0.85,
   },
   translateIconUnavailable: {
     opacity: 0.5,
   },
   countdownText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
     color: theme.accent,
-    minWidth: 18,
+    minWidth: 14,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
   summaryPressable: {
     alignSelf: 'stretch',
     width: '100%',
-    marginTop: 8,
-    paddingVertical: 10,
+    marginTop: 4,
+    paddingTop: 4,
+    paddingBottom: 8,
     paddingHorizontal: 12,
   },
   cardTitle: {
@@ -443,6 +513,12 @@ function createStyles(theme: Theme) {
     gap: 8,
     marginTop: 4,
   },
+  metaDivider: {
+    fontSize: 12,
+    color: theme.textMuted,
+    opacity: 0.55,
+    fontWeight: '300',
+  },
   cardSourceWrapper: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -457,6 +533,11 @@ function createStyles(theme: Theme) {
   cardDate: {
     fontSize: 12,
     color: theme.textMuted,
+  },
+  cardWordCount: {
+    fontSize: 12,
+    color: theme.textMuted,
+    fontVariant: ['tabular-nums'],
   },
   cardSummary: {
     fontSize: 13,

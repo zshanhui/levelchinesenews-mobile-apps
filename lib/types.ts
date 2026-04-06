@@ -5,6 +5,8 @@ export interface ArticleListItem {
   id: string;
   title: string;
   source: string | null;
+  /** Word count from API (e.g. Chinese word segments); null when unknown */
+  word_count: number | null;
   source_url: string | null;
   main_image: string | null;
   published_date: string | null;
