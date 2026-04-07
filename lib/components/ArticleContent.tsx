@@ -162,7 +162,7 @@ const BOOKMARK_SAVED_COLOR = '#c41e1a';
 const BOOKMARK_ICON_BOX = 24;
 
 /** Reserve horizontal space so wrapped text does not sit under the absolutely positioned translate FAB. */
-const SENTENCE_TRANSLATE_FAB_RESERVE = 12;
+const SENTENCE_TRANSLATE_FAB_RESERVE = 0;
 
 const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon({
   saved,
@@ -408,11 +408,11 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       rowStyles.sentence,
       {
         rowGap: sentenceMarginBottom,
-        paddingRight: showTranslateControl ? SENTENCE_TRANSLATE_FAB_RESERVE : 0,
+        paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE,
         minHeight: sentenceMinHeight,
       },
     ],
-    [rowStyles.sentence, sentenceMarginBottom, sentenceMinHeight, showTranslateControl],
+    [rowStyles.sentence, sentenceMarginBottom, sentenceMinHeight],
   );
 
   return (

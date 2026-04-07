@@ -14,6 +14,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { ArticleListFilterShelve } from '../../lib/components/ArticleListFilterShelve';
 import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import { getReadStatesForArticleIds } from '../../lib/savedArticlesDb';
@@ -28,6 +29,7 @@ export default function ArticlesScreen() {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const {
     items,
     loading,
@@ -48,6 +50,14 @@ export default function ArticlesScreen() {
   );
   const itemsRef = useRef(items);
   itemsRef.current = items;
+
+  const openFilterSheet = useCallback(() => {
+    setFilterSheetOpen(true);
+  }, []);
+
+  const closeFilterSheet = useCallback(() => {
+    setFilterSheetOpen(false);
+  }, []);
 
   const refreshReadStatesForCurrentItems = useCallback(async () => {
     if (Platform.OS === 'web') {
@@ -100,12 +110,32 @@ export default function ArticlesScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () =>
-        usingCache && cachedAt ? (
-          <CacheIndicator cachedAt={cachedAt} />
-        ) : null,
+      headerRight: () => (
+        <View style={styles.headerRightRow}>
+          {usingCache && cachedAt ? (
+            <CacheIndicator cachedAt={cachedAt} />
+          ) : null}
+          <Pressable
+            style={styles.filterHeaderButton}
+            onPress={openFilterSheet}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Open article filters"
+          >
+            <Ionicons name="filter-outline" size={19.2} color={theme.text} />
+          </Pressable>
+        </View>
+      ),
     });
-  }, [navigation, usingCache, cachedAt]);
+  }, [
+    navigation,
+    usingCache,
+    cachedAt,
+    openFilterSheet,
+    styles.filterHeaderButton,
+    styles.headerRightRow,
+    theme.text,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,6 +166,7 @@ export default function ArticlesScreen() {
   }
 
   return (
+    <>
     <FlatList
       style={styles.list}
       data={items}
@@ -182,11 +213,27 @@ export default function ArticlesScreen() {
       onEndReachedThreshold={0.4}
       showsVerticalScrollIndicator={false}
     />
+    <ArticleListFilterShelve
+      visible={filterSheetOpen}
+      onRequestClose={closeFilterSheet}
+    />
+    </>
   );
 }
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
+  headerRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginRight: 12,
+  },
+  filterHeaderButton: {
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   centerContainer: {
     flex: 1,
     backgroundColor: theme.background,
