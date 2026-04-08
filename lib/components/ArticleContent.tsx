@@ -160,6 +160,8 @@ const BOOKMARK_ONLY_SCROLL_RESERVE = 32;
 const BOOKMARK_SAVED_COLOR = '#c41e1a';
 
 const BOOKMARK_ICON_BOX = 24;
+const BOOKMARK_OUTLINE_ICON_SIZE = 22;
+const BOOKMARK_SAVED_ICON_SIZE = 20;
 
 /** Reserve horizontal space so wrapped text does not sit under the absolutely positioned translate FAB. */
 const SENTENCE_TRANSLATE_FAB_RESERVE = 0;
@@ -237,7 +239,11 @@ const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon(
           ]}
           pointerEvents="none"
         >
-          <Ionicons name="bookmark-outline" size={22} color={accentColor} />
+          <Ionicons
+            name="bookmark-outline"
+            size={BOOKMARK_OUTLINE_ICON_SIZE}
+            color={accentColor}
+          />
         </Animated.View>
         <Animated.View
           style={[
@@ -250,7 +256,11 @@ const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon(
           ]}
           pointerEvents="none"
         >
-          <Ionicons name="bookmark" size={22} color={BOOKMARK_SAVED_COLOR} />
+          <Ionicons
+            name="bookmark"
+            size={BOOKMARK_SAVED_ICON_SIZE}
+            color={BOOKMARK_SAVED_COLOR}
+          />
         </Animated.View>
         </View>
       </Animated.View>
@@ -841,7 +851,7 @@ function createStyles(theme: Theme, isDark: boolean) {
   /** 27×27 touch target; anchored to bottom-right of sentence row (does not participate in flex wrap). */
   sentenceTranslateButton: {
     position: 'absolute',
-    right: -5,
+    right: -10,
     bottom: 0,
     zIndex: 2,
     width: 27,
@@ -867,14 +877,14 @@ function createStyles(theme: Theme, isDark: boolean) {
   sentenceBookmarkButton: {
     position: 'absolute',
     zIndex: 1,
-    top: -16,
-    right: -5,
+    top: -22,
+    right: -10,
     padding: 0,
     backgroundColor: 'transparent',
     ...bookmarkShadow,
   },
   sentenceBookmarkButtonSaved: {
-    top: -17,
+    top: -19,
   },
   sentenceBookmarkButtonPressed: {
     opacity: 0.65,
