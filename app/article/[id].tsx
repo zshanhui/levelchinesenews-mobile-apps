@@ -24,6 +24,7 @@ import {
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { resolveImageUrl } from '../../lib/api';
+import { formatPublishedDate } from '../../lib/formatPublishedDate';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
 import {
   articleDetailToListItem,
@@ -80,19 +81,6 @@ function ArticleSkeletonLoadingLayer({
       </View>
     </View>
   );
-}
-
-function formatPublishedDate(iso: string | null): string {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return '';
-  }
 }
 
 export default function ArticleDetailScreen() {

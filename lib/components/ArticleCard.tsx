@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../i18n';
 import {
@@ -12,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { resolveImageUrl } from '../api';
+import { formatPublishedDate } from '../formatPublishedDate';
 import {
   THUMB_MAX_HEIGHT,
   THUMB_MIN_HEIGHT,
@@ -22,22 +24,17 @@ import type { ArticleListItem } from '../types';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 
-function formatPublishedDate(iso: string | null): string {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return '';
-  }
-}
-
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen).trim() + '…';
+}
+
+/** Warm newsprint tones for list thumbnails when no image URL is available. */
+function newspaperThumbnailGradient(isDark: boolean): [string, string, string] {
+  if (isDark) {
+    return ['#0f0e0c', '#1f1c18', '#2f2b26'];
+  }
+  return ['#fcfbf7', '#efe8dc', '#ddd2c2'];
 }
 
 const hasTranslation = (item: ArticleListItem) =>
@@ -102,6 +99,10 @@ export function ArticleCard({
     : null;
 
   const imageUri = resolveImageUrl(item.main_image);
+  const thumbnailGradientColors = useMemo(
+    () => newspaperThumbnailGradient(isDark),
+    [isDark],
+  );
 
   useEffect(() => {
     setAspectRatio(null);
@@ -162,7 +163,7 @@ export function ArticleCard({
         <Pressable
           onPress={onPress}
           style={({ pressed }) => [
-            imageUri ? styles.thumbnailWrapper : styles.thumbnailPlaceholder,
+            imageUri ? styles.thumbnailWrapper : styles.thumbnailNoImageOuter,
             { width: THUMB_WIDTH, height: thumbHeight },
             pressed && styles.thumbnailPressed,
           ]}
@@ -185,7 +186,33 @@ export function ArticleCard({
               accessibilityIgnoresInvertColors
             />
           ) : (
-            <Ionicons name="newspaper-outline" size={32} color={theme.textMuted} />
+            <LinearGradient
+              colors={thumbnailGradientColors}
+              locations={[0, 0.42, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.thumbnailNoImageGradient,
+                { width: THUMB_WIDTH, height: thumbHeight },
+              ]}
+            >
+              <View style={styles.thumbnailNoImageInner}>
+                <Ionicons
+                  name="newspaper-outline"
+                  size={item.source ? 22 : 32}
+                  color={theme.textMuted}
+                />
+                {item.source ? (
+                  <Text
+                    style={styles.thumbnailSourceText}
+                    numberOfLines={3}
+                    ellipsizeMode="tail"
+                  >
+                    {item.source}
+                  </Text>
+                ) : null}
+              </View>
+            </LinearGradient>
           )}
         </Pressable>
         <Pressable
@@ -215,7 +242,13 @@ export function ArticleCard({
             <View style={styles.cardMeta}>
               {item.source ? (
                 <View style={styles.cardSourceWrapper}>
-                  <Text style={styles.cardSource}>{item.source}</Text>
+                  <Text
+                    style={styles.cardSource}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.source}
+                  </Text>
                 </View>
               ) : null}
               {item.source &&
@@ -226,7 +259,7 @@ export function ArticleCard({
                 </Text>
               ) : null}
               {item.published_date ? (
-                <Text style={styles.cardDate}>
+                <Text style={styles.cardDate} numberOfLines={1}>
                   {formatPublishedDate(item.published_date)}
                 </Text>
               ) : null}
@@ -240,13 +273,10 @@ export function ArticleCard({
               {item.word_count != null && item.word_count > 0 ? (
                 <Text
                   style={styles.cardWordCount}
-                  accessibilityLabel={t('articleWordCount', {
-                    count: item.word_count,
-                  })}
+                  numberOfLines={1}
+                  accessibilityLabel={`${item.word_count} 单词`}
                 >
-                  {t('articleWordCount', {
-                    count: item.word_count,
-                  })}
+                  {`${item.word_count} 单词`}
                 </Text>
               ) : null}
             </View>
@@ -427,14 +457,31 @@ function createStyles(theme: Theme, isDark: boolean) {
     borderRadius: 8,
     backgroundColor: theme.border,
   },
-  thumbnailPlaceholder: {
+  thumbnailNoImageOuter: {
     flexShrink: 0,
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: theme.border,
-    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  thumbnailNoImageGradient: {
+    borderRadius: 8,
+  },
+  thumbnailNoImageInner: {
+    flex: 1,
+    flexDirection: 'column',
     justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  thumbnailSourceText: {
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 13,
+    color: isDark ? theme.textMuted : theme.textSecondary,
   },
   thumbnailPressed: {
     opacity: 0.7,
@@ -509,32 +556,35 @@ function createStyles(theme: Theme, isDark: boolean) {
   cardMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 4,
     marginTop: 4,
+    minWidth: 0,
+    width: '100%',
   },
   metaDivider: {
+    flexShrink: 0,
     fontSize: 12,
     color: theme.textMuted,
     opacity: 0.55,
     fontWeight: '300',
   },
   cardSourceWrapper: {
-    paddingHorizontal: 8,
+    flexShrink: 1,
+    minWidth: 0,
     paddingVertical: 3,
     borderRadius: 6,
   },
   cardSource: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: theme.textSecondary,
-    letterSpacing: 0.5,
+    fontSize: 12,
+    color: theme.textMuted,
   },
   cardDate: {
+    flexShrink: 0,
     fontSize: 12,
     color: theme.textMuted,
   },
   cardWordCount: {
+    flexShrink: 0,
     fontSize: 12,
     color: theme.textMuted,
     fontVariant: ['tabular-nums'],

@@ -109,7 +109,6 @@ export const translations = {
     showEnglishTranslation: 'Show English translation',
     requestTranslation: 'Request translation',
     openArticle: 'open article: {{title}}',
-    articleWordCount: '{{count}} words',
 
     // Native language selector
     nativeLanguage: 'native language',
@@ -409,7 +408,6 @@ export const translations = {
     showEnglishTranslation: 'Tunjukkan terjemahan Inggeris',
     requestTranslation: 'Minta terjemahan',
     openArticle: 'buka artikel: {{title}}',
-    articleWordCount: '{{count}} perkataan',
 
     // Native language selector
     nativeLanguage: 'bahasa ibunda',
@@ -561,7 +559,6 @@ export const translations = {
     showEnglishTranslation: 'إظهار الترجمة بالإنجليزية',
     requestTranslation: 'طلب ترجمة',
     openArticle: 'فتح المقال: {{title}}',
-    articleWordCount: '{{count}} كلمة',
 
     // Native language selector
     nativeLanguage: 'اللغة الأم',
@@ -709,7 +706,6 @@ export const translations = {
     showEnglishTranslation: '显示英文翻译',
     requestTranslation: '请求翻译',
     openArticle: '打开文章：{{title}}',
-    articleWordCount: '{{count}} 词',
 
     // Native language selector
     nativeLanguage: '母语',
