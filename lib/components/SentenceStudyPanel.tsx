@@ -7,7 +7,10 @@ import { i18n, useTranslation } from '../i18n';
 import { useFont } from '../FontContext';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import { useTheme } from '../ThemeContext';
-import { fetchDictEntryByWord } from '../useLocalDictService';
+import {
+  resolveDictLookup,
+  type DictLookupMatch,
+} from '../useLocalDictService';
 import type { Theme } from '../theme';
 
 const isWebLocalhost =
@@ -66,7 +69,7 @@ export function SentenceStudyPanel({
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const { chineseFontStyle } = useFont();
-  const [dictEntry, setDictEntry] = useState<{ definitions: string } | null>(null);
+  const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
   const [lookupComplete, setLookupComplete] = useState(false);
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
   const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
@@ -74,22 +77,22 @@ export function SentenceStudyPanel({
 
   useEffect(() => {
     let cancelled = false;
-    setDictEntry(null);
+    setDictMatches([]);
     setLookupComplete(false);
     setHasLocalDictData(null);
     const runLookup = async () => {
       try {
-        const [entry, totalCount] = await Promise.all([
-          fetchDictEntryByWord(word),
+        const [lookupResult, totalCount] = await Promise.all([
+          resolveDictLookup(word),
           getTotalLcnDictEntriesCount(),
         ]);
         if (cancelled) return;
-        setDictEntry(entry ?? null);
+        setDictMatches(lookupResult.matches);
         setHasLocalDictData(totalCount > 0);
       } catch (err) {
         if (cancelled) return;
         console.warn(`Study panel lookup warning for "${word}":`, err);
-        setDictEntry(null);
+        setDictMatches([]);
         setHasLocalDictData(false);
       } finally {
         if (!cancelled) {
@@ -131,6 +134,12 @@ export function SentenceStudyPanel({
   const openLocalDictSettings = useCallback(() => {
     router.push('/settings/localdict');
   }, [router]);
+
+  const showMissingDictSetup = lookupComplete && !hasLocalDictData;
+  const showDefinitionText =
+    !lookupComplete || dictMatches.some((match) => Boolean(match.entry.definitions));
+  const showSplitMatches = dictMatches.length > 1;
+  const singleMatch = dictMatches[0] ?? null;
 
   return (
     <View style={[styles.panel, { paddingBottom: Math.max(bottomInset, 16) }]}>
@@ -187,54 +196,82 @@ export function SentenceStudyPanel({
           ) : null}
         </View>
       </View>
-      <View style={styles.panelDefinition}>
-        {lookupComplete && !hasLocalDictData ? (
-          <View style={styles.panelDefinitionMissingDict}>
+      {showMissingDictSetup || showDefinitionText ? (
+        <View style={styles.panelDefinition}>
+          {showMissingDictSetup ? (
+            <View style={styles.panelDefinitionMissingDict}>
+              <Text
+                style={[
+                  styles.panelDefinitionText,
+                  styles.panelDefinitionTextMissing,
+                  chineseFontStyle,
+                ]}
+              >
+                {t('loadLocalDictFirstHint')}
+              </Text>
+              <Pressable onPress={openLocalDictSettings} accessibilityRole="button">
+                {({ pressed }) => (
+                  <View
+                    style={[
+                      styles.panelDefinitionLinkRow,
+                      pressed && styles.panelDefinitionLinkRowPressed,
+                    ]}
+                  >
+                    <Text style={styles.panelDefinitionLink}>{t('setupLocalDict')}</Text>
+                    <Ionicons
+                      name="arrow-forward-outline"
+                      size={14}
+                      color={theme.accent}
+                    />
+                  </View>
+                )}
+              </Pressable>
+            </View>
+          ) : showSplitMatches ? (
+            <View style={styles.panelDefinitionList}>
+              {dictMatches.map((match, idx) => (
+                <View
+                  key={`${match.lookupText}:${match.entry.id}`}
+                  style={[
+                    styles.panelDefinitionItem,
+                    idx > 0 ? styles.panelDefinitionItemDivider : null,
+                  ]}
+                >
+                  <View style={styles.panelDefinitionItemHeader}>
+                    <Text style={[styles.panelDefinitionItemWord, chineseFontStyle]}>
+                      {match.lookupText}
+                    </Text>
+                    {match.entry.pinyin ? (
+                      <Text style={[styles.panelDefinitionItemPinyin, chineseFontStyle]}>
+                        {match.entry.pinyin}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text
+                    style={[
+                      styles.panelDefinitionText,
+                      styles.panelDefinitionTextLoaded,
+                      chineseFontStyle,
+                    ]}
+                  >
+                    {match.entry.definitions}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
             <Text
               style={[
                 styles.panelDefinitionText,
-                styles.panelDefinitionTextMissing,
+                singleMatch?.entry.definitions ? styles.panelDefinitionTextLoaded : null,
                 chineseFontStyle,
               ]}
             >
-              {t('loadLocalDictFirstHint')}
+              {singleMatch?.entry.definitions ?? t('nativeLanguageDefinitionPlaceholder')}
             </Text>
-            <Pressable onPress={openLocalDictSettings} accessibilityRole="button">
-              {({ pressed }) => (
-                <View
-                  style={[
-                    styles.panelDefinitionLinkRow,
-                    pressed && styles.panelDefinitionLinkRowPressed,
-                  ]}
-                >
-                  <Text style={styles.panelDefinitionLink}>{t('setupLocalDict')}</Text>
-                  <Ionicons
-                    name="arrow-forward-outline"
-                    size={14}
-                    color={theme.accent}
-                  />
-                </View>
-              )}
-            </Pressable>
-          </View>
-        ) : (
-          <Text
-            style={[
-              styles.panelDefinitionText,
-              dictEntry?.definitions ? styles.panelDefinitionTextLoaded : null,
-              lookupComplete && !dictEntry?.definitions
-                ? styles.panelDefinitionTextMissing
-                : null,
-              chineseFontStyle,
-            ]}
-          >
-            {dictEntry?.definitions ??
-              (lookupComplete
-                ? t('wordMissingInLocalDict')
-                : t('nativeLanguageDefinitionPlaceholder'))}
-          </Text>
-        )}
-      </View>
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -292,6 +329,32 @@ function createStyles(theme: Theme, isDark: boolean) {
     },
     panelDefinitionMissingDict: {
       gap: 8,
+    },
+    panelDefinitionList: {
+      gap: 12,
+    },
+    panelDefinitionItem: {
+      gap: 6,
+    },
+    panelDefinitionItemDivider: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+      paddingTop: 12,
+    },
+    panelDefinitionItemHeader: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    panelDefinitionItemWord: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: isDark ? theme.text : theme.accent,
+    },
+    panelDefinitionItemPinyin: {
+      fontSize: 13,
+      color: theme.textMuted,
     },
     panelDefinitionText: {
       fontSize: 14,

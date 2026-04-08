@@ -12,6 +12,16 @@ import { envConfig } from "./api";
 import { sentryCaptureException } from "./monitoring";
 import { randomUUID } from "./uuid";
 
+export interface DictLookupMatch {
+  lookupText: string;
+  entry: database.DictEntry;
+}
+
+export interface DictLookupResult {
+  matches: DictLookupMatch[];
+  mode: 'exact' | 'greedy' | 'none';
+}
+
 export async function fetchDictEntryByWord(chineseWord: string) {
   if (chineseWord === '' || !chineseWord) return null;
   try {
@@ -22,6 +32,67 @@ export async function fetchDictEntryByWord(chineseWord: string) {
     console.warn(`Dict lookup warning for "${chineseWord}":`, err);
     return null;
   }
+}
+
+async function greedyLongestMatchLookup(chineseWord: string): Promise<DictLookupMatch[]> {
+  const matches: DictLookupMatch[] = [];
+  let start = 0;
+
+  while (start < chineseWord.length) {
+    let matched: DictLookupMatch | null = null;
+
+    for (let end = chineseWord.length; end > start; end -= 1) {
+      const candidate = chineseWord.slice(start, end);
+      const entry = await fetchDictEntryByWord(candidate);
+      if (entry) {
+        matched = {
+          lookupText: candidate,
+          entry,
+        };
+        break;
+      }
+    }
+
+    if (!matched) {
+      return [];
+    }
+
+    matches.push(matched);
+    start += matched.lookupText.length;
+  }
+
+  return matches.length > 1 ? matches : [];
+}
+
+export async function resolveDictLookup(chineseWord: string): Promise<DictLookupResult> {
+  const normalizedWord = chineseWord.trim();
+  if (!normalizedWord) {
+    return { matches: [], mode: 'none' };
+  }
+
+  const exactEntry = await fetchDictEntryByWord(normalizedWord);
+  if (exactEntry) {
+    return {
+      matches: [
+        {
+          lookupText: normalizedWord,
+          entry: exactEntry,
+        },
+      ],
+      mode: 'exact',
+    };
+  }
+
+  if (normalizedWord.length < 2) {
+    return { matches: [], mode: 'none' };
+  }
+
+  const greedyMatches = await greedyLongestMatchLookup(normalizedWord);
+  if (greedyMatches.length > 0) {
+    return { matches: greedyMatches, mode: 'greedy' };
+  }
+
+  return { matches: [], mode: 'none' };
 }
 
 export async function checkIfLocalDictTableExists(): Promise<boolean> {
