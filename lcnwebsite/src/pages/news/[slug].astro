@@ -1,0 +1,73 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = (await getCollection('blog')).filter((entry) => !entry.data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id.replace(/\.(md|mdx)$/i, '') },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={`${post.data.title} | LearnChineseNews`} description={post.data.description}>
+  <article class="container post-wrap">
+    <a class="back-link" href="/news/">Back to latest news</a>
+    <h1>{post.data.title}</h1>
+    <p class="post-date">
+      {post.data.pubDate.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })}
+    </p>
+    <div class="post-content">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .post-wrap {
+    max-width: 860px;
+  }
+
+  .back-link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-size: 0.88rem;
+  }
+
+  h1 {
+    margin: 0.55rem 0 0.25rem;
+    font-size: clamp(1.75rem, 3.3vw, 2.35rem);
+    line-height: 1.14;
+  }
+
+  .post-date {
+    margin: 0 0 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+  }
+
+  .post-content :global(p) {
+    margin: 0 0 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .post-content :global(ul) {
+    margin: 0.5rem 0 0.8rem;
+    padding-left: 1.1rem;
+  }
+
+  .post-content :global(li) {
+    margin: 0.25rem 0;
+    color: var(--text-secondary);
+  }
+</style>

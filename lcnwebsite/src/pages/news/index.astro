@@ -1,0 +1,86 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog'))
+  .filter((entry) => !entry.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const postSlug = (id: string) => id.replace(/\.(md|mdx)$/i, '');
+---
+
+<BaseLayout title="Latest News | LearnChineseNews" description="Product updates and notes from LearnChineseNews.">
+  <section class="container news-wrap">
+    <h1>Latest News</h1>
+    {
+      posts.length ? (
+        <div class="news-list">
+          {posts.map((post) => (
+            <article class="card post-card">
+              <h2>
+                <a href={`/news/${postSlug(post.id)}/`}>{post.data.title}</a>
+              </h2>
+              <p class="post-date">
+                {post.data.pubDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+              <p class="post-desc">{post.data.description}</p>
+              <a class="read-more" href={`/news/${postSlug(post.id)}/`}>Read More</a>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p>No posts yet.</p>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .news-wrap {
+    max-width: 860px;
+  }
+
+  h1 {
+    margin: 0 0 0.9rem;
+    font-size: clamp(1.7rem, 3.2vw, 2.25rem);
+  }
+
+  .news-list {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .post-card h2 {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.25;
+  }
+
+  .post-card h2 a {
+    color: var(--accent);
+  }
+
+  .post-date {
+    margin: 0.2rem 0 0.3rem;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+  }
+
+  .post-desc {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  .read-more {
+    margin-top: 0.35rem;
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-size: 0.9rem;
+  }
+</style>

@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+import { siteConfig } from '../config/site';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Learn Chinese by reading real native-level content with built-in dictionary, pinyin, and study tools.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="/" class="brand">{siteConfig.brandName}</a>
+        <nav class="top-nav" aria-label="Main navigation">
+          <a href="/">Home</a>
+          <a href="/news/">News</a>
+          <a href="/about">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="site-main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>Copyright @ 2026 WuweiLabs</p>
+        <div class="footer-links" aria-label="Footer links">
+          <span>Privacy</span>
+          <span aria-hidden="true">|</span>
+          <a href={`mailto:${siteConfig.contactEmail}`}>Contact</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

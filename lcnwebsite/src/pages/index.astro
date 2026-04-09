@@ -1,0 +1,629 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { siteConfig } from '../config/site';
+
+const expoUrl = siteConfig.cta.expoUrl.trim();
+const githubUrl = siteConfig.cta.githubUrl.trim();
+const posts = (await getCollection('blog'))
+  .filter((entry) => !entry.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const latestPost = posts[0];
+const latestPostSlug = latestPost ? latestPost.id.replace(/\.(md|mdx)$/i, '') : '';
+const latestPostDate = latestPost
+  ? latestPost.data.pubDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  : '';
+---
+
+<BaseLayout
+  title={`${siteConfig.brandName} - Learn Chinese by Reading Native Content`}
+  description="Learn Chinese by reading real native-level content with dictionary, pinyin, segmentation, and AI-assisted tools."
+>
+  <section class="container hero">
+    <div class="hero-media">
+      <div class="phone-stage">
+        <div class="phone-shell">
+          <button class="carousel-arrow arrow-left" type="button" aria-label="Previous screenshot">
+            &#8249;
+          </button>
+          <button class="carousel-arrow arrow-right" type="button" aria-label="Next screenshot">
+            &#8250;
+          </button>
+          <div class="phone-speaker" aria-hidden="true"></div>
+          <div class="phone-screen">
+            <img
+              class="hero-screen-image"
+              data-hero-image
+              src={siteConfig.heroScreens[0].src}
+              alt={siteConfig.heroScreens[0].alt}
+              loading="eager"
+            />
+          </div>
+          <div class="phone-homebar" aria-hidden="true"></div>
+        </div>
+        <p class="screen-caption" data-hero-caption>{siteConfig.heroScreens[0].alt}</p>
+      </div>
+      <div class="hero-screens-data" hidden>
+        {siteConfig.heroScreens.map((screen) => (
+          <span data-hero-src={screen.src} data-hero-alt={screen.alt}></span>
+        ))}
+      </div>
+    </div>
+
+    <div class="hero-copy">
+      <p class="eyebrow">{siteConfig.brandName}</p>
+      <h1>Learn Chinese by Reading Native Level Content</h1>
+      <p class="subtitle">
+        with built-in tools such as dictionary, pinyin, and AI simplify
+      </p>
+      <div class="cta-row" aria-label="Download actions">
+        {
+          expoUrl ? (
+            <a class="button button-primary" href={expoUrl}>
+              {siteConfig.cta.expoLabel}
+            </a>
+          ) : (
+            <button class="button button-primary" type="button">
+              {siteConfig.cta.expoLabel}
+            </button>
+          )
+        }
+        {
+          githubUrl ? (
+            <a class="button button-secondary" href={githubUrl}>
+              {siteConfig.cta.githubLabel}
+            </a>
+          ) : (
+            <button class="button button-secondary" type="button">
+              {siteConfig.cta.githubLabel}
+            </button>
+          )
+        }
+      </div>
+      {
+        latestPost ? (
+          <article class="latest-news">
+            <p class="latest-news-label">Latest News</p>
+            <h3>
+              <a href={`/news/${latestPostSlug}/`}>{latestPost.data.title}</a>
+            </h3>
+            <p class="latest-news-date">{latestPostDate}</p>
+            <p class="latest-news-desc">
+              {latestPost.data.description}
+              {' '}
+              <a class="latest-news-link" href={`/news/${latestPostSlug}/`}>
+                Read More
+              </a>
+            </p>
+          </article>
+        ) : (
+          <p class="latest">Latest updates are coming soon.</p>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="container section">
+    <h2>Key Features</h2>
+    <div class="features-grid">
+      <article class="card">
+        <h3>Real News, Most Content</h3>
+        <p>We only support real news sites from genuine sources and current events.</p>
+      </article>
+      <article class="card">
+        <h3>Best Chinese Reader for Learners</h3>
+        <p>The reader is crafted for Chinese learners, with light and dark mode plus adjustable spacing and font size.</p>
+      </article>
+      <article class="card">
+        <h3>Local Dictionary</h3>
+        <p>Built-in offline-first dictionary with Pleco integration support.</p>
+      </article>
+      <article class="card">
+        <h3>Pinyin and Segmentation</h3>
+        <p>Chinese is hard, so segmentation and pinyin can be turned on or off while reading.</p>
+      </article>
+      <article class="card">
+        <h3>Sentence Level Translations</h3>
+        <p>High-quality translations for every sentence in English, Spanish, Indonesian Malay, Russian, and Arabic.</p>
+      </article>
+      <article class="card">
+        <h3>Place Bookmarks</h3>
+        <p>Bookmark the exact sentence so you can jump back to where you left off in long articles.</p>
+      </article>
+      <article class="card">
+        <h3>Built to be Offline and Privacy First</h3>
+        <p>Most features work offline and your data stays on your device, not on our servers.</p>
+      </article>
+      <article class="card">
+        <h3>Never Ads, Always Free and Open</h3>
+        <p>The app will never have ads, and most features remain free. The project is open source.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="container section">
+    <h2>Features Planned</h2>
+    <div class="features-grid">
+      <article class="card">
+        <h3>Simplify Articles (coming soon)</h3>
+        <p>Use AI to simplify news articles at 1x and 2x levels, making them easier for HSK4-HSK6 readers.</p>
+      </article>
+      <article class="card">
+        <h3>Anki Integration (coming soon)</h3>
+        <p>Export words with sentence context and definitions to Anki in one click.</p>
+      </article>
+      <article class="card">
+        <h3>Article Vocab Preview</h3>
+        <p>Review new words, including person, place, and organization names before reading.</p>
+      </article>
+      <article class="card">
+        <h3>High Quality Audio</h3>
+        <p>We are building high-quality read-along audio for selected articles.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="container section faq">
+    <h2>Frequent Ask Questions</h2>
+    <div class="card qa">
+      <h3>What platforms are supported?</h3>
+      <p>LearnChineseNews is built for Android, iOS, and Web.</p>
+    </div>
+    <div class="card qa">
+      <h3>What news sources are supported?</h3>
+      <p>We source from major news publishers such as Zaobao and Huaqiu, and keep adding more.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+
+<script is:inline>
+  const screens = Array.from(document.querySelectorAll('[data-hero-src]')).map((el) => ({
+    src: el.getAttribute('data-hero-src') || '',
+    alt: el.getAttribute('data-hero-alt') || '',
+  }));
+  const heroImage = document.querySelector('[data-hero-image]');
+  const caption = document.querySelector('[data-hero-caption]');
+  const prevButton = document.querySelector('.arrow-left');
+  const nextButton = document.querySelector('.arrow-right');
+  let currentIndex = 0;
+
+  const updateSlides = (nextIndex) => {
+    if (!screens.length || !(heroImage instanceof HTMLImageElement)) return;
+    currentIndex = (nextIndex + screens.length) % screens.length;
+    const nextScreen = screens[currentIndex];
+    heroImage.src = nextScreen.src;
+    heroImage.alt = nextScreen.alt;
+    if (caption) {
+      caption.textContent = nextScreen.alt;
+    }
+  };
+
+  prevButton?.addEventListener('click', () => updateSlides(currentIndex - 1));
+  nextButton?.addEventListener('click', () => updateSlides(currentIndex + 1));
+</script>
+
+<style>
+  .hero {
+    display: grid;
+    gap: 1.15rem;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 0.7rem 0.7rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--bg);
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    /* Fabric-like weave: stacked warp/weft + diagonal twill threads over deep red */
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent 0 5px,
+        rgba(255, 255, 255, 0.045) 5px 6px,
+        transparent 6px 11px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent 0 5px,
+        rgba(0, 0, 0, 0.06) 5px 6px,
+        transparent 6px 11px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.11) 0 1px,
+        transparent 1px 5px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.05) 0 1px,
+        transparent 1px 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.028) 0 1px,
+        transparent 1px 3px
+      ),
+      radial-gradient(
+        ellipse 120% 80% at 20% 15%,
+        rgba(255, 255, 255, 0.07),
+        transparent 55%
+      ),
+      linear-gradient(160deg, rgba(139, 26, 26, 0.78), rgba(90, 14, 14, 0.72));
+    /* Soften the diagonal edge (hypotenuse) instead of a hard clip */
+    -webkit-mask-image: linear-gradient(
+      to bottom right,
+      #000 0%,
+      #000 min(38%, calc(50% - 3.5rem)),
+      rgba(0, 0, 0, 0.55) min(46%, calc(50% - 1rem)),
+      rgba(0, 0, 0, 0.18) min(52%, calc(50% + 0.5rem)),
+      transparent min(58%, calc(50% + 2rem))
+    );
+    mask-image: linear-gradient(
+      to bottom right,
+      #000 0%,
+      #000 min(38%, calc(50% - 3.5rem)),
+      rgba(0, 0, 0, 0.55) min(46%, calc(50% - 1rem)),
+      rgba(0, 0, 0, 0.18) min(52%, calc(50% + 0.5rem)),
+      transparent min(58%, calc(50% + 2rem))
+    );
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    /* Diagonal + horizontal blend so red/tan meet in a wider, softer band */
+    background:
+      linear-gradient(
+        125deg,
+        rgba(245, 240, 232, 0) 0%,
+        rgba(245, 240, 232, 0.06) 32%,
+        rgba(245, 240, 232, 0.14) 44%,
+        rgba(245, 240, 232, 0.22) 52%,
+        rgba(245, 240, 232, 0.12) 60%,
+        rgba(245, 240, 232, 0) 72%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(245, 240, 232, 0) 0%,
+        rgba(245, 240, 232, 0.08) 38%,
+        rgba(245, 240, 232, 0.28) 50%,
+        rgba(245, 240, 232, 0.72) 58%,
+        rgba(245, 240, 232, 0.9) 68%,
+        rgba(245, 240, 232, 0.95) 100%
+      );
+  }
+
+  .hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-media {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .hero-copy {
+    min-width: 0;
+  }
+
+  .phone-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 3.1rem;
+    background: transparent;
+  }
+
+  .phone-shell {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 320px);
+    max-width: 100%;
+    min-width: 0;
+    max-height: min(78vh, 756px);
+    aspect-ratio: 9 / 19.5;
+    border-radius: 42px;
+    padding: 14px;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, #2f2f32, #121214);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .phone-speaker {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    width: 110px;
+    height: 16px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.035);
+    z-index: 2;
+  }
+
+  .phone-screen {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    width: 100%;
+    border-radius: 30px;
+    background: var(--bg);
+  }
+
+  .hero-screen-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+    object-position: center top;
+    background: var(--bg);
+  }
+
+  .phone-homebar {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    width: 120px;
+    height: 5px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .carousel-arrow {
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+    border-radius: 999px;
+    background: rgba(255, 253, 249, 0.60);
+    color: var(--accent);
+    font-size: 1.44rem;
+    line-height: 1;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+
+  .carousel-arrow:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .arrow-left {
+    left: 20px;
+  }
+
+  .arrow-right {
+    right: 20px;
+  }
+
+  .screen-caption {
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    margin-top: 0;
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.28;
+    font-weight: 600;
+    text-align: center;
+    width: min(92%, 420px);
+    z-index: 3;
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-size: 0.88rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0.35rem 0 0.5rem;
+    line-height: 1.08;
+    font-size: clamp(1.72rem, 3.6vw, 2.72rem);
+  }
+
+  .subtitle {
+    margin: 0;
+    max-width: 42ch;
+    color: var(--text-secondary);
+    font-size: 0.94rem;
+  }
+
+  .cta-row {
+    margin-top: 0.95rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cta-row a.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .latest {
+    margin-top: 0.65rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .latest-news {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  }
+
+  .latest-news-label {
+    margin: 0 0 0.15rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+
+  .latest-news h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.22;
+  }
+
+  .latest-news h3 a {
+    color: var(--accent);
+  }
+
+  .latest-news-date {
+    margin: 0.15rem 0 0.28rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  .latest-news-desc {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .latest-news-link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .features-grid h3,
+  .qa h3 {
+    margin: 0 0 0.35rem;
+    font-size: 0.98rem;
+  }
+
+  .features-grid p,
+  .qa p {
+    margin: 0;
+  }
+
+  .faq {
+    margin-bottom: 0.4rem;
+  }
+
+  .faq .qa + .qa {
+    margin-top: 0.6rem;
+  }
+
+  @media (max-width: 960px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+
+
+    .hero-copy {
+      text-align: center;
+      justify-items: center;
+    }
+
+    .subtitle {
+      margin-inline: auto;
+    }
+
+    .cta-row {
+      justify-content: center;
+    }
+
+    .latest-news {
+      text-align: center;
+    }
+
+    .latest-news-desc {
+      margin-inline: auto;
+      max-width: 46ch;
+    }
+
+    .phone-stage {
+      min-height: auto;
+      padding: 0 0 2.9rem;
+    }
+
+    .phone-shell {
+      width: min(100%, 320px);
+      transform: none;
+    }
+
+    .carousel-arrow {
+      width: 30px;
+      height: 30px;
+      font-size: 1.2rem;
+    }
+
+    .arrow-left {
+      left: 18px;
+    }
+
+    .arrow-right {
+      right: 18px;
+    }
+
+    .screen-caption {
+      margin: 0;
+      width: min(92%, 300px);
+      font-size: 0.82rem;
+    }
+  }
+</style>
