@@ -3,11 +3,10 @@ import { apiWriteUrl, envConfig, getUserFriendlyErrorMessage, postWithTimeout } 
 import { TRANSLATION_POST_TIMEOUT_MS } from './constants';
 import { useNativeLanguage } from './NativeLanguageContext';
 import { useTranslation } from './i18n';
-import { sentryCaptureException } from './monitoring';
 import { TranslationKind, type TranslationResponse } from './types';
 import { translationLangForNative } from './useArticleTranslations';
 
-/** For Sentry tags when POST /translations fails (timeout, network, HTTP, etc.). */
+/** Classify POST /translations failures (timeout, network, HTTP, etc.) for logging. */
 function classifySentenceTranslateFailure(err: unknown): string {
   if (err instanceof Error && err.name === 'AbortError') return 'timeout';
   const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
@@ -81,22 +80,13 @@ export function useTranslateSentence() {
       } catch (err) {
         const message = getUserFriendlyErrorMessage(err, t('somethingWentWrong'));
         setError(message);
-        sentryCaptureException(err instanceof Error ? err : new Error(message), {
-          level: 'warning',
-          tags: {
-            feature: 'sentence_translation_post',
-            failure_kind: classifySentenceTranslateFailure(err),
-          },
-          contexts: {
-            translation_request: {
-              article_id: params.articleId,
-              paragraph_index: params.paragraphIndex,
-              sentence_index: params.sentenceIndex,
-              target_lang: targetLang,
-              source_text_length: trimmed.length,
-            },
-          },
-        });
+        if (__DEV__) {
+          console.warn(
+            '[sentence_translation_post]',
+            classifySentenceTranslateFailure(err),
+            err,
+          );
+        }
         throw err instanceof Error ? err : new Error(message);
       }
     },

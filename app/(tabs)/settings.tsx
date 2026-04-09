@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import Constants from 'expo-constants';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   Platform,
@@ -46,6 +47,8 @@ const FONT_SIZE_OPTIONS: {
 export default function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
   const { t } = useTranslation();
+  const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'dev';
+  const shouldEnableDebugPanel = process.env.EXPO_PUBLIC_DEBUG === '1';
   const {
     useNotoSansSC,
     setUseNotoSansSC,
@@ -60,13 +63,25 @@ export default function SettingsScreen() {
   const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
     boolean | null
   >(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(!__DEV__);
+  const lastVersionTapAtRef = useRef(0);
 
   useEffect(() => {
-    if (process.env.EXPO_PUBLIC_DEBUG !== '1' || Platform.OS === 'web') return;
+    if (!shouldEnableDebugPanel || Platform.OS === 'web') return;
     AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
       setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
     });
-  }, []);
+  }, [shouldEnableDebugPanel]);
+
+  const handleVersionPress = () => {
+    if (!shouldEnableDebugPanel || !__DEV__) return;
+
+    const now = Date.now();
+    if (now - lastVersionTapAtRef.current < 400) {
+      setShowDebugPanel((current) => !current);
+    }
+    lastVersionTapAtRef.current = now;
+  };
 
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -215,7 +230,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {process.env.EXPO_PUBLIC_DEBUG === '1' && (
+        {shouldEnableDebugPanel && showDebugPanel && (
           <View style={styles.debugSection}>
             <Text style={styles.debugSectionTitle}>
               {t('debugEnvVars')}
@@ -225,7 +240,6 @@ export default function SettingsScreen() {
               selectable
             >
               {[
-                `EXPO_PUBLIC_SENTRY_DSN=${process.env.EXPO_PUBLIC_SENTRY_DSN ?? '(not set)'}`,
                 `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
                 `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
                 `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
@@ -247,6 +261,13 @@ export default function SettingsScreen() {
             </Text>
           </View>
         )}
+
+        <Pressable
+          onPress={handleVersionPress}
+          style={({ pressed }) => [styles.versionButton, pressed && styles.versionButtonPressed]}
+        >
+          <Text style={styles.versionText}>Version {appVersion}</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -436,6 +457,18 @@ function createStyles(theme: Theme) {
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.border,
+  },
+  versionText: {
+    fontSize: 12,
+    color: theme.textMuted,
+    textAlign: 'center',
+  },
+  versionButton: {
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  versionButtonPressed: {
+    opacity: 0.7,
   },
   });
 }

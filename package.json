@@ -1,6 +1,6 @@
 {
   "name": "mobile-apps-levelchinesenews",
-  "version": "1.0.0",
+  "version": "0.5.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -17,7 +17,6 @@
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/elements": "^2.9.5",
-    "@sentry/react-native": "~7.2.0",
     "expo": "~54.0.33",
     "expo-constants": "^18.0.13",
     "expo-dev-client": "~6.0.20",

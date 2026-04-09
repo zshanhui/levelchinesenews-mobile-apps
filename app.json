@@ -3,7 +3,7 @@
     "name": "LevelChineseNews",
     "slug": "react-native-apps-lcn",
     "scheme": "lcn",
-    "version": "1.0.0",
+    "version": "0.5.0",
     "orientation": "portrait",
     "icon": "./assets/lcnicons-v4/ios/m1024.png",
     "userInterfaceStyle": "light",
@@ -38,14 +38,6 @@
         {
           "enableFTS": true,
           "useSQLCipher": false
-        }
-      ],
-      [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "lcn-mobile-apps",
-          "organization": "wuweilabs"
         }
       ]
     ],

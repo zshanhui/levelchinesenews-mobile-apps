@@ -9,7 +9,6 @@
 import { gunzipSync } from "fflate";
 import * as database from "./localDatabase";
 import { envConfig } from "./api";
-import { sentryCaptureException } from "./monitoring";
 import { randomUUID } from "./uuid";
 
 export interface DictLookupMatch {
@@ -109,29 +108,6 @@ export interface CompactRemoteDictEntry {
 
 export type ProgressCallback = (pct: number, loaded?: number, total?: number) => void;
 
-function captureLocalDictException(
-  exception: unknown,
-  stage: 'download' | 'reset' | 'delete',
-  extra?: Record<string, unknown>,
-) {
-  sentryCaptureException(
-    exception instanceof Error ? exception : new Error(String(exception)),
-    {
-      level: 'error',
-      tags: {
-        feature: 'local_dict',
-        stage,
-      },
-      contexts: {
-        local_dict: {
-          remote_dict_url: envConfig.remoteBaseChineseEnglishDictUrl ?? '(not set)',
-          ...extra,
-        },
-      },
-    },
-  );
-}
-
 async function bulkInsertDictEntries(
   sqliteDb: Awaited<ReturnType<typeof database.getLocalDatabase>>,
   entries: CompactRemoteDictEntry[],
@@ -203,9 +179,6 @@ export async function firstLoadLocalDictFromRemote(
     }
   } catch (err) {
     console.error('error during first load of dict from remote: ', err)
-    captureLocalDictException(err, 'download', {
-      requested_remote_dict_url: remoteDictUrl ?? '(not set)',
-    });
     // potentially reset the dict to fix corrupt state?
     return null
   }
@@ -241,7 +214,6 @@ export async function deleteLocalDict(): Promise<number> {
     return 1;
   } catch (err) {
     console.warn('Error while deleting local dict table:', err)
-    captureLocalDictException(err, 'delete');
     throw err;
   }
 }

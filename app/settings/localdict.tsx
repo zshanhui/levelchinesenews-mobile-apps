@@ -17,7 +17,6 @@ import {
   resetLocalDict,
 } from '../../lib/useLocalDictService';
 import * as database from '../../lib/localDatabase';
-import { sentryCaptureException } from '../../lib/monitoring';
 
 export default function LocalDictSettingsScreen() {
   const { theme } = useTheme();
@@ -76,13 +75,6 @@ export default function LocalDictSettingsScreen() {
         setError(t('downloadFailed'));
       }
     } catch (err) {
-      sentryCaptureException(err instanceof Error ? err : new Error(t('downloadFailed')), {
-        level: 'error',
-        tags: {
-          feature: 'local_dict',
-          stage: 'download_setup',
-        },
-      });
       setError(err instanceof Error ? err.message : t('downloadFailed'));
       setProgress(null);
       setProgressLoaded(null);
@@ -104,13 +96,6 @@ export default function LocalDictSettingsScreen() {
       setProgressTotal(null);
       setRandomEntry(null);
     } catch (err) {
-      sentryCaptureException(err instanceof Error ? err : new Error(t('downloadFailed')), {
-        level: 'error',
-        tags: {
-          feature: 'local_dict',
-          stage: 'reset_ui',
-        },
-      });
       setError(err instanceof Error ? err.message : t('downloadFailed'));
     } finally {
       setIsResetting(false);
