@@ -240,6 +240,9 @@ export default function SettingsScreen() {
               selectable
             >
               {[
+                `EXPO_PUBLIC_GLITCHTIP_DSN=${
+                  process.env.EXPO_PUBLIC_GLITCHTIP_DSN ? '(configured)' : '(not set)'
+                }`,
                 `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
                 `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
                 `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
