@@ -5,6 +5,7 @@ const LOCAL_DATABASE_NAME = 'lcnlocal';
 const lcnDictTableName = 'lcndict';
 export const userSavedArticlesTableName = 'user_saved_articles';
 export const articleDetailCacheTableName = 'article_detail_cache';
+export const userProfileTableName = 'userprofile';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -73,6 +74,13 @@ export interface DictEntry {
   definitions: string;
 }
 
+export interface UserProfile {
+  id: string;
+  installation_id: string;
+  created_at: number;
+  updated_at: number;
+}
+
 export async function insertDictEntry(entry: DictEntry) {
   const db = await getLocalDatabase();
   const id = randomUUID();
@@ -102,8 +110,8 @@ export async function migrateLocalDatabaseIfNeeded(db: SQLite.SQLiteDatabase) {
     'PRAGMA user_version'
   );
   const currentDbVersion = result?.user_version ?? 0;
-  if (currentDbVersion >= 1) return;
-  await db.execAsync('PRAGMA user_version = 1');
+  if (currentDbVersion >= 4) return;
+  await runMigrations(db);
 }
 
 /** Runs all migrations; called on DB open. Idempotent. */
@@ -143,6 +151,18 @@ export async function runMigrations(db: SQLite.SQLiteDatabase) {
       CREATE INDEX IF NOT EXISTS idx_article_detail_cache_cached_at ON ${articleDetailCacheTableName} (cached_at ASC);
     `, db);
     await db.execAsync('PRAGMA user_version = 3');
+  }
+
+  if (current < 4) {
+    await execWithReconnectRetry(`
+      CREATE TABLE IF NOT EXISTS ${userProfileTableName} (
+        id TEXT PRIMARY KEY,
+        installation_id TEXT NOT NULL UNIQUE,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `, db);
+    await db.execAsync('PRAGMA user_version = 4');
   }
 }
 
@@ -217,4 +237,40 @@ export async function getRandomProverbOrChengyuEntry(): Promise<DictEntry | null
      LIMIT 1`
   );
   return result ?? null;
+}
+
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const db = await getLocalDatabase();
+  const result = await db.getFirstAsync<UserProfile>(
+    `SELECT * FROM ${userProfileTableName} ORDER BY created_at ASC LIMIT 1`
+  );
+  return result ?? null;
+}
+
+export async function getOrCreateInstallationId(): Promise<string> {
+  const db = await getLocalDatabase();
+  const existingProfile = await db.getFirstAsync<UserProfile>(
+    `SELECT * FROM ${userProfileTableName} ORDER BY created_at ASC LIMIT 1`
+  );
+  if (existingProfile?.installation_id) {
+    return existingProfile.installation_id;
+  }
+
+  const installationId = randomUUID();
+  const now = Date.now();
+  await db.runAsync(
+    `
+      INSERT OR IGNORE INTO ${userProfileTableName} (id, installation_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?)
+    `,
+    'local',
+    installationId,
+    now,
+    now
+  );
+  const insertedProfile = await db.getFirstAsync<UserProfile>(
+    `SELECT * FROM ${userProfileTableName} WHERE id = ? LIMIT 1`,
+    ['local']
+  );
+  return insertedProfile?.installation_id ?? installationId;
 }

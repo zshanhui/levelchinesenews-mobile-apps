@@ -21,7 +21,10 @@ import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { envConfig } from '../../lib/api';
 import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
-import { userSavedArticlesTableName } from '../../lib/localDatabase';
+import {
+  getOrCreateInstallationId,
+  userSavedArticlesTableName,
+} from '../../lib/localDatabase';
 
 const LINE_SPACING_OPTIONS: {
   value: LineSpacingLevel;
@@ -63,6 +66,7 @@ export default function SettingsScreen() {
   const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
     boolean | null
   >(null);
+  const [installationId, setInstallationId] = useState<string | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(!__DEV__);
   const lastVersionTapAtRef = useRef(0);
 
@@ -72,6 +76,14 @@ export default function SettingsScreen() {
       setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
     });
   }, [shouldEnableDebugPanel]);
+
+  useEffect(() => {
+    getOrCreateInstallationId()
+      .then(setInstallationId)
+      .catch((err) => {
+        console.warn('Failed to load installation id for settings:', err);
+      });
+  }, []);
 
   const handleVersionPress = () => {
     if (!shouldEnableDebugPanel || !__DEV__) return;
@@ -270,6 +282,9 @@ export default function SettingsScreen() {
           style={({ pressed }) => [styles.versionButton, pressed && styles.versionButtonPressed]}
         >
           <Text style={styles.versionText}>Version {appVersion}</Text>
+          {installationId ? (
+            <Text style={styles.versionSubtext}>{installationId}</Text>
+          ) : null}
         </Pressable>
       </ScrollView>
     </View>
@@ -465,6 +480,12 @@ function createStyles(theme: Theme) {
     fontSize: 12,
     color: theme.textMuted,
     textAlign: 'center',
+  },
+  versionSubtext: {
+    fontSize: 8,
+    color: theme.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
   },
   versionButton: {
     marginTop: 24,

@@ -5,6 +5,8 @@ import {
 } from '../lib/glitchtipInit';
 import '../lib/i18n';
 import { FontProvider } from '../lib/FontContext';
+import { getOrCreateInstallationId } from '../lib/localDatabase';
+import { setMonitoringInstallationId } from '../lib/monitoring';
 import { NativeLanguageProvider } from '../lib/NativeLanguageContext';
 import { I18nSync } from '../lib/i18n/I18nSync';
 import { ThemeProvider, useTheme } from '../lib/ThemeContext';
@@ -35,6 +37,16 @@ function RootContent() {
 
 function RootLayout() {
   const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    getOrCreateInstallationId()
+      .then((installationId) => {
+        setMonitoringInstallationId(installationId);
+      })
+      .catch((err) => {
+        console.warn('Failed to initialize installation id:', err);
+      });
+  }, []);
 
   useEffect(() => {
     if (glitchTipEnabled && navigationRef && navigationIntegration) {
