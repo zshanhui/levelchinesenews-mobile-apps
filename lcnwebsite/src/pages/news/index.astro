@@ -16,7 +16,7 @@ const postSlug = (id: string) => id.replace(/\.(md|mdx)$/i, '');
       posts.length ? (
         <div class="news-list">
           {posts.map((post) => (
-            <article class="card post-card">
+            <article class="post-card">
               <h2>
                 <a href={`/news/${postSlug(post.id)}/`}>{post.data.title}</a>
               </h2>
@@ -45,13 +45,13 @@ const postSlug = (id: string) => id.replace(/\.(md|mdx)$/i, '');
   }
 
   h1 {
-    margin: 0 0 0.9rem;
+    margin: 0 0 1.35rem;
     font-size: clamp(1.7rem, 3.2vw, 2.25rem);
   }
 
   .news-list {
     display: grid;
-    gap: 0.65rem;
+    gap: 1.15rem;
   }
 
   .post-card h2 {

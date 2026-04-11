@@ -22,7 +22,14 @@ const { title, description = 'Learn Chinese by reading real native-level content
   <body>
     <header class="site-header">
       <div class="container header-inner">
-        <a href="/" class="brand">{siteConfig.brandName}</a>
+        <a href="/" class="brand">
+          <span class="brand-logo" aria-hidden="true">
+            <span class="brand-logo-bar brand-logo-bar--1"></span>
+            <span class="brand-logo-bar brand-logo-bar--2"></span>
+            <span class="brand-logo-bar brand-logo-bar--3"></span>
+          </span>
+          <span class="brand-text">{siteConfig.brandName}</span>
+        </a>
         <nav class="top-nav" aria-label="Main navigation">
           <a href="/">Home</a>
           <a href="/news/">News</a>
@@ -39,7 +46,7 @@ const { title, description = 'Learn Chinese by reading real native-level content
       <div class="container footer-inner">
         <p>Copyright @ 2026 WuweiLabs</p>
         <div class="footer-links" aria-label="Footer links">
-          <span>Privacy</span>
+          <a href="/privacy-policy">Privacy</a>
           <span aria-hidden="true">|</span>
           <a href={`mailto:${siteConfig.contactEmail}`}>Contact</a>
         </div>

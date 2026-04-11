@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config/site';
+import { getEntry, render } from 'astro:content';
+
+const entry = await getEntry('legal', 'privacy-policy');
+if (!entry) {
+  throw new Error('Missing src/content/legal/privacy-policy.md');
+}
+const { Content } = await render(entry);
+const { title, description, lastUpdated } = entry.data;
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="container policy-wrap">
+    <h1>{title}</h1>
+    <p class="last-updated">Last updated: {lastUpdated}</p>
+    <article class="policy-content">
+      <Content />
+    </article>
+    <p class="contact-line">
+      Reach us at
+      <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .policy-wrap {
+    max-width: 820px;
+  }
+
+  h1 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+  }
+
+  .last-updated {
+    margin: 0 0 2rem;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+  }
+
+  .policy-content :global(h2) {
+    margin: 2rem 0 0.6rem;
+    font-size: 1.25rem;
+    color: var(--text);
+  }
+
+  .policy-content :global(h3) {
+    margin: 1.2rem 0 0.4rem;
+    font-size: 1.05rem;
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+
+  .policy-content :global(p) {
+    margin: 0 0 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .policy-content :global(ul) {
+    margin: 0 0 0.78rem;
+    padding-left: 1.4rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .policy-content :global(li) {
+    margin-bottom: 0.35rem;
+  }
+
+  .policy-content :global(a) {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .contact-line {
+    margin: 0.78rem 0 0;
+    color: var(--text);
+  }
+
+  .contact-line a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+</style>

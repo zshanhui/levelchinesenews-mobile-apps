@@ -23,7 +23,7 @@ const latestPostDate = latestPost
   title={`${siteConfig.brandName} - Learn Chinese by Reading Native Content`}
   description="Learn Chinese by reading real native-level content with dictionary, pinyin, segmentation, and AI-assisted tools."
 >
-  <section class="container hero">
+  <section class="hero landing-section">
     <div class="hero-media">
       <div class="phone-stage">
         <div class="phone-shell">
@@ -55,7 +55,6 @@ const latestPostDate = latestPost
     </div>
 
     <div class="hero-copy">
-      <p class="eyebrow">{siteConfig.brandName}</p>
       <h1>Learn Chinese by Reading Native Level Content</h1>
       <p class="subtitle">
         with built-in tools such as dictionary, pinyin, and AI simplify
@@ -107,7 +106,7 @@ const latestPostDate = latestPost
     </div>
   </section>
 
-  <section class="container section">
+  <section class="section landing-section">
     <h2>Key Features</h2>
     <div class="features-grid">
       <article class="card">
@@ -145,7 +144,7 @@ const latestPostDate = latestPost
     </div>
   </section>
 
-  <section class="container section">
+  <section class="section landing-section">
     <h2>Features Planned</h2>
     <div class="features-grid">
       <article class="card">
@@ -167,7 +166,7 @@ const latestPostDate = latestPost
     </div>
   </section>
 
-  <section class="container section faq">
+  <section class="section landing-section faq">
     <h2>Frequent Ask Questions</h2>
     <div class="card qa">
       <h3>What platforms are supported?</h3>
@@ -208,6 +207,16 @@ const latestPostDate = latestPost
 </script>
 
 <style>
+  /* Full viewport width; gutters only (no max-width column). */
+  .landing-section {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    box-sizing: border-box;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
   .hero {
     display: grid;
     gap: 1.15rem;
@@ -451,15 +460,6 @@ const latestPostDate = latestPost
     z-index: 3;
   }
 
-  .eyebrow {
-    margin: 0;
-    font-size: 0.88rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 700;
-  }
-
   h1 {
     margin: 0.35rem 0 0.5rem;
     line-height: 1.08;
@@ -541,6 +541,12 @@ const latestPostDate = latestPost
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.6rem;
+    justify-items: center;
+  }
+
+  .features-grid .card {
+    max-width: 600px;
+    width: 100%;
   }
 
   .features-grid h3,

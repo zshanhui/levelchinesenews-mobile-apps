@@ -11,6 +11,25 @@ const blog = defineCollection({
   }),
 });
 
+const about = defineCollection({
+  loader: glob({ base: './src/content/about', pattern: '*.md' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+  }),
+});
+
+const legal = defineCollection({
+  loader: glob({ base: './src/content/legal', pattern: '*.md' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    lastUpdated: z.string(),
+  }),
+});
+
 export const collections = {
   blog,
+  about,
+  legal,
 };

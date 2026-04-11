@@ -1,37 +1,23 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../config/site';
+import { getEntry, render } from 'astro:content';
+
+const entry = await getEntry('about', 'about');
+if (!entry) {
+  throw new Error('Missing src/content/about/about.md');
+}
+const { Content } = await render(entry);
+const { title, description } = entry.data;
 ---
 
-<BaseLayout
-  title={`About ${siteConfig.brandName}`}
-  description="How LearnChineseNews started, and why we are building better reading tools for intermediate Chinese learners."
->
+<BaseLayout title={title} description={description}>
   <section class="container about-wrap">
-    <h1>About {siteConfig.brandName}</h1>
-    <article class="card">
-      <p>
-        Hi, thanks for your interest in our little project. I started learning Chinese in 2021 and picking up the
-        first couple hundred vocab words was easy. I found a frequency list and learned the first few hundred words.
-        I am a heritage Chinese learner, so I always had some exposure to spoken Chinese, but I was never able to
-        read Chinese because literacy takes active study.
-      </p>
-      <p>
-        I decided to learn to read Chinese at a native level within five years, but after the basics there is a real
-        gap between native books and articles and what intermediate learners (HSK4 and HSK5) can read without looking
-        up every other sentence. So I decided to build LearnChineseNews around Chinese New Year 2026 to bridge that
-        gap. I built a simple version with pinyin and segmentation, then added a basic CEDICT and Pleco integration.
-      </p>
-      <p>
-        What I realized is that a few practical tools can make even complex native-level articles approachable.
-        Eventually I added sentence-level translations, AI-assisted study tools, and more media sources so I could
-        always find content I already wanted to read.
-      </p>
-      <p>
-        Now we are getting ready for internal beta testing with a few dozen users. If you are an intermediate Chinese
-        learner and want to try new tools for learning by reading real native content, I would love your feedback so
-        we can decide our next development path.
-      </p>
+    <h1>{title}</h1>
+    <article>
+      <div class="about-content">
+        <Content />
+      </div>
       <p class="contact-line">
         Reach me at
         <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>
@@ -46,17 +32,22 @@ import { siteConfig } from '../config/site';
   }
 
   h1 {
-    margin: 0 0 0.75rem;
+    margin: 0 0 1.35rem;
     font-size: clamp(1.65rem, 3.2vw, 2.3rem);
   }
 
-  article p {
+  .about-content :global(p) {
     margin: 0 0 0.78rem;
     color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .about-content :global(p:last-child) {
+    margin-bottom: 0;
   }
 
   .contact-line {
-    margin-bottom: 0;
+    margin: 0.78rem 0 0;
     color: var(--text);
   }
 
