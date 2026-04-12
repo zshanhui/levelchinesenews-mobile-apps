@@ -9,7 +9,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "worker:dev": "wrangler dev --config workers/wrangler.toml",
+    "worker:dep": "wrangler deploy --config workers/wrangler.toml",
+    "page:dep": "wrangler pages deploy dist --project-name=learnchinesenews-landingsite"
   },
   "dependencies": {
     "astro": "^6.1.1"

@@ -1,0 +1,271 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config/site';
+
+const title = 'Contact';
+const description = 'Send a message to the LearnChineseNews team.';
+const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
+---
+
+<BaseLayout {title} {description}>
+  <section class="container contact-wrap">
+    <h1>Contact</h1>
+    <p class="contact-lead">
+      Questions or feedback? Send a message below or email us at
+      <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
+    </p>
+
+    <div id="contact-success" class="contact-success" hidden role="status">
+      Thanks — your message was sent. We will get back to you when we can.
+    </div>
+
+    <div id="contact-error" class="contact-error" hidden role="alert">
+      Something went wrong sending your message. Please try again or email us directly.
+    </div>
+
+    <form
+      class="contact-form card"
+      method="POST"
+      enctype="application/x-www-form-urlencoded"
+      action={formAction || undefined}
+      onsubmit={!formAction ? 'return false' : undefined}
+    >
+      <input
+        type="text"
+        name="website"
+        tabindex="-1"
+        autocomplete="off"
+        aria-hidden="true"
+        class="contact-honeypot"
+      />
+
+      <label class="contact-label" for="contact-email">Email</label>
+      <input
+        id="contact-email"
+        class="contact-input"
+        type="email"
+        name="email"
+        required={!!formAction}
+        autocomplete="email"
+        placeholder="you@example.com"
+        disabled={!formAction}
+      />
+
+      <label class="contact-label" for="contact-message">Message</label>
+      <textarea
+        id="contact-message"
+        class="contact-textarea"
+        name="message"
+        required={!!formAction}
+        rows={6}
+        placeholder="Your message…"
+        disabled={!formAction}
+      />
+
+      <button type="submit" class="button button-primary contact-submit" disabled={!formAction}>
+        Send message
+      </button>
+    </form>
+
+    <div class="contact-form-meta card">
+      {
+        formAction ? (
+          <p class="contact-worker-url">
+            <span class="contact-worker-url-label">PUBLIC_CONTACT_WORKER_URL</span>
+            <code class="contact-worker-url-value">{formAction}</code>
+          </p>
+        ) : (
+          <p class="contact-config-error">
+            <strong>Contact form not configured.</strong> Set <code>PUBLIC_CONTACT_WORKER_URL</code> to
+            your Cloudflare Worker URL and redeploy the site. Deploy the worker from <code>workers/</code>{' '}
+            and add the secret <code>RESEND_API_KEY</code>. You can still reach us at{' '}
+            <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
+          </p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline>
+  (function () {
+    try {
+      var q = new URLSearchParams(window.location.search);
+      if (q.has('success')) {
+        var ok = document.getElementById('contact-success');
+        if (ok) ok.removeAttribute('hidden');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+      if (q.has('error')) {
+        var bad = document.getElementById('contact-error');
+        if (bad) bad.removeAttribute('hidden');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch (_) {}
+  })();
+</script>
+
+<style>
+  .contact-wrap {
+    max-width: 560px;
+  }
+
+  h1 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+  }
+
+  .contact-lead {
+    margin: 0 0 1.25rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .contact-lead a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .contact-success {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  .contact-error {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, #8b4513 35%, var(--border));
+    background: color-mix(in srgb, #c45c26 10%, var(--surface));
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .contact-honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .contact-label {
+    font-size: 0.88rem;
+    font-weight: 650;
+    color: var(--text);
+    margin-top: 0.35rem;
+  }
+
+  .contact-label:first-of-type {
+    margin-top: 0;
+  }
+
+  .contact-input,
+  .contact-textarea {
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.72rem;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .contact-textarea {
+    resize: vertical;
+    min-height: 7rem;
+    line-height: 1.45;
+  }
+
+  .contact-input:focus,
+  .contact-textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    outline-offset: 1px;
+  }
+
+  .contact-submit {
+    align-self: flex-start;
+    margin-top: 0.35rem;
+  }
+
+  .contact-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .contact-input:disabled,
+  .contact-textarea:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .contact-form-meta {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
+  .contact-worker-url {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--text-secondary);
+  }
+
+  .contact-worker-url-label {
+    font-weight: 650;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .contact-worker-url-value {
+    display: block;
+    margin: 0;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.82rem;
+    word-break: break-all;
+    color: var(--text);
+    background: color-mix(in srgb, var(--border) 55%, transparent);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .contact-config-error {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  .contact-config-error strong {
+    color: var(--text);
+  }
+
+  .contact-form-meta code {
+    font-size: 0.88em;
+    color: var(--text);
+    background: color-mix(in srgb, var(--border) 65%, transparent);
+    padding: 0.12rem 0.35rem;
+    border-radius: 6px;
+  }
+
+  .contact-form-meta a {
+    color: var(--accent);
+  }
+</style>

@@ -18,7 +18,7 @@ const postSlug = (id: string) => id.replace(/\.(md|mdx)$/i, '');
           {posts.map((post) => (
             <article class="post-card">
               <h2>
-                <a href={`/news/${postSlug(post.id)}/`}>{post.data.title}</a>
+                <a href={`/news/${postSlug(post.id)}`}>{post.data.title}</a>
               </h2>
               <p class="post-date">
                 {post.data.pubDate.toLocaleDateString('en-US', {
@@ -28,7 +28,7 @@ const postSlug = (id: string) => id.replace(/\.(md|mdx)$/i, '');
                 })}
               </p>
               <p class="post-desc">{post.data.description}</p>
-              <a class="read-more" href={`/news/${postSlug(post.id)}/`}>Read More</a>
+              <a class="read-more" href={`/news/${postSlug(post.id)}`}>Read More</a>
             </article>
           ))}
         </div>

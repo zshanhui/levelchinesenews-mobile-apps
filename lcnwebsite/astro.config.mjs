@@ -3,6 +3,10 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://learnchinese.news',
+  site: 'https://learnchinesenews.com',
   output: 'static',
+  trailingSlash: 'never',
+  build: {
+    format: 'file',
+  },
 });

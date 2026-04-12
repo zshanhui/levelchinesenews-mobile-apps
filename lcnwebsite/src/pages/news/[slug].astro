@@ -16,7 +16,7 @@ const { Content } = await render(post);
 
 <BaseLayout title={`${post.data.title} | LearnChineseNews`} description={post.data.description}>
   <article class="container post-wrap">
-    <a class="back-link" href="/news/">Back to latest news</a>
+    <a class="back-link" href="/news">Back to latest news</a>
     <h1>{post.data.title}</h1>
     <p class="post-date">
       {post.data.pubDate.toLocaleDateString('en-US', {

@@ -89,13 +89,13 @@ const latestPostDate = latestPost
           <article class="latest-news">
             <p class="latest-news-label">Latest News</p>
             <h3>
-              <a href={`/news/${latestPostSlug}/`}>{latestPost.data.title}</a>
+              <a href={`/news/${latestPostSlug}`}>{latestPost.data.title}</a>
             </h3>
             <p class="latest-news-date">{latestPostDate}</p>
             <p class="latest-news-desc">
               {latestPost.data.description}
               {' '}
-              <a class="latest-news-link" href={`/news/${latestPostSlug}/`}>
+              <a class="latest-news-link" href={`/news/${latestPostSlug}`}>
                 Read More
               </a>
             </p>

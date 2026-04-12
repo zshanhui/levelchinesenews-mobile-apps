@@ -1,0 +1,15 @@
+# Deploy: cd workers && npx wrangler deploy
+# Secrets: npx wrangler secret put RESEND_API_KEY
+
+name = "lcn-contact"
+main = "contact.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+# Recipient inbox for contact submissions
+CONTACT_TO_EMAIL = "shanhui@proton.me"
+# Sender — must be verified in Resend (add your domain or use Resend onboarding address for testing)
+MAIL_FROM = "LevelChinese News <contact@levelchinese.app>"
+# Match your production site (trailingSlash: never → /contact?…)
+CONTACT_SUCCESS_REDIRECT = "https://learnchinese.app/contact?success=1"
+CONTACT_ERROR_REDIRECT = "https://learnchinese.app/contact?error=1"
