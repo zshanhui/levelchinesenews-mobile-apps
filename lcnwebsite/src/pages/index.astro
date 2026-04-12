@@ -34,7 +34,8 @@ const latestPostDate = latestPost
             &#8250;
           </button>
           <div class="phone-speaker" aria-hidden="true"></div>
-          <div class="phone-screen">
+          <div class="phone-screen" data-hero-screen aria-live="polite">
+            <div class="hero-screen-loader" aria-hidden="true" />
             <img
               class="hero-screen-image"
               data-hero-image
@@ -186,15 +187,46 @@ const latestPostDate = latestPost
     alt: el.getAttribute('data-hero-alt') || '',
   }));
   const heroImage = document.querySelector('[data-hero-image]');
+  const phoneScreen = document.querySelector('[data-hero-screen]');
   const caption = document.querySelector('[data-hero-caption]');
   const prevButton = document.querySelector('.arrow-left');
   const nextButton = document.querySelector('.arrow-right');
   let currentIndex = 0;
+  let loadSeq = 0;
 
   const updateSlides = (nextIndex) => {
     if (!screens.length || !(heroImage instanceof HTMLImageElement)) return;
     currentIndex = (nextIndex + screens.length) % screens.length;
     const nextScreen = screens[currentIndex];
+
+    let sameAsCurrent = false;
+    try {
+      const nextUrl = new URL(nextScreen.src, location.href).href;
+      const curUrl = new URL(heroImage.currentSrc || heroImage.src, location.href).href;
+      sameAsCurrent = curUrl === nextUrl;
+    } catch {
+      sameAsCurrent = false;
+    }
+    if (sameAsCurrent) {
+      heroImage.alt = nextScreen.alt;
+      if (caption) {
+        caption.textContent = nextScreen.alt;
+      }
+      return;
+    }
+
+    const seq = ++loadSeq;
+    phoneScreen?.classList.add('is-loading');
+    phoneScreen?.setAttribute('aria-busy', 'true');
+
+    const finish = () => {
+      if (seq !== loadSeq) return;
+      phoneScreen?.classList.remove('is-loading');
+      phoneScreen?.setAttribute('aria-busy', 'false');
+    };
+
+    heroImage.addEventListener('load', finish, { once: true });
+    heroImage.addEventListener('error', finish, { once: true });
     heroImage.src = nextScreen.src;
     heroImage.alt = nextScreen.alt;
     if (caption) {
@@ -388,6 +420,46 @@ const latestPostDate = latestPost
     width: 100%;
     border-radius: 30px;
     background: var(--bg);
+  }
+
+  .hero-screen-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--bg) 58%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .phone-screen.is-loading .hero-screen-loader {
+    opacity: 1;
+  }
+
+  .hero-screen-loader::after {
+    content: '';
+    width: 34px;
+    height: 34px;
+    border: 3px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: hero-loader-spin 0.65s linear infinite;
+  }
+
+  @keyframes hero-loader-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-screen-loader::after {
+      animation: none;
+      border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    }
   }
 
   .hero-screen-image {
