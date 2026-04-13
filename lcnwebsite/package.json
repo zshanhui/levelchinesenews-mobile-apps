@@ -12,7 +12,7 @@
     "astro": "astro",
     "worker:dev": "wrangler dev --config workers/wrangler.toml",
     "worker:dep": "wrangler deploy --config workers/wrangler.toml",
-    "page:dep": "wrangler pages deploy dist --project-name=learnchinesenews-landingsite"
+    "page:dep": "astro build && wrangler pages deploy dist --project-name=learnchinesenews-landingsite"
   },
   "dependencies": {
     "astro": "^6.1.1"

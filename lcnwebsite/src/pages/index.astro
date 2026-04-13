@@ -245,8 +245,8 @@ const latestPostDate = latestPost
     max-width: none;
     margin-inline: 0;
     box-sizing: border-box;
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 
   .hero {
@@ -370,6 +370,8 @@ const latestPostDate = latestPost
 
   .hero-copy {
     min-width: 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
   }
 
   .phone-stage {
@@ -552,10 +554,12 @@ const latestPostDate = latestPost
     gap: 0.5rem;
   }
 
-  .cta-row a.button {
+  .cta-row a.button,
+  .cta-row button.button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 0;
   }
 
   .latest {
@@ -606,19 +610,19 @@ const latestPostDate = latestPost
     color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
-    white-space: nowrap;
   }
 
   .features-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.6rem;
-    justify-items: center;
+    gap: 0.75rem;
+    justify-items: stretch;
   }
 
   .features-grid .card {
     max-width: 600px;
     width: 100%;
+    min-width: 0;
   }
 
   .features-grid h3,
@@ -646,11 +650,22 @@ const latestPostDate = latestPost
     }
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 900px) {
     .features-grid {
       grid-template-columns: 1fr;
     }
+  }
 
+  @media (max-width: 760px) {
+    .landing-section {
+      padding-left: max(0.85rem, env(safe-area-inset-left, 0px));
+      padding-right: max(0.85rem, env(safe-area-inset-right, 0px));
+    }
+
+    .hero {
+      padding: 0.55rem 0.55rem 0.75rem;
+      border-radius: 14px;
+    }
 
     .hero-copy {
       text-align: center;
@@ -659,10 +674,20 @@ const latestPostDate = latestPost
 
     .subtitle {
       margin-inline: auto;
+      max-width: min(42ch, 100%);
     }
 
     .cta-row {
       justify-content: center;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.65rem;
+    }
+
+    .cta-row .button {
+      width: 100%;
+      max-width: 22rem;
+      margin-inline: auto;
     }
 
     .latest-news {
@@ -671,7 +696,11 @@ const latestPostDate = latestPost
 
     .latest-news-desc {
       margin-inline: auto;
-      max-width: 46ch;
+      max-width: min(46ch, 100%);
+    }
+
+    .latest-news-link {
+      white-space: normal;
     }
 
     .phone-stage {
@@ -685,23 +714,40 @@ const latestPostDate = latestPost
     }
 
     .carousel-arrow {
-      width: 30px;
-      height: 30px;
-      font-size: 1.2rem;
+      width: 44px;
+      height: 44px;
+      font-size: 1.35rem;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .arrow-left {
-      left: 18px;
+      left: max(0.35rem, env(safe-area-inset-left, 0px));
     }
 
     .arrow-right {
-      right: 18px;
+      right: max(0.35rem, env(safe-area-inset-right, 0px));
     }
 
     .screen-caption {
       margin: 0;
       width: min(92%, 300px);
       font-size: 0.82rem;
+      padding-inline: 0.25rem;
+    }
+
+    .faq .card.qa {
+      padding: 0.9rem 0.85rem;
+    }
+
+    .section h2 {
+      font-size: clamp(1.2rem, 5vw, 1.65rem);
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+
+    .features-grid h3,
+    .qa h3 {
+      font-size: clamp(0.95rem, 3.5vw, 1.02rem);
     }
   }
 </style>

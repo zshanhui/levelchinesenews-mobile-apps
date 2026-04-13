@@ -67,6 +67,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 10;
+  padding-top: env(safe-area-inset-top, 0px);
   background: color-mix(in srgb, var(--bg) 92%, white);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(6px);
@@ -96,7 +97,7 @@ a {
 
 .brand-text {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 200;
   line-height: 1;
 }
 
@@ -132,7 +133,7 @@ a {
 
 .top-nav {
   display: flex;
-  gap: 0.95rem;
+  gap: 1.45rem;
   color: var(--text-secondary);
 }
 
@@ -142,7 +143,7 @@ a {
 
 .site-main {
   flex: 1 0 auto;
-  padding: 2.5rem 0 2.3rem;
+  padding: 2.5rem 0 calc(2.3rem + env(safe-area-inset-bottom, 0px));
 }
 
 .section {
@@ -200,6 +201,7 @@ a {
   align-items: center;
   gap: 1rem;
   min-height: 60px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   color: var(--text-muted);
   font-size: 0.86rem;
 }
@@ -219,7 +221,26 @@ a {
   }
 
   .header-inner {
-    min-height: 62px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    min-height: 0;
+    padding-top: 0.65rem;
+  }
+
+  .brand {
+    align-self: flex-start;
+  }
+
+  .top-nav {
+    width: 100%;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    row-gap: 0.45rem;
+    column-gap: 2rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.05rem;
+    border-top: 1px solid var(--border);
   }
 
   .footer-inner {
@@ -227,5 +248,23 @@ a {
     flex-direction: column;
     justify-content: center;
     padding: 0.8rem 0;
+    padding-bottom: max(0.8rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .site-main {
+    padding: 1.35rem 0 calc(1.6rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .button {
+    min-height: 44px;
+    padding: 0.62rem 1rem;
+    box-sizing: border-box;
+  }
+
+  .top-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.05rem 0;
   }
 }
