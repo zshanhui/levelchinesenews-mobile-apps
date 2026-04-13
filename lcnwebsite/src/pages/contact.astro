@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../config/site';
 
 const title = 'Contact';
-const description = 'Send a message to the LearnChineseNews team.';
+const description = 'Send a message to the LevelChinese team.';
 const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
 ---
 
@@ -67,7 +67,7 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
       </button>
     </form>
 
-    <div class="contact-form-meta card">
+    <!-- <div class="contact-form-meta card">
       {
         formAction ? (
           <p class="contact-worker-url">
@@ -83,7 +83,7 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
           </p>
         )
       }
-    </div>
+    </div> -->
   </section>
 </BaseLayout>
 

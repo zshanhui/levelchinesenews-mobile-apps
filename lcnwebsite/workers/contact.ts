@@ -8,9 +8,9 @@ export interface Env {
   CONTACT_TO_EMAIL: string;
   /** Must be a verified sender in Resend (domain or onboarding address). */
   MAIL_FROM: string;
-  /** Full URL, e.g. https://learnchinese.news/contact?success=1 */
+  /** Full URL, e.g. https://levelchinese.app/contact?success=1 */
   CONTACT_SUCCESS_REDIRECT: string;
-  /** Full URL on send failure, e.g. https://learnchinese.news/contact?error=1 */
+  /** Full URL on send failure, e.g. https://levelchinese.app/contact?error=1 */
   CONTACT_ERROR_REDIRECT: string;
 }
 
@@ -72,7 +72,7 @@ export default {
         from: env.MAIL_FROM,
         to: [env.CONTACT_TO_EMAIL],
         reply_to: email,
-        subject: 'LearnChineseNews contact form',
+        subject: 'LevelChinese News contact form',
         text: `From: ${email}\n\n${message}`,
       }),
     });

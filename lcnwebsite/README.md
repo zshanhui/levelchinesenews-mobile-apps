@@ -1,6 +1,6 @@
 # README.md
 
-this dir contains the learnchinese.news website and marketing material
+this directory contains the levelchinese.app website and marketing material
 
 ## marketing copy
 

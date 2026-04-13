@@ -11,5 +11,5 @@ CONTACT_TO_EMAIL = "shanhui@proton.me"
 # Sender — must be verified in Resend (add your domain or use Resend onboarding address for testing)
 MAIL_FROM = "LevelChinese News <contact@levelchinese.app>"
 # Match your production site (trailingSlash: never → /contact?…)
-CONTACT_SUCCESS_REDIRECT = "https://learnchinese.app/contact?success=1"
-CONTACT_ERROR_REDIRECT = "https://learnchinese.app/contact?error=1"
+CONTACT_SUCCESS_REDIRECT = "https://levelchinese.app/contact?success=1"
+CONTACT_ERROR_REDIRECT = "https://levelchinese.app/contact?error=1"

@@ -1,11 +1,11 @@
 ---
-title: "LearnChineseNews Beta Update: Building Better Reading Tools"
+title: "LevelChinese News Beta Update: Building Better Reading Tools"
 description: "A quick update on our beta progress, new reader improvements, and what we are shipping next for intermediate Chinese learners."
 pubDate: 2026-03-30
 draft: false
 ---
 
-We are getting ready for the next phase of LearnChineseNews internal closed beta testing.
+We are getting ready for the next phase of LevelChinese News internal closed beta testing.
 
 Over the next couple weeks, we focused on a polishing out UX/UI bugs across the preview Android app, focus on the reading workflow:
 

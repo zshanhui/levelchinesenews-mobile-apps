@@ -1,12 +1,12 @@
 ---
 title: Privacy Policy
-description: Privacy policy for LearnChineseNews.
+description: Privacy policy for LevelChinese News.
 lastUpdated: April 11, 2026
 ---
 
 ## Who we are
 
-LearnChineseNews is a Chinese-language reading app built for learners. It is operated by **WuweiLabs**, based in Singapore. When this policy says "we" or "us", it refers to WuweiLabs.
+LevelChinese News is a Chinese-language reading app built for learners. It is operated by **WuweiLabs**, based in Singapore. When this policy says "we" or "us", it refers to WuweiLabs.
 
 ## Age requirement
 
@@ -47,7 +47,7 @@ We do not sell, rent, or share your data with any third party for marketing or a
 
 ## Marketing website
 
-Our website ([learnchinese.news](https://learnchinese.news)) does not use analytics, tracking cookies, or any third-party scripts beyond Google Fonts for typography.
+Our website ([levelchinese.app](https://levelchinese.app)) does not use analytics, tracking cookies, or any third-party scripts beyond Google Fonts for typography.
 
 ## Data security
 
