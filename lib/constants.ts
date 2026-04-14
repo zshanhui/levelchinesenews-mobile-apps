@@ -23,7 +23,7 @@ export const STORAGE_KEY_ARTICLES = 'my_articles';
 // Article card
 export const THUMB_WIDTH = 80;
 export const THUMB_MIN_HEIGHT = 50;
-export const THUMB_MAX_HEIGHT = 120;
+export const THUMB_MAX_HEIGHT = 70;
 export const TRANSLATION_COUNTDOWN_SECONDS = 15;
 
 // Article detail

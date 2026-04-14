@@ -1,8 +1,12 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeContext';
+
+/** Extra space below tab icons/labels (safe area is added on top of this). */
+const TAB_BAR_EXTRA_BOTTOM_PADDING = 10;
 
 function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
   const logoColors = [theme.accent, '#8a8278', theme.text];
@@ -40,6 +44,7 @@ function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
 export default function TabLayout() {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -57,6 +62,7 @@ export default function TabLayout() {
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
           borderTopWidth: 1,
+          paddingBottom: insets.bottom + TAB_BAR_EXTRA_BOTTOM_PADDING,
         },
         sceneStyle: { backgroundColor: theme.background },
       }}

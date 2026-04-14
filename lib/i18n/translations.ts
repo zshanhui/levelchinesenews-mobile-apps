@@ -6,15 +6,16 @@ export const translations = {
   en: {
     // Brand & tabs
     brand: 'LevelChineseNews',
-    'tabs.articles': 'articles',
-    'tabs.create': 'create',
-    'tabs.settings': 'settings',
+    'tabs.articles': 'Read',
+    'tabs.create': 'Create',
+    'tabs.settings': 'Settings',
 
     // Articles list (index)
     loadingArticles: 'Loading articles…',
     retry: 'Retry',
     noArticlesYet: 'no articles yet',
     addArticlesHint: 'add articles from the create tab by pasting a news url',
+    loadMore: 'Load more',
 
     // Create tab
     parse: 'parse',
@@ -153,9 +154,9 @@ export const translations = {
   es: {
     // Brand & tabs
     brand: 'LevelChineseNews',
-    'tabs.articles': 'artículos',
-    'tabs.create': 'crear',
-    'tabs.settings': 'ajustes',
+    'tabs.articles': 'Leer',
+    'tabs.create': 'Crear',
+    'tabs.settings': 'Ajustes',
 
     // Articles list (index)
     loadingArticles: 'Cargando artículos…',
@@ -163,6 +164,7 @@ export const translations = {
     noArticlesYet: 'aún no hay artículos',
     addArticlesHint:
       'añade artículos desde la pestaña crear pegando una url de noticias',
+    loadMore: 'Cargar más',
 
     // Create tab
     parse: 'analizar',
@@ -304,9 +306,9 @@ export const translations = {
   ms: {
     // Brand & tabs
     brand: 'LevelChineseNews',
-    'tabs.articles': 'artikel',
-    'tabs.create': 'cipta',
-    'tabs.settings': 'tetapan',
+    'tabs.articles': 'Baca',
+    'tabs.create': 'Cipta',
+    'tabs.settings': 'Tetapan',
 
     // Articles list (index)
     loadingArticles: 'Memuatkan artikel…',
@@ -314,6 +316,7 @@ export const translations = {
     noArticlesYet: 'belum ada artikel',
     addArticlesHint:
       'tambah artikel daripada tab cipta dengan menampal url berita',
+    loadMore: 'Muat lagi',
 
     // Create tab
     parse: 'hurai',
@@ -455,7 +458,7 @@ export const translations = {
   ar: {
     // Brand & tabs
     brand: 'LevelChineseNews',
-    'tabs.articles': 'المقالات',
+    'tabs.articles': 'قراءة',
     'tabs.create': 'إنشاء',
     'tabs.settings': 'الإعدادات',
 
@@ -465,6 +468,7 @@ export const translations = {
     noArticlesYet: 'لا توجد مقالات بعد',
     addArticlesHint:
       'أضف مقالات من تبويب إنشاء عن طريق لصق رابط خبر',
+    loadMore: 'تحميل المزيد',
 
     // Create tab
     parse: 'تحليل',
@@ -606,7 +610,7 @@ export const translations = {
   zh: {
     // Brand & tabs
     brand: 'LevelChineseNews',
-    'tabs.articles': '文章',
+    'tabs.articles': '阅读',
     'tabs.create': '创建',
     'tabs.settings': '设置',
 
@@ -615,6 +619,7 @@ export const translations = {
     retry: '重试',
     noArticlesYet: '暂无文章',
     addArticlesHint: '在创建标签页粘贴新闻链接添加文章',
+    loadMore: '加载更多',
 
     // Create tab
     parse: '解析',

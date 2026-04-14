@@ -1,9 +1,10 @@
+import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display';
 import {
   NotoSansSC_400Regular,
   NotoSansSC_600SemiBold,
 } from '@expo-google-fonts/noto-sans-sc';
 import { Platform } from 'react-native';
-import { useFonts } from '@expo-google-fonts/noto-sans-sc/useFonts';
+import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createContext,
@@ -47,6 +48,8 @@ type FontContextValue = {
   chineseFontStyle: { fontFamily?: string };
   /** Bold variant for headings */
   chineseFontBoldStyle: { fontFamily?: string };
+  /** Playfair Display semibold for decorative UI (e.g. Load more) */
+  fancyDisplayFontStyle: { fontFamily?: string };
   /** Resolved numeric font size for article content */
   articleFontSize: number;
   /** Whether fonts are ready (when useNotoSansSC is true) */
@@ -66,6 +69,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
   const [fontsLoaded] = useFonts({
     NotoSansSC_400Regular,
     NotoSansSC_600SemiBold,
+    PlayfairDisplay_600SemiBold,
   });
 
   useEffect(() => {
@@ -130,6 +134,10 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
       ? { fontFamily: 'NotoSansSC_600SemiBold' as const }
       : {};
 
+  const fancyDisplayFontStyle = fontsLoaded
+    ? { fontFamily: 'PlayfairDisplay_600SemiBold' as const }
+    : {};
+
   const articleFontSize = FONT_SIZE_MAP[fontSize];
 
   const value: FontContextValue = {
@@ -143,6 +151,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     setFontSize,
     chineseFontStyle,
     chineseFontBoldStyle,
+    fancyDisplayFontStyle,
     articleFontSize,
     fontsReady: !useNotoSansSC || fontsLoaded,
   };

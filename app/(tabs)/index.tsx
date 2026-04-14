@@ -18,6 +18,7 @@ import { ArticleListFilterShelve } from '../../lib/components/ArticleListFilterS
 import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import { getReadStatesForArticleIds } from '../../lib/savedArticlesDb';
+import { useFont } from '../../lib/FontContext';
 import { useArticles } from '../../lib/useArticles';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
@@ -26,6 +27,7 @@ const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
 export default function ArticlesScreen() {
   const { theme } = useTheme();
+  const { fancyDisplayFontStyle } = useFont();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
@@ -196,9 +198,28 @@ export default function ArticlesScreen() {
         </View>
       }
       ListFooterComponent={
-        loadingMore ? (
+        items.length > 0 && hasMore ? (
           <View style={styles.footer}>
-            <ActivityIndicator size="small" color={theme.accent} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.loadMoreButton,
+                loadingMore && styles.loadMoreButtonDisabled,
+                pressed && !loadingMore && styles.loadMoreButtonPressed,
+              ]}
+              onPress={() => loadMore()}
+              disabled={loadingMore}
+              accessibilityRole="button"
+              accessibilityState={{ busy: loadingMore }}
+              accessibilityLabel={t('loadMore')}
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={theme.accent} />
+              ) : (
+                <Text style={[styles.loadMoreButtonText, fancyDisplayFontStyle]}>
+                  {t('loadMore')}
+                </Text>
+              )}
+            </Pressable>
           </View>
         ) : null
       }
@@ -209,8 +230,6 @@ export default function ArticlesScreen() {
           tintColor={theme.accent}
         />
       }
-      onEndReached={() => hasMore && loadMore()}
-      onEndReachedThreshold={0.4}
       showsVerticalScrollIndicator={false}
     />
     <ArticleListFilterShelve
@@ -301,6 +320,25 @@ function createStyles(theme: Theme) {
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  loadMoreButton: {
+    minWidth: 200,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  loadMoreButtonDisabled: {
+    opacity: 0.75,
+  },
+  loadMoreButtonPressed: {
+    opacity: 0.88,
+  },
+  loadMoreButtonText: {
+    fontSize: 17,
+    color: theme.accent,
   },
   });
 }
