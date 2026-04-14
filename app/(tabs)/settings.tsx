@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +22,9 @@ import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { envConfig } from '../../lib/api';
 import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
+
+const URL_ABOUT_PAGE = 'https://levelchinese.app/about';
+const URL_CONTACT_PAGE = 'https://levelchinese.app/contact';
 import {
   getOrCreateInstallationId,
   userSavedArticlesTableName,
@@ -61,6 +65,7 @@ export default function SettingsScreen() {
     setLineSpacing,
     fontSize,
     setFontSize,
+    fancyDisplayFontStyle,
   } = useFont();
 
   const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
@@ -277,6 +282,29 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        <View style={styles.footerLinksRow}>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => Linking.openURL(URL_ABOUT_PAGE)}
+            style={({ pressed }) => [
+              styles.footerLinkButton,
+              pressed && styles.footerLinkButtonPressed,
+            ]}
+          >
+            <Text style={[styles.footerLinkText, fancyDisplayFontStyle]}>{t('aboutLink')}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => Linking.openURL(URL_CONTACT_PAGE)}
+            style={({ pressed }) => [
+              styles.footerLinkButton,
+              pressed && styles.footerLinkButtonPressed,
+            ]}
+          >
+            <Text style={[styles.footerLinkText, fancyDisplayFontStyle]}>{t('contactLink')}</Text>
+          </Pressable>
+        </View>
+
         <Pressable
           onPress={handleVersionPress}
           style={({ pressed }) => [styles.versionButton, pressed && styles.versionButtonPressed]}
@@ -475,6 +503,30 @@ function createStyles(theme: Theme) {
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.border,
+  },
+  footerLinksRow: {
+    flexDirection: 'row',
+    marginTop: 24,
+    gap: 10,
+  },
+  footerLinkButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  footerLinkButtonPressed: {
+    opacity: 0.75,
+    backgroundColor: theme.etchedBg,
+  },
+  footerLinkText: {
+    fontSize: 16,
+    color: theme.accent,
   },
   versionText: {
     fontSize: 12,

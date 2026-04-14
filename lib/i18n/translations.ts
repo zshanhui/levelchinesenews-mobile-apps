@@ -58,6 +58,8 @@ export const translations = {
     lineSpacingNumbersRelaxed: '14px, 40px',
     adjustFontSize: 'adjust article font size',
     debugEnvVars: 'Debug – environment variables',
+    aboutLink: 'About',
+    contactLink: 'Contact',
 
     // Article detail
     article: 'article',
@@ -207,6 +209,8 @@ export const translations = {
     lineSpacingNumbersRelaxed: '14px, 40px',
     adjustFontSize: 'ajustar tamaño de fuente del artículo',
     debugEnvVars: 'Depuración – variables de entorno',
+    aboutLink: 'Acerca de',
+    contactLink: 'Contacto',
 
     // Article detail
     article: 'artículo',
@@ -359,6 +363,8 @@ export const translations = {
     lineSpacingNumbersRelaxed: '14px, 40px',
     adjustFontSize: 'laras saiz fon artikel',
     debugEnvVars: 'Debug – pemboleh ubah persekitaran',
+    aboutLink: 'Perihal',
+    contactLink: 'Hubungi',
 
     // Article detail
     article: 'artikel',
@@ -511,6 +517,8 @@ export const translations = {
     lineSpacingNumbersRelaxed: '14px, 40px',
     adjustFontSize: 'ضبط حجم خط المقال',
     debugEnvVars: 'تصحيح الأخطاء – متغيرات البيئة',
+    aboutLink: 'حول',
+    contactLink: 'اتصل',
 
     // Article detail
     article: 'مقال',
@@ -661,6 +669,8 @@ export const translations = {
     lineSpacingNumbersRelaxed: '14px, 40px',
     adjustFontSize: '调整文章字体大小',
     debugEnvVars: '调试 – 环境变量',
+    aboutLink: '关于',
+    contactLink: '联系',
 
     // Article detail
     article: '文章',
