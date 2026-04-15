@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { NativeLanguage } from '../nativeLanguage';
@@ -19,19 +20,26 @@ const NATIVE_LANGUAGE_OPTIONS: {
 }[] = [
   { value: NativeLanguage.EN, labelKey: 'langEnglish' },
   { value: NativeLanguage.ZH, labelKey: 'langChinese' },
+  { value: NativeLanguage.AR, labelKey: 'langArabic' },
+  { value: NativeLanguage.ID, labelKey: 'langIndonesian' },
+  { value: NativeLanguage.VI, labelKey: 'langVietnamese' },
   { value: NativeLanguage.ES, labelKey: 'langSpanish' },
   { value: NativeLanguage.MS, labelKey: 'langMalay' },
-  { value: NativeLanguage.ID, labelKey: 'langIndonesian' },
   { value: NativeLanguage.RU, labelKey: 'langRussian' },
-  { value: NativeLanguage.AR, labelKey: 'langArabic' },
 ];
 
 export function NativeLanguageSelector() {
   const { theme } = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
   const { t } = useTranslation();
   const { nativeLanguage, setNativeLanguage } = useNativeLanguage();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [modalVisible, setModalVisible] = useState(false);
+
+  /** Large enough to show the full list on typical phones without scrolling. */
+  const modalListMaxHeight = Math.round(
+    Math.min(windowHeight * 0.72, 720),
+  );
 
   const selectedOpt = NATIVE_LANGUAGE_OPTIONS.find(
     (o) => o.value === nativeLanguage,
@@ -76,7 +84,7 @@ export function NativeLanguageSelector() {
               {t('selectNativeLanguage')}
             </Text>
             <ScrollView
-              style={styles.modalScroll}
+              style={{ maxHeight: modalListMaxHeight }}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={true}
             >
@@ -158,11 +166,12 @@ function createStyles(theme: Theme) {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'center',
-      padding: 24,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
     },
     modalContent: {
       borderRadius: 12,
-      maxHeight: '70%',
+      maxHeight: '88%',
       overflow: 'hidden',
     },
     modalTitle: {
@@ -172,9 +181,6 @@ function createStyles(theme: Theme) {
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
-    },
-    modalScroll: {
-      maxHeight: 320,
     },
     modalOption: {
       paddingVertical: 14,

@@ -123,8 +123,9 @@ export const translations = {
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
     langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Russian',
-    langArabic: '🇸🇦 العربية',
+    langArabic: '🇪🇬 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
     // Article content
@@ -276,8 +277,9 @@ export const translations = {
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
     langIndonesian: '🇮🇩 Indonesio',
+    langVietnamese: '🇻🇳 Vietnamita',
     langRussian: '🇷🇺 Ruso',
-    langArabic: '🇸🇦 العربية',
+    langArabic: '🇪🇬 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
     // Article content
@@ -432,8 +434,9 @@ export const translations = {
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
     langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Bahasa Rusia',
-    langArabic: '🇸🇦 العربية',
+    langArabic: '🇪🇬 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
     // Article content
@@ -466,6 +469,480 @@ export const translations = {
     failedToLoadArticles: 'Gagal memuat artikel.',
     failedToRefresh: 'Gagal menyegarkan.',
     failedToLoadMore: 'Gagal memuat lagi.',
+  },
+  id: {
+    // Brand & tabs
+    brand: 'LevelChineseNews',
+    'tabs.articles': 'Baca',
+    'tabs.create': 'Buat',
+    'tabs.settings': 'Pengaturan',
+
+    // Articles list (index)
+    loadingArticles: 'Memuat artikel…',
+    retry: 'Coba lagi',
+    noArticlesYet: 'belum ada artikel',
+    addArticlesHint:
+      'tambahkan artikel dari tab buat dengan menempelkan URL berita',
+    loadMore: 'Muat lebih banyak',
+
+    // Create tab
+    parse: 'urai',
+    myArticles: 'artikel saya ({{count}})',
+    noArticlesParseFirst: 'belum ada artikel — urai satu terlebih dahulu',
+    savedArticlesLoadFailed: 'tidak dapat memuat artikel tersimpan',
+    fetching: 'mengambil…',
+    indexing: 'mengindeks…',
+    articleSaved: 'artikel disimpan',
+    newArticleCreated: 'artikel baru dibuat',
+    articleAlreadyCreated:
+      'Artikel ini sudah dibuat — tidak perlu diambil lagi',
+    fetchAnotherArticle: 'ambil artikel lain',
+    enterUrl: 'Masukkan URL yang didukung untuk mengambil artikel',
+    urlPlaceholder: 'https://zaobao.com/...',
+    dailyLimitReached: 'batas harian tercapai — kembali besok',
+    parsesRemaining: '{{remaining}} dari {{max}} penguraian tersisa hari ini',
+    supportedSites: 'situs yang didukung',
+    parseArticleUrl: 'Urai URL artikel',
+    myArticlesFilterUnread: 'belum dibaca ({{count}})',
+    myArticlesFilterFinished: 'selesai ({{count}})',
+    myArticlesFilterEmptyUnread: 'tidak ada artikel yang belum dibaca',
+    myArticlesFilterEmptyRead: 'belum ada artikel yang selesai',
+
+    // Settings
+    settings: 'pengaturan',
+    configurePreferences: 'bahasa dan preferensi umum',
+    darkMode: 'mode gelap (cyberpunk)',
+    configureLocalDict: 'konfigurasi kamus lokal',
+    downloadAndReset: 'unduh dan reset',
+    readerPreferences: 'preferensi pembaca',
+    useNotoSansSc: 'gunakan Noto Sans SC untuk bahasa Tionghoa',
+    showPinyin: 'tampilkan pinyin dalam artikel',
+    adjustLineSpacing: 'sesuaikan jarak baris di konten artikel',
+    lineSpacingCompact: 'rapat',
+    lineSpacingNormal: 'normal',
+    lineSpacingRelaxed: 'longgar',
+    lineSpacingNumbersCompact: '0px, 8px',
+    lineSpacingNumbersNormal: '6px, 24px',
+    lineSpacingNumbersRelaxed: '14px, 40px',
+    adjustFontSize: 'sesuaikan ukuran font artikel',
+    debugEnvVars: 'Debug – variabel lingkungan',
+    aboutLink: 'Tentang',
+    contactLink: 'Kontak',
+
+    // Article detail
+    article: 'artikel',
+    back: 'kembali',
+    loading: 'memuat…',
+    cached: 'tersimpan dalam cache',
+    seed: 'data contoh',
+    noContentAvailable: 'tidak ada konten',
+    openSettings: 'Buka pengaturan',
+    openSourceArticle: 'buka artikel sumber',
+    markRead: 'tandai sudah dibaca',
+    markUnread: 'tandai belum dibaca',
+    markedReadStatus: 'ditandai sudah dibaca',
+    saveToMyArticles: 'Simpan ke artikel saya',
+    savedToMyArticles: 'Disimpan ke artikel saya',
+    removeFromMyArticles: 'Hapus dari artikel saya',
+    removedFromMyArticles: 'Dihapus dari artikel saya',
+    saveArticleFailed: 'Tidak dapat menyimpan artikel',
+    bookmarkSentence: 'Tandai kalimat',
+    removeSentenceBookmark: 'Hapus penanda kalimat',
+    sentenceBookmarkSaved: 'Kalimat ditandai',
+    sentenceBookmarkRemoved: 'Penanda kalimat dihapus',
+    sentenceBookmarkFailed: 'Tidak dapat memperbarui penanda kalimat',
+    aiTranslatedWithDeepseek: 'Diterjemahkan AI dengan DeepSeek',
+
+    // Not found
+    notFound: 'ups! tidak ditemukan',
+    goBackHome: 'kembali ke beranda',
+
+    // Local dict / dictionary
+    localDictionary: 'kamus lokal',
+    localDictionarySettings: 'pengaturan kamus lokal',
+    downloadLocalDict: 'Muat kamus dari server',
+    resetLocalDict: 'Reset kamus lokal',
+    resetting: 'Mereset…',
+    downloading: 'Mengunduh…',
+    downloadLocalDictHint:
+      'Unduh kamus CEDICT dari server jarak jauh dan muat ke basis data lokal Anda. Ukuran total sekitar 10 MB.',
+    dictEntriesCount: '{{count}} entri dalam kamus lokal',
+    randomEntrySample: 'contoh frasa, peribahasa, 成语',
+    showAnotherRandomEntry: 'Tampilkan entri acak lainnya',
+    downloadFailed: 'Gagal mengunduh',
+
+    // Article card (translation)
+    translationFailed: 'Terjemahan gagal',
+    couldNotGenerateTranslation:
+      'Tidak dapat membuat terjemahan. Silakan coba lagi.',
+    generatingTranslation: 'Membuat terjemahan…',
+    showChineseTitle: 'Tampilkan judul bahasa Tionghoa',
+    showEnglishTranslation: 'Tampilkan terjemahan bahasa Inggris',
+    requestTranslation: 'Minta terjemahan',
+    openArticle: 'buka artikel: {{title}}',
+
+    // Native language selector
+    nativeLanguage: 'bahasa ibu',
+    nativeLanguageHint:
+      'Bahasa ibu Anda dipakai untuk terjemahan dan petunjuk bermanfaat lainnya.',
+    selectNativeLanguage: 'pilih bahasa ibu',
+    select: 'Pilih',
+    langEnglish: '🇺🇸 English',
+    langSpanish: '🇪🇸 Español',
+    langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langVietnamese: '🇻🇳 Tiếng Việt',
+    langRussian: '🇷🇺 Rusia',
+    langArabic: '🇪🇬 العربية',
+    langChinese: '🇨🇳 简体中文 (only UI)',
+
+    // Article content
+    nativeLanguageDefinitionPlaceholder:
+      'definisi dalam bahasa ibu akan muncul di sini..',
+    loadLocalDictFirstHint:
+      'muat kamus lokal terlebih dahulu untuk melihat definisi di sini',
+    setupLocalDict: 'atur kamus lokal',
+    getPleco: 'Dapatkan Pleco',
+    openPlecoWebsite: 'Buka situs web Pleco',
+    wordMissingInLocalDict:
+      'Kata tidak ada dalam kamus lokal—coba Pleco atau laporkan kata yang hilang.',
+    openInPleco: 'Buka di kamus Pleco',
+    pleco: 'Pleco',
+    plecoSource: 'Level Chinese News',
+
+    // Cache / seed indicators
+    cachedLabel: 'Cache {{label}}',
+    seedData: 'Data contoh',
+
+    // Errors (api / useArticles)
+    somethingWentWrong: 'Terjadi kesalahan. Silakan coba lagi.',
+    requestTimedOut: 'Permintaan habis waktu. Silakan coba lagi.',
+    unableToConnect:
+      'Tidak dapat terhubung. Periksa koneksi internet Anda.',
+    networkUnstableOrOff:
+      'Koneksi jaringan Anda tidak stabil atau terputus.',
+    serverError: 'Kesalahan server. Silakan coba lagi nanti.',
+    errorNotFound: 'Tidak ditemukan.',
+    articleNotFound: 'Artikel tidak ditemukan',
+    failedToLoadArticles: 'Gagal memuat artikel.',
+    failedToRefresh: 'Gagal memperbarui.',
+    failedToLoadMore: 'Gagal memuat lebih banyak.',
+  },
+  vi: {
+    // Brand & tabs
+    brand: 'LevelChineseNews',
+    'tabs.articles': 'Đọc',
+    'tabs.create': 'Tạo',
+    'tabs.settings': 'Cài đặt',
+
+    // Articles list (index)
+    loadingArticles: 'Đang tải bài viết…',
+    retry: 'Thử lại',
+    noArticlesYet: 'chưa có bài viết',
+    addArticlesHint:
+      'thêm bài từ tab Tạo bằng cách dán URL tin tức',
+    loadMore: 'Tải thêm',
+
+    // Create tab
+    parse: 'phân tích',
+    myArticles: 'bài viết của tôi ({{count}})',
+    noArticlesParseFirst: 'chưa có bài viết — hãy phân tích một bài trước',
+    savedArticlesLoadFailed: 'không tải được bài viết đã lưu',
+    fetching: 'đang lấy…',
+    indexing: 'đang lập chỉ mục…',
+    articleSaved: 'đã lưu bài viết',
+    newArticleCreated: 'đã tạo bài viết mới',
+    articleAlreadyCreated:
+      'Bài viết này đã được tạo — không cần tải lại',
+    fetchAnotherArticle: 'lấy bài viết khác',
+    enterUrl: 'Nhập URL được hỗ trợ để lấy bài viết',
+    urlPlaceholder: 'https://zaobao.com/...',
+    dailyLimitReached: 'đã hết hạn mức trong ngày — quay lại vào ngày mai',
+    parsesRemaining: 'hôm nay còn {{remaining}}/{{max}} lần phân tích',
+    supportedSites: 'trang được hỗ trợ',
+    parseArticleUrl: 'Phân tích URL bài viết',
+    myArticlesFilterUnread: 'chưa đọc ({{count}})',
+    myArticlesFilterFinished: 'đã đọc xong ({{count}})',
+    myArticlesFilterEmptyUnread: 'không có bài chưa đọc',
+    myArticlesFilterEmptyRead: 'chưa có bài đã đọc xong',
+
+    // Settings
+    settings: 'cài đặt',
+    configurePreferences: 'ngôn ngữ và tùy chọn chung',
+    darkMode: 'chế độ tối (cyberpunk)',
+    configureLocalDict: 'cấu hình từ điển cục bộ',
+    downloadAndReset: 'tải xuống và đặt lại',
+    readerPreferences: 'tùy chọn đọc',
+    useNotoSansSc: 'dùng Noto Sans SC cho chữ Hán',
+    showPinyin: 'hiện phiên âm trong bài viết',
+    adjustLineSpacing: 'căn chỉnh khoảng cách dòng trong nội dung',
+    lineSpacingCompact: 'chật',
+    lineSpacingNormal: 'bình thường',
+    lineSpacingRelaxed: 'thoáng',
+    lineSpacingNumbersCompact: '0px, 8px',
+    lineSpacingNumbersNormal: '6px, 24px',
+    lineSpacingNumbersRelaxed: '14px, 40px',
+    adjustFontSize: 'cỡ chữ trong bài viết',
+    debugEnvVars: 'Gỡ lỗi – biến môi trường',
+    aboutLink: 'Giới thiệu',
+    contactLink: 'Liên hệ',
+
+    // Article detail
+    article: 'bài viết',
+    back: 'quay lại',
+    loading: 'đang tải…',
+    cached: 'đã lưu cache',
+    seed: 'dữ liệu mẫu',
+    noContentAvailable: 'không có nội dung',
+    openSettings: 'Mở cài đặt',
+    openSourceArticle: 'mở bài viết gốc',
+    markRead: 'đánh dấu đã đọc',
+    markUnread: 'đánh dấu chưa đọc',
+    markedReadStatus: 'đã đánh dấu đã đọc',
+    saveToMyArticles: 'Lưu vào bài viết của tôi',
+    savedToMyArticles: 'Đã lưu vào bài viết của tôi',
+    removeFromMyArticles: 'Gỡ khỏi bài viết của tôi',
+    removedFromMyArticles: 'Đã gỡ khỏi bài viết của tôi',
+    saveArticleFailed: 'Không lưu được bài viết',
+    bookmarkSentence: 'Đánh dấu câu này',
+    removeSentenceBookmark: 'Bỏ đánh dấu câu này',
+    sentenceBookmarkSaved: 'Đã lưu đánh dấu câu',
+    sentenceBookmarkRemoved: 'Đã bỏ đánh dấu câu',
+    sentenceBookmarkFailed: 'Không cập nhật được đánh dấu câu',
+    aiTranslatedWithDeepseek: 'Bản dịch AI bằng DeepSeek',
+
+    // Not found
+    notFound: 'Ôi! Không thấy trang',
+    goBackHome: 'về trang chủ',
+
+    // Local dict / dictionary
+    localDictionary: 'từ điển cục bộ',
+    localDictionarySettings: 'cài đặt từ điển cục bộ',
+    downloadLocalDict: 'Tải từ điển từ máy chủ',
+    resetLocalDict: 'Đặt lại từ điển cục bộ',
+    resetting: 'Đang đặt lại…',
+    downloading: 'Đang tải…',
+    downloadLocalDictHint:
+      'Tải bộ từ điển CEDICT từ máy chủ xa về cơ sở dữ liệu cục bộ. Dung lượng khoảng 10 MB.',
+    dictEntriesCount: '{{count}} mục trong từ điển cục bộ',
+    randomEntrySample: 'ví dụ: cụm, tục ngữ, 成语',
+    showAnotherRandomEntry: 'Hiện mục ngẫu nhiên khác',
+    downloadFailed: 'Tải thất bại',
+
+    // Article card (translation)
+    translationFailed: 'Dịch thất bại',
+    couldNotGenerateTranslation:
+      'Không tạo được bản dịch. Vui lòng thử lại.',
+    generatingTranslation: 'Đang tạo bản dịch…',
+    showChineseTitle: 'Hiện tiêu đề tiếng Trung',
+    showEnglishTranslation: 'Hiện bản dịch tiếng Anh',
+    requestTranslation: 'Yêu cầu dịch',
+    openArticle: 'mở bài viết: {{title}}',
+
+    // Native language selector
+    nativeLanguage: 'ngôn ngữ mẹ đẻ',
+    nativeLanguageHint:
+      'Ngôn ngữ mẹ đẻ dùng để hiển thị bản dịch và gợi ý hữu ích khác.',
+    selectNativeLanguage: 'chọn ngôn ngữ mẹ đẻ',
+    select: 'Chọn',
+    langEnglish: '🇺🇸 English',
+    langSpanish: '🇪🇸 Español',
+    langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langVietnamese: '🇻🇳 Tiếng Việt',
+    langRussian: '🇷🇺 Tiếng Nga',
+    langArabic: '🇪🇬 العربية',
+    langChinese: '🇨🇳 简体中文 (only UI)',
+
+    // Article content
+    nativeLanguageDefinitionPlaceholder:
+      'định nghĩa bằng ngôn ngữ của bạn sẽ hiện tại đây..',
+    loadLocalDictFirstHint:
+      'hãy tải từ điển cục bộ trước để xem nghĩa tại đây',
+    setupLocalDict: 'thiết lập từ điển cục bộ',
+    getPleco: 'Tải Pleco',
+    openPlecoWebsite: 'Mở trang web Pleco',
+    wordMissingInLocalDict:
+      'Từ không có trong từ điển cục bộ — thử Pleco hoặc báo thiếu.',
+    openInPleco: 'Mở trong từ điển Pleco',
+    pleco: 'Pleco',
+    plecoSource: 'Level Chinese News',
+
+    // Cache / seed indicators
+    cachedLabel: 'Đã cache {{label}}',
+    seedData: 'Dữ liệu mẫu',
+
+    // Errors (api / useArticles)
+    somethingWentWrong: 'Đã có lỗi. Vui lòng thử lại.',
+    requestTimedOut: 'Hết thời gian chờ. Vui lòng thử lại.',
+    unableToConnect:
+      'Không kết nối được. Kiểm tra mạng.',
+    networkUnstableOrOff:
+      'Kết nối mạng không ổn định hoặc đã tắt.',
+    serverError: 'Lỗi máy chủ. Vui lòng thử sau.',
+    errorNotFound: 'Không tìm thấy.',
+    articleNotFound: 'Không thấy bài viết',
+    failedToLoadArticles: 'Không tải được danh sách bài.',
+    failedToRefresh: 'Không làm mới được.',
+    failedToLoadMore: 'Không tải thêm được.',
+  },
+  ru: {
+    // Brand & tabs
+    brand: 'LevelChineseNews',
+    'tabs.articles': 'Чтение',
+    'tabs.create': 'Создание',
+    'tabs.settings': 'Настройки',
+
+    // Articles list (index)
+    loadingArticles: 'Загрузка статей…',
+    retry: 'Повторить',
+    noArticlesYet: 'пока нет статей',
+    addArticlesHint:
+      'добавьте статьи на вкладке «Создание», вставив URL новости',
+    loadMore: 'Загрузить ещё',
+
+    // Create tab
+    parse: 'разобрать',
+    myArticles: 'мои статьи ({{count}})',
+    noArticlesParseFirst: 'пока нет статей — сначала разберите одну',
+    savedArticlesLoadFailed: 'не удалось загрузить сохранённые статьи',
+    fetching: 'получение…',
+    indexing: 'индексация…',
+    articleSaved: 'статья сохранена',
+    newArticleCreated: 'создана новая статья',
+    articleAlreadyCreated:
+      'Эта статья уже создана — повторно загружать не нужно',
+    fetchAnotherArticle: 'загрузить другую статью',
+    enterUrl: 'Введите поддерживаемый URL, чтобы загрузить статью',
+    urlPlaceholder: 'https://zaobao.com/...',
+    dailyLimitReached: 'дневной лимит исчерпан — зайдите завтра',
+    parsesRemaining: 'сегодня осталось {{remaining}} из {{max}} разборов',
+    supportedSites: 'поддерживаемые сайты',
+    parseArticleUrl: 'Разобрать URL статьи',
+    myArticlesFilterUnread: 'непрочитанные ({{count}})',
+    myArticlesFilterFinished: 'прочитанные ({{count}})',
+    myArticlesFilterEmptyUnread: 'нет непрочитанных статей',
+    myArticlesFilterEmptyRead: 'пока нет прочитанных статей',
+
+    // Settings
+    settings: 'настройки',
+    configurePreferences: 'язык и общие параметры',
+    darkMode: 'тёмная тема (киберпанк)',
+    configureLocalDict: 'настроить локальный словарь',
+    downloadAndReset: 'скачать и сбросить',
+    readerPreferences: 'настройки чтения',
+    useNotoSansSc: 'использовать Noto Sans SC для китайского текста',
+    showPinyin: 'показывать пиньинь в статьях',
+    adjustLineSpacing: 'межстрочный интервал в тексте статьи',
+    lineSpacingCompact: 'плотный',
+    lineSpacingNormal: 'обычный',
+    lineSpacingRelaxed: 'свободный',
+    lineSpacingNumbersCompact: '0px, 8px',
+    lineSpacingNumbersNormal: '6px, 24px',
+    lineSpacingNumbersRelaxed: '14px, 40px',
+    adjustFontSize: 'размер шрифта статьи',
+    debugEnvVars: 'Отладка – переменные среды',
+    aboutLink: 'О приложении',
+    contactLink: 'Контакты',
+
+    // Article detail
+    article: 'статья',
+    back: 'назад',
+    loading: 'загрузка…',
+    cached: 'кэш',
+    seed: 'демо-данные',
+    noContentAvailable: 'нет содержимого',
+    openSettings: 'Открыть настройки',
+    openSourceArticle: 'открыть исходную статью',
+    markRead: 'пометить прочитанным',
+    markUnread: 'пометить непрочитанным',
+    markedReadStatus: 'отмечено прочитанным',
+    saveToMyArticles: 'Сохранить в мои статьи',
+    savedToMyArticles: 'Сохранено в мои статьи',
+    removeFromMyArticles: 'Удалить из моих статей',
+    removedFromMyArticles: 'Удалено из моих статей',
+    saveArticleFailed: 'Не удалось сохранить статью',
+    bookmarkSentence: 'Закладка на предложение',
+    removeSentenceBookmark: 'Убрать закладку',
+    sentenceBookmarkSaved: 'Закладка сохранена',
+    sentenceBookmarkRemoved: 'Закладка удалена',
+    sentenceBookmarkFailed: 'Не удалось обновить закладку',
+    aiTranslatedWithDeepseek: 'Перевод ИИ (DeepSeek)',
+
+    // Not found
+    notFound: 'ой! страница не найдена',
+    goBackHome: 'на главную',
+
+    // Local dict / dictionary
+    localDictionary: 'локальный словарь',
+    localDictionarySettings: 'настройки локального словаря',
+    downloadLocalDict: 'Загрузить словарь с сервера',
+    resetLocalDict: 'Сбросить локальный словарь',
+    resetting: 'Сброс…',
+    downloading: 'Загрузка…',
+    downloadLocalDictHint:
+      'Скачайте словарь CEDICT с удалённого сервера и загрузите его в локальную базу. Размер около 10 МБ.',
+    dictEntriesCount: 'записей в локальном словаре: {{count}}',
+    randomEntrySample: 'пример: фраза, пословица, 成语',
+    showAnotherRandomEntry: 'Показать другую случайную запись',
+    downloadFailed: 'Ошибка загрузки',
+
+    // Article card (translation)
+    translationFailed: 'Ошибка перевода',
+    couldNotGenerateTranslation:
+      'Не удалось создать перевод. Попробуйте ещё раз.',
+    generatingTranslation: 'Создание перевода…',
+    showChineseTitle: 'Показать заголовок на китайском',
+    showEnglishTranslation: 'Показать перевод на английском',
+    requestTranslation: 'Запросить перевод',
+    openArticle: 'открыть статью: {{title}}',
+
+    // Native language selector
+    nativeLanguage: 'родной язык',
+    nativeLanguageHint:
+      'Родной язык используется для переводов и подсказок.',
+    selectNativeLanguage: 'выберите родной язык',
+    select: 'Выбрать',
+    langEnglish: '🇺🇸 English',
+    langSpanish: '🇪🇸 Español',
+    langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langVietnamese: '🇻🇳 Tiếng Việt',
+    langRussian: '🇷🇺 Русский',
+    langArabic: '🇪🇬 العربية',
+    langChinese: '🇨🇳 简体中文 (only UI)',
+
+    // Article content
+    nativeLanguageDefinitionPlaceholder:
+      'здесь будет определение на вашем языке..',
+    loadLocalDictFirstHint:
+      'сначала загрузите локальный словарь, чтобы видеть определения',
+    setupLocalDict: 'настроить локальный словарь',
+    getPleco: 'Скачать Pleco',
+    openPlecoWebsite: 'Сайт Pleco',
+    wordMissingInLocalDict:
+      'Слова нет в локальном словаре — попробуйте Pleco или сообщите об отсутствии.',
+    openInPleco: 'Открыть в словаре Pleco',
+    pleco: 'Pleco',
+    plecoSource: 'Level Chinese News',
+
+    // Cache / seed indicators
+    cachedLabel: 'Кэш: {{label}}',
+    seedData: 'Демо-данные',
+
+    // Errors (api / useArticles)
+    somethingWentWrong: 'Что-то пошло не так. Попробуйте ещё раз.',
+    requestTimedOut: 'Время запроса истекло. Попробуйте ещё раз.',
+    unableToConnect:
+      'Нет подключения. Проверьте интернет.',
+    networkUnstableOrOff:
+      'Соединение нестабильно или отсутствует.',
+    serverError: 'Ошибка сервера. Попробуйте позже.',
+    errorNotFound: 'Не найдено.',
+    articleNotFound: 'Статья не найдена',
+    failedToLoadArticles: 'Не удалось загрузить статьи.',
+    failedToRefresh: 'Не удалось обновить.',
+    failedToLoadMore: 'Не удалось загрузить ещё.',
   },
   ar: {
     // Brand & tabs
@@ -588,8 +1065,9 @@ export const translations = {
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
     langIndonesian: '🇮🇩 الإندونيسية',
+    langVietnamese: '🇻🇳 الفيتنامية',
     langRussian: '🇷🇺 الروسية',
-    langArabic: '🇸🇦 العربية',
+    langArabic: '🇪🇬 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
     // Article content
@@ -739,8 +1217,9 @@ export const translations = {
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
     langIndonesian: '🇮🇩 印尼语',
+    langVietnamese: '🇻🇳 越南语',
     langRussian: '🇷🇺 俄语',
-    langArabic: '🇸🇦 العربية',
+    langArabic: '🇪🇬 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
     // Article content
