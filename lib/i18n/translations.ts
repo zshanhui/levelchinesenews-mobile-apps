@@ -122,6 +122,8 @@ export const translations = {
     langEnglish: '🇺🇸 English',
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langRussian: '🇷🇺 Russian',
     langArabic: '🇸🇦 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
@@ -273,6 +275,8 @@ export const translations = {
     langEnglish: '🇺🇸 English',
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 Indonesio',
+    langRussian: '🇷🇺 Ruso',
     langArabic: '🇸🇦 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
@@ -427,6 +431,8 @@ export const translations = {
     langEnglish: '🇺🇸 English',
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 Bahasa Indonesia',
+    langRussian: '🇷🇺 Bahasa Rusia',
     langArabic: '🇸🇦 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
@@ -581,6 +587,8 @@ export const translations = {
     langEnglish: '🇺🇸 English',
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 الإندونيسية',
+    langRussian: '🇷🇺 الروسية',
     langArabic: '🇸🇦 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 
@@ -730,6 +738,8 @@ export const translations = {
     langEnglish: '🇺🇸 English',
     langSpanish: '🇪🇸 Español',
     langMalay: '🇲🇾 Bahasa Melayu',
+    langIndonesian: '🇮🇩 印尼语',
+    langRussian: '🇷🇺 俄语',
     langArabic: '🇸🇦 العربية',
     langChinese: '🇨🇳 简体中文 (only UI)',
 

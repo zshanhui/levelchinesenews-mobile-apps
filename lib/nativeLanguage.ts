@@ -6,6 +6,8 @@ export enum NativeLanguage {
   EN = 'en',
   ES = 'es',
   MS = 'ms',
+  ID = 'id',
+  RU = 'ru',
   AR = 'ar',
   ZH = 'zh',
 }
@@ -14,6 +16,8 @@ const LEGACY_STORAGE_MAP: Record<string, NativeLanguage> = {
   english: NativeLanguage.EN,
   spanish: NativeLanguage.ES,
   'bahasa-malay': NativeLanguage.MS,
+  indonesian: NativeLanguage.ID,
+  russian: NativeLanguage.RU,
   arabic: NativeLanguage.AR,
   chinese: NativeLanguage.ZH,
 };

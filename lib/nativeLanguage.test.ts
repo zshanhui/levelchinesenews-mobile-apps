@@ -13,6 +13,8 @@ describe('parseStoredNativeLanguage', () => {
     expect(parseStoredNativeLanguage(NativeLanguage.EN)).toBe(NativeLanguage.EN);
     expect(parseStoredNativeLanguage(NativeLanguage.ES)).toBe(NativeLanguage.ES);
     expect(parseStoredNativeLanguage(NativeLanguage.MS)).toBe(NativeLanguage.MS);
+    expect(parseStoredNativeLanguage(NativeLanguage.ID)).toBe(NativeLanguage.ID);
+    expect(parseStoredNativeLanguage(NativeLanguage.RU)).toBe(NativeLanguage.RU);
     expect(parseStoredNativeLanguage(NativeLanguage.AR)).toBe(NativeLanguage.AR);
     expect(parseStoredNativeLanguage(NativeLanguage.ZH)).toBe(NativeLanguage.ZH);
   });
@@ -21,6 +23,8 @@ describe('parseStoredNativeLanguage', () => {
     expect(parseStoredNativeLanguage('english')).toBe(NativeLanguage.EN);
     expect(parseStoredNativeLanguage('spanish')).toBe(NativeLanguage.ES);
     expect(parseStoredNativeLanguage('bahasa-malay')).toBe(NativeLanguage.MS);
+    expect(parseStoredNativeLanguage('indonesian')).toBe(NativeLanguage.ID);
+    expect(parseStoredNativeLanguage('russian')).toBe(NativeLanguage.RU);
     expect(parseStoredNativeLanguage('arabic')).toBe(NativeLanguage.AR);
     expect(parseStoredNativeLanguage('chinese')).toBe(NativeLanguage.ZH);
   });

@@ -21,6 +21,8 @@ const NATIVE_LANGUAGE_OPTIONS: {
   { value: NativeLanguage.ZH, labelKey: 'langChinese' },
   { value: NativeLanguage.ES, labelKey: 'langSpanish' },
   { value: NativeLanguage.MS, labelKey: 'langMalay' },
+  { value: NativeLanguage.ID, labelKey: 'langIndonesian' },
+  { value: NativeLanguage.RU, labelKey: 'langRussian' },
   { value: NativeLanguage.AR, labelKey: 'langArabic' },
 ];
 

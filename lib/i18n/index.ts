@@ -7,6 +7,8 @@ i18n.use(initReactI18next).init({
     en: { translation: translations.en },
     es: { translation: translations.es },
     ms: { translation: translations.ms },
+    id: { translation: translations.en },
+    ru: { translation: translations.en },
     ar: { translation: translations.ar },
     zh: { translation: translations.zh },
   },
