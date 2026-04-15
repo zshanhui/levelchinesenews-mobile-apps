@@ -16,6 +16,11 @@ export const translations = {
     noArticlesYet: 'no articles yet',
     addArticlesHint: 'add articles from the create tab by pasting a news url',
     loadMore: 'Load more',
+    articleSortBy: 'Sort by',
+    articleSortPublishedDate: 'published date',
+    articleSortAddedDate: 'created date',
+    articleFilterByTopics: 'Filter by topics',
+    articleTopicsComingSoon: 'coming soon...',
 
     // Create tab
     parse: 'parse',
@@ -170,6 +175,11 @@ export const translations = {
     addArticlesHint:
       'añade artículos desde la pestaña crear pegando una url de noticias',
     loadMore: 'Cargar más',
+    articleSortBy: 'Ordenar por',
+    articleSortPublishedDate: 'fecha de publicación',
+    articleSortAddedDate: 'fecha de creación',
+    articleFilterByTopics: 'Filtrar por temas',
+    articleTopicsComingSoon: 'próximamente…',
 
     // Create tab
     parse: 'analizar',
@@ -327,6 +337,11 @@ export const translations = {
     addArticlesHint:
       'tambah artikel daripada tab cipta dengan menampal url berita',
     loadMore: 'Muat lagi',
+    articleSortBy: 'Susun mengikut',
+    articleSortPublishedDate: 'tarikh terbit',
+    articleSortAddedDate: 'tarikh dicipta',
+    articleFilterByTopics: 'Tapis mengikut topik',
+    articleTopicsComingSoon: 'akan datang…',
 
     // Create tab
     parse: 'hurai',
@@ -484,6 +499,11 @@ export const translations = {
     addArticlesHint:
       'tambahkan artikel dari tab buat dengan menempelkan URL berita',
     loadMore: 'Muat lebih banyak',
+    articleSortBy: 'Urutkan berdasarkan',
+    articleSortPublishedDate: 'tanggal terbit',
+    articleSortAddedDate: 'tanggal dibuat',
+    articleFilterByTopics: 'Filter berdasarkan topik',
+    articleTopicsComingSoon: 'segera hadir…',
 
     // Create tab
     parse: 'urai',
@@ -642,6 +662,11 @@ export const translations = {
     addArticlesHint:
       'thêm bài từ tab Tạo bằng cách dán URL tin tức',
     loadMore: 'Tải thêm',
+    articleSortBy: 'Sắp xếp theo',
+    articleSortPublishedDate: 'ngày xuất bản',
+    articleSortAddedDate: 'ngày tạo',
+    articleFilterByTopics: 'Lọc theo chủ đề',
+    articleTopicsComingSoon: 'sắp ra mắt…',
 
     // Create tab
     parse: 'phân tích',
@@ -800,6 +825,11 @@ export const translations = {
     addArticlesHint:
       'добавьте статьи на вкладке «Создание», вставив URL новости',
     loadMore: 'Загрузить ещё',
+    articleSortBy: 'Сортировать по',
+    articleSortPublishedDate: 'дата публикации',
+    articleSortAddedDate: 'дата создания',
+    articleFilterByTopics: 'Фильтр по темам',
+    articleTopicsComingSoon: 'скоро…',
 
     // Create tab
     parse: 'разобрать',
@@ -958,6 +988,11 @@ export const translations = {
     addArticlesHint:
       'أضف مقالات من تبويب إنشاء عن طريق لصق رابط خبر',
     loadMore: 'تحميل المزيد',
+    articleSortBy: 'ترتيب حسب',
+    articleSortPublishedDate: 'تاريخ النشر',
+    articleSortAddedDate: 'تاريخ الإنشاء',
+    articleFilterByTopics: 'تصفية حسب المواضيع',
+    articleTopicsComingSoon: 'قريباً…',
 
     // Create tab
     parse: 'تحليل',
@@ -1114,6 +1149,11 @@ export const translations = {
     noArticlesYet: '暂无文章',
     addArticlesHint: '在创建标签页粘贴新闻链接添加文章',
     loadMore: '加载更多',
+    articleSortBy: '排序方式',
+    articleSortPublishedDate: '发布日期',
+    articleSortAddedDate: '创建日期',
+    articleFilterByTopics: '按主题筛选',
+    articleTopicsComingSoon: '即将推出…',
 
     // Create tab
     parse: '解析',

@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { ArticleListFilterShelve } from '../../lib/components/ArticleListFilterShelve';
+import { ArticleListSkeleton } from '../../lib/components/ArticleListSkeleton';
 import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
 import { getReadStatesForArticleIds } from '../../lib/savedArticlesDb';
@@ -34,6 +35,9 @@ export default function ArticlesScreen() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const {
     items,
+    orderBy,
+    setOrderBy,
+    sortReloading,
     loading,
     refreshing,
     loadingMore,
@@ -124,7 +128,7 @@ export default function ArticlesScreen() {
             accessibilityRole="button"
             accessibilityLabel="Open article filters"
           >
-            <Ionicons name="filter-outline" size={19.2} color={theme.text} />
+            <Ionicons name="funnel-outline" size={22} color={theme.accent} />
           </Pressable>
         </View>
       ),
@@ -146,13 +150,10 @@ export default function ArticlesScreen() {
     }, [loadInitial, refreshReadStatesForCurrentItems]),
   );
 
-  if (loading && items.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={theme.accent} />
-        <Text style={styles.loadingText}>{t('loadingArticles')}</Text>
-      </View>
-    );
+  const showListLoader = (loading && items.length === 0) || sortReloading;
+
+  if (showListLoader) {
+    return <ArticleListSkeleton />;
   }
 
   if (error && items.length === 0) {
@@ -235,6 +236,11 @@ export default function ArticlesScreen() {
     <ArticleListFilterShelve
       visible={filterSheetOpen}
       onRequestClose={closeFilterSheet}
+      orderBy={orderBy}
+      onSelectOrderBy={(next) => {
+        void setOrderBy(next);
+        closeFilterSheet();
+      }}
     />
     </>
   );
@@ -259,11 +265,6 @@ function createStyles(theme: Theme) {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: theme.textSecondary,
   },
   errorText: {
     marginTop: 12,

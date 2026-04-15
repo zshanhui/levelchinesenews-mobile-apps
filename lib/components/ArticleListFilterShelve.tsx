@@ -1,7 +1,9 @@
+import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -9,18 +11,32 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '../i18n';
+import type { ArticleListOrderBy } from '../types';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+
+/** Georgia / system serif — matches sort controls in this sheet. */
+const serifTextStyle = Platform.select({
+  ios: { fontFamily: 'Georgia' },
+  android: { fontFamily: 'serif' },
+  default: { fontFamily: 'Georgia' },
+});
 
 type ArticleListFilterShelveProps = {
   visible: boolean;
   onRequestClose: () => void;
+  orderBy: ArticleListOrderBy;
+  onSelectOrderBy: (orderBy: ArticleListOrderBy) => void;
 };
 
 export function ArticleListFilterShelve({
   visible,
   onRequestClose,
+  orderBy,
+  onSelectOrderBy,
 }: ArticleListFilterShelveProps) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { height: windowHeight } = useWindowDimensions();
@@ -49,6 +65,19 @@ export function ArticleListFilterShelve({
     }).start();
   }, [visible, sheetHeight, translateY]);
 
+  const sortButtonHaptic = useCallback(() => {
+    if (Platform.OS === 'web') return;
+    void Haptics.selectionAsync().catch(() => {});
+  }, []);
+
+  const onPressSort = useCallback(
+    (field: ArticleListOrderBy) => {
+      sortButtonHaptic();
+      onSelectOrderBy(field);
+    },
+    [onSelectOrderBy, sortButtonHaptic],
+  );
+
   return (
     <Modal
       visible={visible}
@@ -75,8 +104,67 @@ export function ArticleListFilterShelve({
           ]}
         >
           <View style={styles.handle} />
-          <Text style={styles.title}>Filters</Text>
-          <Text style={styles.hint}>Filter options will appear here.</Text>
+          <Text style={styles.sortLabel}>{t('articleSortBy')}</Text>
+          <View style={styles.sortRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.sortButton,
+                styles.sortButtonFirst,
+                orderBy === 'published_date' && styles.sortButtonSelected,
+                pressed && styles.sortButtonPressed,
+              ]}
+              onPress={() => onPressSort('published_date')}
+              hitSlop={{ top: 14, bottom: 14, left: 8, right: 4 }}
+              android_ripple={{
+                color: theme.highlightBg,
+                foreground: true,
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: orderBy === 'published_date' }}
+              accessibilityLabel={`${t('articleSortBy')}: ${t('articleSortPublishedDate')}`}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  orderBy === 'published_date' && styles.sortButtonTextSelected,
+                ]}
+              >
+                {t('articleSortPublishedDate')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.sortButton,
+                orderBy === 'created_at' && styles.sortButtonSelected,
+                pressed && styles.sortButtonPressed,
+              ]}
+              onPress={() => onPressSort('created_at')}
+              hitSlop={{ top: 14, bottom: 14, left: 4, right: 8 }}
+              android_ripple={{
+                color: theme.highlightBg,
+                foreground: true,
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: orderBy === 'created_at' }}
+              accessibilityLabel={`${t('articleSortBy')}: ${t('articleSortAddedDate')}`}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  orderBy === 'created_at' && styles.sortButtonTextSelected,
+                ]}
+              >
+                {t('articleSortAddedDate')}
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.topicsSection}>
+            <Text style={styles.topicsLabel}>{t('articleFilterByTopics')}</Text>
+            <Text style={styles.topicsPlaceholder}>
+              {t('articleTopicsComingSoon')}
+            </Text>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -112,16 +200,71 @@ function createStyles(theme: Theme) {
       backgroundColor: theme.border,
       marginBottom: 16,
     },
-    title: {
-      fontSize: 18,
+    sortLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 10,
+      ...serifTextStyle,
+    },
+    sortRow: {
+      flexDirection: 'row',
+      flexWrap: 'nowrap',
+      alignItems: 'stretch',
+    },
+    sortButton: {
+      width: '33.333333%',
+      flexShrink: 0,
+      paddingVertical: 18,
+      paddingHorizontal: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 60,
+    },
+    sortButtonFirst: {
+      marginRight: 7,
+    },
+    sortButtonSelected: {
+      borderColor: theme.accent,
+      backgroundColor: theme.highlightBg,
+    },
+    sortButtonPressed: {
+      opacity: 0.82,
+      transform: [{ scale: 0.98 }],
+    },
+    sortButtonText: {
+      fontSize: 12,
       fontWeight: '600',
       color: theme.text,
-      marginBottom: 8,
+      textAlign: 'center',
+      ...serifTextStyle,
     },
-    hint: {
-      fontSize: 14,
+    sortButtonTextSelected: {
+      color: theme.accent,
+      fontWeight: '700',
+    },
+    topicsSection: {
+      marginTop: 22,
+    },
+    topicsLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 10,
+      ...serifTextStyle,
+    },
+    topicsPlaceholder: {
+      fontSize: 13,
+      fontStyle: 'italic',
       color: theme.textMuted,
-      lineHeight: 20,
+      textAlign: 'left',
+      alignSelf: 'stretch',
+      paddingVertical: 8,
+      ...serifTextStyle,
     },
   });
 }

@@ -23,6 +23,9 @@ export interface ScrapeResponse extends ArticleListItem {
   existing: boolean;
 }
 
+/** `order_by` query value for GET /api/v1/articles */
+export type ArticleListOrderBy = 'published_date' | 'created_at';
+
 /** Paginated list response */
 export interface ArticleListResponse {
   items: ArticleListItem[];

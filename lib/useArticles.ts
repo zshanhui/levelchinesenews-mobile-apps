@@ -8,7 +8,11 @@ import {
   saveCachedList,
   updateCachedArticle,
 } from './articleListCache';
-import type { ArticleListItem, ArticleListResponse } from './types';
+import type {
+  ArticleListItem,
+  ArticleListOrderBy,
+  ArticleListResponse,
+} from './types';
 
 export function useArticles() {
   const { t } = useTranslation();
@@ -21,6 +25,9 @@ export function useArticles() {
   const [error, setError] = useState<string | null>(null);
   const [usingCache, setUsingCache] = useState(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const [orderBy, setOrderByState] = useState<ArticleListOrderBy>('published_date');
+  const [sortReloading, setSortReloading] = useState(false);
+  const orderByRef = useRef<ArticleListOrderBy>('published_date');
 
   const itemsRef = useRef<ArticleListItem[]>([]);
   useEffect(() => {
@@ -34,7 +41,7 @@ export function useArticles() {
       const url = apiReadUrl('/articles', {
         page: pageNum,
         page_size: PAGE_SIZE,
-        order_by: 'published_date',
+        order_by: orderByRef.current,
         order_desc: true,
       });
       try {
@@ -112,6 +119,27 @@ export function useArticles() {
     }
   }, [fetchPage, hasMore, loading, loadingMore, page, t]);
 
+  const setOrderBy = useCallback(
+    async (next: ArticleListOrderBy) => {
+      if (next === orderByRef.current) return;
+      orderByRef.current = next;
+      setOrderByState(next);
+      setLoading(true);
+      setSortReloading(true);
+      setError(null);
+      try {
+        await fetchPage(1, false);
+      } catch (err) {
+        setError(getUserFriendlyErrorMessage(err, t('failedToLoadArticles')));
+        setItems([]);
+      } finally {
+        setLoading(false);
+        setSortReloading(false);
+      }
+    },
+    [fetchPage, t],
+  );
+
   const updateArticle = useCallback((id: string, patch: Partial<ArticleListItem>) => {
     setItems((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
@@ -121,6 +149,9 @@ export function useArticles() {
 
   return {
     items,
+    orderBy,
+    setOrderBy,
+    sortReloading,
     total,
     loading,
     refreshing,
