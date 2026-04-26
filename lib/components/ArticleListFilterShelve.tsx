@@ -15,6 +15,7 @@ import { useTranslation } from '../i18n';
 import type { ArticleListOrderBy } from '../types';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { TopicsList } from './TopicsList';
 
 /** Georgia / system serif — matches sort controls in this sheet. */
 const serifTextStyle = Platform.select({
@@ -28,6 +29,8 @@ type ArticleListFilterShelveProps = {
   onRequestClose: () => void;
   orderBy: ArticleListOrderBy;
   onSelectOrderBy: (orderBy: ArticleListOrderBy) => void;
+  activeTopicKey: string | null;
+  onTopicSelect: (topicKey: string, tags: string[]) => void;
 };
 
 export function ArticleListFilterShelve({
@@ -35,6 +38,8 @@ export function ArticleListFilterShelve({
   onRequestClose,
   orderBy,
   onSelectOrderBy,
+  activeTopicKey,
+  onTopicSelect,
 }: ArticleListFilterShelveProps) {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -42,7 +47,7 @@ export function ArticleListFilterShelve({
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(0)).current;
-  const sheetHeight = windowHeight * 0.5;
+  const sheetHeight = windowHeight * 0.67;
 
   const closeWithAnimation = useCallback(() => {
     Animated.timing(translateY, {
@@ -161,9 +166,10 @@ export function ArticleListFilterShelve({
 
           <View style={styles.topicsSection}>
             <Text style={styles.topicsLabel}>{t('articleFilterByTopics')}</Text>
-            <Text style={styles.topicsPlaceholder}>
-              {t('articleTopicsComingSoon')}
-            </Text>
+            <TopicsList
+              activeTopicKey={activeTopicKey}
+              onTopicSelect={onTopicSelect}
+            />
           </View>
         </Animated.View>
       </View>
@@ -249,21 +255,14 @@ function createStyles(theme: Theme) {
     },
     topicsSection: {
       marginTop: 22,
+      flex: 1,
+      minHeight: 0,
     },
     topicsLabel: {
       fontSize: 15,
       fontWeight: '600',
       color: theme.textSecondary,
       marginBottom: 10,
-      ...serifTextStyle,
-    },
-    topicsPlaceholder: {
-      fontSize: 13,
-      fontStyle: 'italic',
-      color: theme.textMuted,
-      textAlign: 'left',
-      alignSelf: 'stretch',
-      paddingVertical: 8,
       ...serifTextStyle,
     },
   });

@@ -34,6 +34,11 @@ export interface ArticleListResponse {
   page_size: number;
 }
 
+/** GET /api/v1/articles/topics — topic display name → tag strings for `GET /articles?tags=…` */
+export interface ArticleTopicsResponse {
+  topics: Record<string, string[]>;
+}
+
 /** Word segment from parsed_content (API uses aliases t, p) */
 export interface WordSegment {
   t: string;  // text

@@ -14,7 +14,22 @@ import type {
   ArticleListResponse,
 } from './types';
 
-export function useArticles() {
+function tagsQueryParam(tags: string[] | null | undefined): string | undefined {
+  if (!tags?.length) return undefined;
+  return tags.join(',');
+}
+
+function isActiveTopicFilter(tagsFilter: string[] | null | undefined): boolean {
+  return Array.isArray(tagsFilter) && tagsFilter.length > 0;
+}
+
+/**
+ * Paginated `GET /articles` list. Pass `tagsFilter` (topic tag strings) to add `?tags=…` (OR).
+ * Topic filtering uses the same `orderBy` / `order_by` as the main list (e.g. Created At).
+ * Offline list cache is used only for the **main** list (no topic filter); topic results are
+ * never written to or read from that cache.
+ */
+export function useArticles(tagsFilter: string[] | null = null) {
   const { t } = useTranslation();
   const [items, setItems] = useState<ArticleListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -28,6 +43,13 @@ export function useArticles() {
   const [orderBy, setOrderByState] = useState<ArticleListOrderBy>('published_date');
   const [sortReloading, setSortReloading] = useState(false);
   const orderByRef = useRef<ArticleListOrderBy>('published_date');
+  const tagsFilterRef = useRef(tagsFilter);
+  /** `undefined` = effect never ran; then stable key `null` | string for topic identity. */
+  const tagsFilterKeyRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    tagsFilterRef.current = tagsFilter;
+  }, [tagsFilter]);
 
   const itemsRef = useRef<ArticleListItem[]>([]);
   useEffect(() => {
@@ -36,50 +58,58 @@ export function useArticles() {
 
   const hasMore = items.length < total;
 
-  const fetchPage = useCallback(
-    async (pageNum: number, append: boolean) => {
-      const url = apiReadUrl('/articles', {
-        page: pageNum,
-        page_size: PAGE_SIZE,
-        order_by: orderByRef.current,
-        order_desc: true,
-      });
-      try {
-        const data = await fetchWithTimeout<ArticleListResponse>(
-          url,
-          ARTICLE_REQUEST_TIMEOUT_MS,
-        );
-        setUsingCache(false);
-        setCachedAt(null);
-        const newItems = append
-          ? [...itemsRef.current, ...data.items]
-          : data.items;
-        const deduped = dedupeById(newItems);
-        setItems(append ? deduped : data.items);
-        setTotal(data.total);
-        setPage(data.page);
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
+    const topicActive = isActiveTopicFilter(tagsFilterRef.current);
+    const tags = tagsQueryParam(tagsFilterRef.current);
+    const params: Record<string, string | number | boolean> = {
+      page: pageNum,
+      page_size: PAGE_SIZE,
+      order_by: orderByRef.current,
+      order_desc: true,
+    };
+    if (tags) {
+      params.tags = tags;
+    }
+    const url = apiReadUrl('/articles', params);
+    try {
+      const data = await fetchWithTimeout<ArticleListResponse>(
+        url,
+        ARTICLE_REQUEST_TIMEOUT_MS,
+      );
+      setUsingCache(false);
+      setCachedAt(null);
+      const newItems = append
+        ? [...itemsRef.current, ...data.items]
+        : data.items;
+      const deduped = dedupeById(newItems);
+      setItems(append ? deduped : data.items);
+      setTotal(data.total);
+      setPage(data.page);
+      if (!topicActive) {
         saveCachedList(deduped, data.total, PAGE_SIZE).catch(() => {});
-        return data;
-      } catch {
-        const cached = await loadCachedList();
-        if (cached && cached.items.length > 0) {
-          setUsingCache(true);
-          setCachedAt(cached.cachedAt);
-          setItems(cached.items);
-          setTotal(cached.total);
-          setPage(Math.ceil(cached.items.length / PAGE_SIZE) || 1);
-          return {
-            items: cached.items,
-            total: cached.total,
-            page: 1,
-            page_size: PAGE_SIZE,
-          } as ArticleListResponse;
-        }
-        throw new Error('No network and no cache');
       }
-    },
-    [],
-  );
+      return data;
+    } catch (err) {
+      if (isActiveTopicFilter(tagsFilterRef.current)) {
+        throw err;
+      }
+      const cached = await loadCachedList();
+      if (cached && cached.items.length > 0) {
+        setUsingCache(true);
+        setCachedAt(cached.cachedAt);
+        setItems(cached.items);
+        setTotal(cached.total);
+        setPage(Math.ceil(cached.items.length / PAGE_SIZE) || 1);
+        return {
+          items: cached.items,
+          total: cached.total,
+          page: 1,
+          page_size: PAGE_SIZE,
+        } as ArticleListResponse;
+      }
+      throw new Error('No network and no cache');
+    }
+  }, []);
 
   const loadInitial = useCallback(async () => {
     setLoading(true);
@@ -89,10 +119,46 @@ export function useArticles() {
     } catch (err) {
       setError(getUserFriendlyErrorMessage(err, t('failedToLoadArticles')));
       setItems([]);
+      setTotal(0);
+      setPage(1);
+      setUsingCache(false);
+      setCachedAt(null);
     } finally {
       setLoading(false);
     }
   }, [fetchPage, t]);
+
+  useEffect(() => {
+    // Stable string for "which topic filter is active": join tags with \0 so we never
+    // merge distinct tag lists into the same key (commas could appear inside a tag).
+    const key = isActiveTopicFilter(tagsFilter) && tagsFilter
+      ? tagsFilter.join('\0')
+      : null;
+    const prevKey = tagsFilterKeyRef.current;
+
+    if (prevKey === undefined) {
+      tagsFilterKeyRef.current = key;
+      if (key !== null) {
+        setItems([]);
+        setTotal(0);
+        setUsingCache(false);
+        setCachedAt(null);
+        void loadInitial();
+      }
+      return;
+    }
+
+    if (prevKey === key) {
+      return;
+    }
+
+    tagsFilterKeyRef.current = key;
+    setItems([]);
+    setTotal(0);
+    setUsingCache(false);
+    setCachedAt(null);
+    void loadInitial();
+  }, [tagsFilter, loadInitial]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -144,7 +210,9 @@ export function useArticles() {
     setItems((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     );
-    updateCachedArticle(id, patch).catch(() => {});
+    if (!isActiveTopicFilter(tagsFilterRef.current)) {
+      updateCachedArticle(id, patch).catch(() => {});
+    }
   }, []);
 
   return {

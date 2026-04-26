@@ -33,6 +33,10 @@ export default function ArticlesScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [topicFilterTags, setTopicFilterTags] = useState<string[] | null>(null);
+  const [activeTopicKey, setActiveTopicKey] = useState<string | null>(null);
+  const topicCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const {
     items,
     orderBy,
@@ -49,7 +53,7 @@ export default function ArticlesScreen() {
     refresh,
     loadMore,
     updateArticle,
-  } = useArticles();
+  } = useArticles(topicFilterTags);
 
   const [readByArticleId, setReadByArticleId] = useState<Record<string, boolean>>(
     {},
@@ -64,6 +68,41 @@ export default function ArticlesScreen() {
   const closeFilterSheet = useCallback(() => {
     setFilterSheetOpen(false);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (topicCloseTimerRef.current) {
+        clearTimeout(topicCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const onTopicSelect = useCallback(
+    (topicKey: string, tags: string[]) => {
+      const topicActive =
+        topicFilterTags !== null && topicFilterTags.length > 0;
+      if (topicActive && activeTopicKey === topicKey) {
+        setActiveTopicKey(null);
+        setTopicFilterTags(null);
+        if (topicCloseTimerRef.current) {
+          clearTimeout(topicCloseTimerRef.current);
+          topicCloseTimerRef.current = null;
+        }
+        closeFilterSheet();
+        return;
+      }
+      setActiveTopicKey(topicKey);
+      setTopicFilterTags(tags);
+      if (topicCloseTimerRef.current) {
+        clearTimeout(topicCloseTimerRef.current);
+      }
+      topicCloseTimerRef.current = setTimeout(() => {
+        topicCloseTimerRef.current = null;
+        closeFilterSheet();
+      }, 1000);
+    },
+    [activeTopicKey, closeFilterSheet, topicFilterTags],
+  );
 
   const refreshReadStatesForCurrentItems = useCallback(async () => {
     if (Platform.OS === 'web') {
@@ -241,6 +280,8 @@ export default function ArticlesScreen() {
         void setOrderBy(next);
         closeFilterSheet();
       }}
+      activeTopicKey={activeTopicKey}
+      onTopicSelect={onTopicSelect}
     />
     </>
   );
