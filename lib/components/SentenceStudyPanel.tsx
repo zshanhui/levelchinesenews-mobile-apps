@@ -140,22 +140,42 @@ export function SentenceStudyPanel({
     !lookupComplete || dictMatches.some((match) => Boolean(match.entry.definitions));
   const showSplitMatches = dictMatches.length > 1;
   const singleMatch = dictMatches[0] ?? null;
+  /** Tighten list + header spacing when many sub-word lines would make the panel very tall. */
+  const compactMultiSplit = dictMatches.length >= 3;
 
   return (
-    <View style={[styles.panel, { paddingBottom: Math.max(bottomInset, 16) }]}>
-      <View style={styles.panelHeader}>
+    <View
+      style={[
+        styles.panel,
+        compactMultiSplit && styles.panelCompact,
+        { paddingBottom: Math.max(bottomInset, 16) },
+      ]}
+    >
+      <View style={[styles.panelHeader, compactMultiSplit && styles.panelHeaderCompact]}>
         <View
           style={[
             styles.panelHeaderContent,
             stackPinyinUnderWord ? styles.panelHeaderContentStacked : null,
+            stackPinyinUnderWord && compactMultiSplit
+              ? styles.panelHeaderContentStackedCompact
+              : null,
           ]}
         >
-          <Text style={[styles.panelWord, chineseFontStyle]}>{word}</Text>
+          <Text
+            style={[
+              styles.panelWord,
+              compactMultiSplit && styles.panelWordCompact,
+              chineseFontStyle,
+            ]}
+          >
+            {word}
+          </Text>
           {pinyin ? (
             <Text
               style={[
                 styles.panelPinyin,
                 stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
+                compactMultiSplit && styles.panelPinyinCompact,
                 chineseFontStyle,
               ]}
             >
@@ -172,6 +192,7 @@ export function SentenceStudyPanel({
               style={({ pressed }) => [
                 styles.plecoButton,
                 !isPlecoInstalled ? styles.plecoWebsiteButton : null,
+                compactMultiSplit && styles.plecoButtonCompact,
                 pressed && styles.plecoButtonPressed,
               ]}
               accessibilityRole="button"
@@ -197,7 +218,9 @@ export function SentenceStudyPanel({
         </View>
       </View>
       {showMissingDictSetup || showDefinitionText ? (
-        <View style={styles.panelDefinition}>
+        <View
+          style={[styles.panelDefinition, compactMultiSplit && styles.panelDefinitionCompact]}
+        >
           {showMissingDictSetup ? (
             <View style={styles.panelDefinitionMissingDict}>
               <Text
@@ -228,21 +251,49 @@ export function SentenceStudyPanel({
               </Pressable>
             </View>
           ) : showSplitMatches ? (
-            <View style={styles.panelDefinitionList}>
+            <View
+              style={[
+                styles.panelDefinitionList,
+                compactMultiSplit && styles.panelDefinitionListCompact,
+              ]}
+            >
               {dictMatches.map((match, idx) => (
                 <View
                   key={`${match.lookupText}:${match.entry.id}`}
                   style={[
                     styles.panelDefinitionItem,
-                    idx > 0 ? styles.panelDefinitionItemDivider : null,
+                    compactMultiSplit && styles.panelDefinitionItemCompact,
+                    idx > 0
+                      ? [
+                          styles.panelDefinitionItemDivider,
+                          compactMultiSplit && styles.panelDefinitionItemDividerCompact,
+                        ]
+                      : null,
                   ]}
                 >
-                  <View style={styles.panelDefinitionItemHeader}>
-                    <Text style={[styles.panelDefinitionItemWord, chineseFontStyle]}>
+                  <View
+                    style={[
+                      styles.panelDefinitionItemHeader,
+                      compactMultiSplit && styles.panelDefinitionItemHeaderCompact,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.panelDefinitionItemWord,
+                        compactMultiSplit && styles.panelDefinitionItemWordCompact,
+                        chineseFontStyle,
+                      ]}
+                    >
                       {match.lookupText}
                     </Text>
                     {match.entry.pinyin ? (
-                      <Text style={[styles.panelDefinitionItemPinyin, chineseFontStyle]}>
+                      <Text
+                        style={[
+                          styles.panelDefinitionItemPinyin,
+                          compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                          chineseFontStyle,
+                        ]}
+                      >
                         {match.entry.pinyin}
                       </Text>
                     ) : null}
@@ -250,6 +301,7 @@ export function SentenceStudyPanel({
                   <Text
                     style={[
                       styles.panelDefinitionText,
+                      compactMultiSplit && styles.panelDefinitionTextSplitCompact,
                       styles.panelDefinitionTextLoaded,
                       chineseFontStyle,
                     ]}
@@ -289,11 +341,18 @@ function createStyles(theme: Theme, isDark: boolean) {
       shadowRadius: 8,
       elevation: 8,
     },
+    panelCompact: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
     panelHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 12,
+    },
+    panelHeaderCompact: {
+      marginBottom: 6,
     },
     panelHeaderContent: {
       flex: 1,
@@ -307,6 +366,9 @@ function createStyles(theme: Theme, isDark: boolean) {
       alignItems: 'flex-start',
       gap: 2,
     },
+    panelHeaderContentStackedCompact: {
+      gap: 0,
+    },
     panelHeaderRight: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -319,13 +381,22 @@ function createStyles(theme: Theme, isDark: boolean) {
     panelPinyinUnderWord: {
       fontSize: 13,
     },
+    panelPinyinCompact: {
+      fontSize: 12,
+    },
     panelWord: {
       fontSize: 22,
       fontWeight: '700',
       color: isDark ? theme.text : theme.accent,
     },
+    panelWordCompact: {
+      fontSize: 20,
+    },
     panelDefinition: {
       paddingTop: 8,
+    },
+    panelDefinitionCompact: {
+      paddingTop: 4,
     },
     panelDefinitionMissingDict: {
       gap: 8,
@@ -333,13 +404,22 @@ function createStyles(theme: Theme, isDark: boolean) {
     panelDefinitionList: {
       gap: 12,
     },
+    panelDefinitionListCompact: {
+      gap: 5,
+    },
     panelDefinitionItem: {
       gap: 6,
+    },
+    panelDefinitionItemCompact: {
+      gap: 2,
     },
     panelDefinitionItemDivider: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: theme.border,
       paddingTop: 12,
+    },
+    panelDefinitionItemDividerCompact: {
+      paddingTop: 5,
     },
     panelDefinitionItemHeader: {
       flexDirection: 'row',
@@ -347,18 +427,31 @@ function createStyles(theme: Theme, isDark: boolean) {
       gap: 8,
       flexWrap: 'wrap',
     },
+    panelDefinitionItemHeaderCompact: {
+      gap: 5,
+    },
     panelDefinitionItemWord: {
       fontSize: 18,
       fontWeight: '600',
       color: isDark ? theme.text : theme.accent,
     },
+    panelDefinitionItemWordCompact: {
+      fontSize: 16,
+    },
     panelDefinitionItemPinyin: {
       fontSize: 13,
       color: theme.textMuted,
     },
+    panelDefinitionItemPinyinCompact: {
+      fontSize: 12,
+    },
     panelDefinitionText: {
       fontSize: 14,
       color: theme.textMuted,
+    },
+    panelDefinitionTextSplitCompact: {
+      fontSize: 12,
+      lineHeight: 16,
     },
     panelDefinitionTextLoaded: {
       color: theme.textSecondary,
@@ -390,6 +483,11 @@ function createStyles(theme: Theme, isDark: boolean) {
       paddingHorizontal: 12,
       backgroundColor: '#0078c3',
       borderRadius: 8,
+    },
+    plecoButtonCompact: {
+      paddingVertical: 5,
+      paddingHorizontal: 9,
+      gap: 4,
     },
     plecoWebsiteButton: {
       backgroundColor: '#fff',

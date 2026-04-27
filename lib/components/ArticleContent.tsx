@@ -39,6 +39,13 @@ import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpan
 import { SentenceTranslatePanel } from './SentenceTranslatePanel';
 import { SentenceTranslateToggle } from './SentenceTranslateToggle';
 
+/**
+ * Touch target for tappable word `Pressable`s = **layout** (glyph + optional pinyin in `WordBlock`)
+ * plus this `hitSlop` (extra tappable margin outside the box). Was 10/10/6/6; wider vertical
+ * slop helps taps without overlapping neighbors as much as larger horizontal would.
+ */
+const WORD_SEGMENT_HIT_SLOP = { top: 14, bottom: 14, left: 8, right: 8 } as const;
+
 export interface StudyPanelState {
   word: string;
   pinyin: string | null;
@@ -474,7 +481,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
             <Pressable
               key={wIdx}
               onPress={() => onWordPress(word.t, word.p ?? null, wordKey, sentenceKey)}
-              hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+              hitSlop={WORD_SEGMENT_HIT_SLOP}
               style={({ pressed }) => [
                 wordPressableLayout,
                 pressed && rowStyles.wordPressablePressed,

@@ -189,9 +189,10 @@ export default function ArticlesScreen() {
     }, [loadInitial, refreshReadStatesForCurrentItems]),
   );
 
-  const showListLoader = (loading && items.length === 0) || sortReloading;
+  const showListSkeleton =
+    (loading && items.length === 0) || sortReloading || refreshing;
 
-  if (showListLoader) {
+  if (showListSkeleton) {
     return <ArticleListSkeleton />;
   }
 

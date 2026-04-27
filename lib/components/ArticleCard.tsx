@@ -16,7 +16,6 @@ import { resolveImageUrl } from '../api';
 import { formatPublishedDate } from '../formatPublishedDate';
 import {
   THUMB_MAX_HEIGHT,
-  THUMB_MIN_HEIGHT,
   THUMB_WIDTH,
   TRANSLATION_COUNTDOWN_SECONDS,
 } from '../constants';
@@ -86,7 +85,6 @@ export function ArticleCard({
     }, 1000);
     return () => clearInterval(id);
   }, [translating]);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const displayTitle =
     showTranslated && item.title_translated_en
       ? item.title_translated_en
@@ -104,17 +102,12 @@ export function ArticleCard({
     [isDark],
   );
 
-  useEffect(() => {
-    setAspectRatio(null);
-  }, [imageUri]);
-
-  const thumbHeight =
-    aspectRatio != null
-      ? Math.min(
-          THUMB_MAX_HEIGHT,
-          Math.max(THUMB_MIN_HEIGHT, THUMB_WIDTH / aspectRatio),
-        )
-      : THUMB_WIDTH;
+  /**
+   * Fixed size — was dynamic from `onLoad` aspect ratio, which made rows jump 80px → 50–70px when
+   * images decoded. That relayout (plus FlatList recycling) caused list shake / vibration.
+   * Cropping with `contentFit="cover"` matches a stable frame.
+   */
+  const thumbHeight = THUMB_MAX_HEIGHT;
 
   /** Match `card` paddingTop — anchor translate to thumbnail row, not card center (avoids shift when summary expands). */
   const CARD_PADDING = 8;
@@ -179,10 +172,6 @@ export function ArticleCard({
               source={{ uri: imageUri }}
               style={[styles.thumbnail, { width: THUMB_WIDTH, height: thumbHeight }]}
               contentFit="cover"
-              onLoad={(e) => {
-                const { width, height } = e.source;
-                if (width && height) setAspectRatio(width / height);
-              }}
               accessibilityIgnoresInvertColors
             />
           ) : (
@@ -445,22 +434,22 @@ function createStyles(theme: Theme, isDark: boolean) {
   },
   thumbnailWrapper: {
     flexShrink: 0,
-    width: 80,
-    height: 80,
+    width: THUMB_WIDTH,
+    height: THUMB_MAX_HEIGHT,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: theme.border,
   },
   thumbnail: {
-    width: 80,
-    height: 80,
+    width: THUMB_WIDTH,
+    height: THUMB_MAX_HEIGHT,
     borderRadius: 8,
     backgroundColor: theme.border,
   },
   thumbnailNoImageOuter: {
     flexShrink: 0,
-    width: 80,
-    height: 80,
+    width: THUMB_WIDTH,
+    height: THUMB_MAX_HEIGHT,
     borderRadius: 8,
     overflow: 'hidden',
   },
