@@ -616,6 +616,7 @@ export function ArticleContent({
     highlightedSentenceKey: highlightedSentenceKey ?? null,
     hasSelectedWord: selectedWord != null,
     parsedContentLength: parsedContent.length,
+    articleId: articleId ?? null,
   });
 
   const {

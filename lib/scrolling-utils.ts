@@ -26,7 +26,9 @@
  * - **Highlight effect** — when `highlightedSentenceKey` is set, scroll after
  *   `InteractionManager.runAfterInteractions` so we don’t fight the transition.
  * - **Bookmark effect** — runs when there is a bookmark and **no** sentence highlight (study
- *   takes priority). It:
+ *   takes priority). It runs **once per session** (`articleId` + bookmark key + content length):
+ *   after the first auto-scroll (or after skipping because study was active), closing study mode
+ *   must **not** jump back to the bookmark.
  *   - Calls `scrollListToSentenceKey` once when interactions are idle, then **backup** timers
  *     (e.g. 450ms / 1200ms for near; more for far) so a late layout or async DB still triggers
  *     a scroll — e.g. opening from the list where bookmark loads after the first paint.
@@ -58,6 +60,7 @@ export function useArticleSmartScroll<Item>({
   highlightedSentenceKey,
   hasSelectedWord,
   parsedContentLength,
+  articleId,
 }: {
   /** Map `sentenceKey` (`"paragraphIdx:sentenceIdx"`) → `FlashList` `data` index. */
   sentenceKeyToIndex: Map<string, number>;
@@ -72,10 +75,24 @@ export function useArticleSmartScroll<Item>({
    * effect re-runs (e.g. after refetch) without depending on a new `parsedContent` **reference** only.
    */
   parsedContentLength: number;
+  /** Article id — part of the bookmark auto-scroll session key (new article → new session). */
+  articleId?: string | null;
 }): {
   listRef: RefObject<FlashListRef<Item> | null>;
 } {
   const listRef = useRef<FlashListRef<Item>>(null);
+  const bookmarkSessionKeyRef = useRef<string | null>(null);
+  /** True after we handled initial bookmark behavior for this session (scroll or skip due to study). */
+  const initialBookmarkAutoScrollConsumedRef = useRef(false);
+
+  const bookmarkSessionKey = `${articleId ?? ''}\0${bookmarkedSentenceKey ?? ''}\0${parsedContentLength}`;
+
+  useEffect(() => {
+    if (bookmarkSessionKeyRef.current !== bookmarkSessionKey) {
+      bookmarkSessionKeyRef.current = bookmarkSessionKey;
+      initialBookmarkAutoScrollConsumedRef.current = false;
+    }
+  }, [bookmarkSessionKey]);
 
   /**
    * Scroll so the row for `sentenceKey` appears at `viewPosition` (0–1) in the viewport.
@@ -142,12 +159,22 @@ export function useArticleSmartScroll<Item>({
     return () => task.cancel();
   }, [hasSelectedWord, highlightedSentenceKey, scrollListToSentenceKey]);
 
-  // --- Bookmark: scroll to the saved sentence (no study highlight) ---
+  // --- Bookmark: scroll to the saved sentence (no study highlight), once per screen session ---
 
   useEffect(() => {
-    if (!bookmarkedSentenceKey || highlightedSentenceKey) {
+    if (!bookmarkedSentenceKey) {
       return;
     }
+    if (highlightedSentenceKey) {
+      // Opened with (or entered) study mode: never auto-jump to bookmark after user dismisses study.
+      initialBookmarkAutoScrollConsumedRef.current = true;
+      return;
+    }
+    if (initialBookmarkAutoScrollConsumedRef.current) {
+      return;
+    }
+    initialBookmarkAutoScrollConsumedRef.current = true;
+
     const key = bookmarkedSentenceKey;
     const tryScroll = () => {
       scrollListToSentenceKey(key, 0.4, { useInstantForFarBookmark: true });
