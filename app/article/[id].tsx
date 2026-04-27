@@ -137,8 +137,8 @@ export default function ArticleDetailScreen() {
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
   const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
   const [refreshOverlayVisible, setRefreshOverlayVisible] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const contentRef = useRef<View>(null);
+  /** Show mark read/unread only after the list reports the last sentence is on screen. */
+  const [markReadFooterVisible, setMarkReadFooterVisible] = useState(false);
   const bookmarkedSentenceKeyRef = useRef<string | null>(null);
   bookmarkedSentenceKeyRef.current = bookmarkedSentenceKey;
 
@@ -217,6 +217,14 @@ export default function ArticleDetailScreen() {
   const onMarkUnread = useCallback(() => {
     if (!id || Platform.OS === 'web') return;
     void setRead(id, false).then(() => setReadState(false));
+  }, [id]);
+
+  const onLastSentenceBecameVisible = useCallback(() => {
+    setMarkReadFooterVisible(true);
+  }, []);
+
+  useEffect(() => {
+    setMarkReadFooterVisible(false);
   }, [id]);
 
   const onSentenceBookmarkPress = useCallback(
@@ -370,142 +378,210 @@ export default function ArticleDetailScreen() {
       ) : article ? (
         <View style={styles.articleContainer}>
           <BookmarkToast toast={bookmarkToast} onDismiss={dismissBookmarkToast} />
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scroll}
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA },
-              selectedWord ? { paddingBottom: 32 + STUDY_PANEL_HEIGHT } : null,
-            ]}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshOverlayVisible}
-                onRefresh={onRefreshArticle}
-                tintColor={theme.accent}
-              />
-            }
+          <Pressable
+            style={styles.articleScrollContainer}
+            collapsable={false}
+            onPress={selectedWord ? onClosePanel : undefined}
           >
-            <Pressable
-              ref={contentRef}
-              style={styles.content}
-              collapsable={false}
-              onPress={selectedWord ? onClosePanel : undefined}
-            >
-              <Text style={styles.title}>{article.title}</Text>
-              <View style={styles.metaRow}>
-                <View style={styles.meta}>
-                  {article.source && (
-                    <View style={styles.metaSource}>
-                      <Text style={styles.metaText}>{article.source}</Text>
-                      {article.source_url ? (
-                        <Pressable
-                          onPress={() => Linking.openURL(article.source_url!)}
-                          hitSlop={8}
-                          accessibilityRole="link"
-                          accessibilityLabel={t('openSourceArticle')}
-                        >
-                          <Ionicons name="open-outline" size={16} color={theme.accent} />
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  )}
-                  {article.published_date ? (
-                    <View style={styles.metaDateRow}>
-                      <Text style={styles.metaText}>
-                        {formatPublishedDate(article.published_date)}
-                      </Text>
-                      {SourceLabel()}
-                    </View>
-                  ) : (
-                    SourceLabel()
-                  )}
-                </View>
-              </View>
-              {((): React.ReactNode => {
-                const imageUri = resolveImageUrl(article.main_image);
-                return imageUri ? (
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.image}
-                    contentFit="cover"
-                    accessibilityIgnoresInvertColors
-                  />
-                ) : null;
-              })()}
-              {article.parsed_content?.length ? (
-                <ArticleContent
-                  parsedContent={article.parsed_content}
-                  selectedWord={selectedWord}
-                  highlightedWordKey={highlightedWordKey}
-                  highlightedSentenceKey={highlightedSentenceKey}
-                  onWordPress={onWordPress}
-                  scrollViewRef={scrollViewRef}
-                  contentRef={contentRef}
-                  sentenceBookmarkEnabled={Platform.OS !== 'web'}
-                  bookmarkedSentenceKey={bookmarkedSentenceKey}
-                  onSentenceBookmarkPress={onSentenceBookmarkPress}
-                  articleTranslations={articleTranslations}
-                  translationLang={translationLang}
-                  articleTranslationsLoading={articleTranslationsLoading}
-                  articleId={id}
-                  mergeTranslationFromPost={mergeTranslationFromPost}
-                />
-              ) : (
-                <Text style={styles.emptyContent}>
-                  {t('noContentAvailable')}
-                </Text>
-              )}
-              {Platform.OS !== 'web' && (
-                <View style={styles.markReadFooter}>
-                  {readState ? (
-                    <View style={styles.markUnreadRow}>
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.markUnreadButton,
-                          pressed && styles.markUnreadButtonPressed,
-                        ]}
-                        onPress={onMarkUnread}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('markUnread')}
-                      >
-                        <Text style={styles.markUnreadButtonLabel}>
-                          {t('markUnread')}
-                        </Text>
-                      </Pressable>
-                      <View
-                        style={styles.markReadStateIcon}
-                        pointerEvents="none"
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                      >
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={22}
-                          color={theme.accent}
-                        />
+            {article.parsed_content?.length ? (
+              <ArticleContent
+                parsedContent={article.parsed_content}
+                listHeader={(
+                  <>
+                    <Text style={styles.title}>{article.title}</Text>
+                    <View style={styles.metaRow}>
+                      <View style={styles.meta}>
+                        {article.source && (
+                          <View style={styles.metaSource}>
+                            <Text style={styles.metaText}>{article.source}</Text>
+                            {article.source_url ? (
+                              <Pressable
+                                onPress={() => Linking.openURL(article.source_url!)}
+                                hitSlop={8}
+                                accessibilityRole="link"
+                                accessibilityLabel={t('openSourceArticle')}
+                              >
+                                <Ionicons name="open-outline" size={16} color={theme.accent} />
+                              </Pressable>
+                            ) : null}
+                          </View>
+                        )}
+                        {article.published_date ? (
+                          <View style={styles.metaDateRow}>
+                            <Text style={styles.metaText}>
+                              {formatPublishedDate(article.published_date)}
+                            </Text>
+                            {SourceLabel()}
+                          </View>
+                        ) : (
+                          SourceLabel()
+                        )}
                       </View>
                     </View>
-                  ) : (
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.markReadButton,
-                        pressed && styles.markReadButtonPressed,
-                      ]}
-                      onPress={onMarkRead}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('markRead')}
-                    >
-                      <Text style={styles.markReadButtonLabel}>
-                        {t('markRead')}
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              )}
-            </Pressable>
-          </ScrollView>
+                    {((): React.ReactNode => {
+                      const imageUri = resolveImageUrl(article.main_image);
+                      return imageUri ? (
+                        <Image
+                          source={{ uri: imageUri }}
+                          style={styles.image}
+                          contentFit="cover"
+                          accessibilityIgnoresInvertColors
+                        />
+                      ) : null;
+                    })()}
+                  </>
+                )}
+                listFooter={
+                  Platform.OS !== 'web' && markReadFooterVisible ? (
+                    <View style={styles.markReadFooter}>
+                      {readState ? (
+                        <View style={styles.markUnreadRow}>
+                          <Pressable
+                            style={({ pressed }) => [
+                              styles.markUnreadButton,
+                              pressed && styles.markUnreadButtonPressed,
+                            ]}
+                            onPress={onMarkUnread}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('markUnread')}
+                          >
+                            <Text style={styles.markUnreadButtonLabel}>
+                              {t('markUnread')}
+                            </Text>
+                          </Pressable>
+                          <View
+                            style={styles.markReadStateIcon}
+                            pointerEvents="none"
+                            accessibilityElementsHidden
+                            importantForAccessibility="no-hide-descendants"
+                          >
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={22}
+                              color={theme.accent}
+                            />
+                          </View>
+                        </View>
+                      ) : (
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.markReadButton,
+                            pressed && styles.markReadButtonPressed,
+                          ]}
+                          onPress={onMarkRead}
+                          accessibilityRole="button"
+                          accessibilityLabel={t('markRead')}
+                        >
+                          <Text style={styles.markReadButtonLabel}>
+                            {t('markRead')}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ) : null
+                }
+                onLastSentenceBecameVisible={
+                  Platform.OS !== 'web' ? onLastSentenceBecameVisible : undefined
+                }
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  {
+                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
+                    paddingHorizontal: 20,
+                  },
+                  selectedWord ? { paddingBottom: 32 + STUDY_PANEL_HEIGHT } : {},
+                ]}
+                style={styles.scroll}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshOverlayVisible}
+                    onRefresh={onRefreshArticle}
+                    tintColor={theme.accent}
+                  />
+                }
+                selectedWord={selectedWord}
+                highlightedWordKey={highlightedWordKey}
+                highlightedSentenceKey={highlightedSentenceKey}
+                onWordPress={onWordPress}
+                sentenceBookmarkEnabled={Platform.OS !== 'web'}
+                bookmarkedSentenceKey={bookmarkedSentenceKey}
+                onSentenceBookmarkPress={onSentenceBookmarkPress}
+                articleTranslations={articleTranslations}
+                translationLang={translationLang}
+                articleTranslationsLoading={articleTranslationsLoading}
+                articleId={id}
+                mergeTranslationFromPost={mergeTranslationFromPost}
+              />
+            ) : (
+              <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA },
+                  selectedWord ? { paddingBottom: 32 + STUDY_PANEL_HEIGHT } : {},
+                ]}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshOverlayVisible}
+                    onRefresh={onRefreshArticle}
+                    tintColor={theme.accent}
+                  />
+                }
+              >
+                <Pressable
+                  style={styles.content}
+                  collapsable={false}
+                  onPress={selectedWord ? onClosePanel : undefined}
+                >
+                  <Text style={styles.title}>{article.title}</Text>
+                  <View style={styles.metaRow}>
+                    <View style={styles.meta}>
+                      {article.source && (
+                        <View style={styles.metaSource}>
+                          <Text style={styles.metaText}>{article.source}</Text>
+                          {article.source_url ? (
+                            <Pressable
+                              onPress={() => Linking.openURL(article.source_url!)}
+                              hitSlop={8}
+                              accessibilityRole="link"
+                              accessibilityLabel={t('openSourceArticle')}
+                            >
+                              <Ionicons name="open-outline" size={16} color={theme.accent} />
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      )}
+                      {article.published_date ? (
+                        <View style={styles.metaDateRow}>
+                          <Text style={styles.metaText}>
+                            {formatPublishedDate(article.published_date)}
+                          </Text>
+                          {SourceLabel()}
+                        </View>
+                      ) : (
+                        SourceLabel()
+                      )}
+                    </View>
+                  </View>
+                  {((): React.ReactNode => {
+                    const imageUri = resolveImageUrl(article.main_image);
+                    return imageUri ? (
+                      <Image
+                        source={{ uri: imageUri }}
+                        style={styles.image}
+                        contentFit="cover"
+                        accessibilityIgnoresInvertColors
+                      />
+                    ) : null;
+                  })()}
+                  <Text style={styles.emptyContent}>
+                    {t('noContentAvailable')}
+                  </Text>
+                </Pressable>
+              </ScrollView>
+            )}
+          </Pressable>
           {selectedWord && !refreshOverlayVisible ? (
             <View style={styles.studyPanelOverlay} pointerEvents="box-none">
               <SentenceStudyPanel
@@ -561,6 +637,10 @@ function createStyles(theme: Theme) {
   articleContainer: {
     flex: 1,
     position: 'relative',
+  },
+  /** Wraps virtualized `ArticleContent` — scroll lives on the inner `FlatList`. */
+  articleScrollContainer: {
+    flex: 1,
   },
   refreshOverlay: {
     backgroundColor: theme.background,

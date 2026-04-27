@@ -1,4 +1,3 @@
-import type { RefObject } from 'react';
 import {
   memo,
   useCallback,
@@ -7,18 +6,21 @@ import {
   useMemo,
   useRef,
 } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   Animated,
-  InteractionManager,
+  FlatList,
   Platform,
   Pressable,
+  type RefreshControlProps,
   StyleSheet,
   Text,
+  type ViewStyle,
+  type ViewToken,
   View,
 } from 'react-native';
-import type { ScrollView } from 'react-native';
 import { NativeLanguage } from '../nativeLanguage';
 import { useFont } from '../FontContext';
 import type { Theme } from '../theme';
@@ -30,6 +32,8 @@ import type {
   TranslationResponse,
   WordSegment,
 } from '../types';
+/** Sentence `FlatList` scroll (study highlight, DB bookmark, `onScrollToIndexFailed`) — see `useArticleSmartScroll` in `lib/scrolling-utils.ts`. */
+import { useArticleSmartScroll } from '../scrolling-utils';
 import { getCachedSentenceTranslationText } from '../useArticleTranslations';
 import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
 import { SentenceTranslatePanel } from './SentenceTranslatePanel';
@@ -40,15 +44,56 @@ export interface StudyPanelState {
   pinyin: string | null;
 }
 
+/** One list row — flattened from `parsedContent` (paragraphs → sentences). */
+export interface ArticleSentenceListItem {
+  sentenceKey: string;
+  paragraphIndex: number;
+  sentenceIndex: number;
+  sentence: Sentence;
+  isLastInParagraph: boolean;
+}
+
+function flattenSentences(
+  parsedContent: ParsedParagraph[],
+): { flatData: ArticleSentenceListItem[]; sentenceKeyToIndex: Map<string, number> } {
+  const flatData: ArticleSentenceListItem[] = [];
+  const sentenceKeyToIndex = new Map<string, number>();
+  parsedContent.forEach((paragraph, paragraphIndex) => {
+    paragraph.s.forEach((sentence, sentenceIndex) => {
+      const sentenceKey = `${paragraphIndex}:${sentenceIndex}`;
+      sentenceKeyToIndex.set(sentenceKey, flatData.length);
+      flatData.push({
+        sentenceKey,
+        paragraphIndex,
+        sentenceIndex,
+        sentence,
+        isLastInParagraph: sentenceIndex === paragraph.s.length - 1,
+      });
+    });
+  });
+  return { flatData, sentenceKeyToIndex };
+}
+
 export interface ArticleContentProps {
   parsedContent: ParsedParagraph[];
+  /** Title, meta, hero image, etc. — part of the same scroll as body */
+  listHeader: ReactNode;
+  /** e.g. mark-read footer — same scroll */
+  listFooter: ReactNode | null;
+  /**
+   * Native: fired once the last body sentence row is on screen (sufficiently visible) so callers can
+   * reveal footer actions (e.g. mark read) only after the reader reaches the end.
+   */
+  onLastSentenceBecameVisible?: () => void;
+  /** Merged with list body padding (see article screen) */
+  contentContainerStyle?: ViewStyle | ViewStyle[];
+  style?: ViewStyle;
+  refreshControl?: ReactElement<RefreshControlProps>;
   /** Controlled panel state - when provided, parent handles panel rendering */
   selectedWord?: StudyPanelState | null;
   highlightedWordKey?: string | null;
   highlightedSentenceKey?: string | null;
   onWordPress?: (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => void;
-  scrollViewRef?: RefObject<ScrollView | null>;
-  contentRef?: RefObject<View | null>;
   /** Native: show sentence bookmark on the selected sentence (web hides) */
   sentenceBookmarkEnabled?: boolean;
   /** DB bookmark as `paragraph:sentence` (matches API sentence keys), or null */
@@ -152,9 +197,6 @@ function minSentenceRowHeight(fontSize: number, showPinyin: boolean): number {
   const pinyinLine = showPinyin ? Math.ceil(WORD_PINYIN_FONT_SIZE * 1.25) : 0;
   return 2 * (pinyinLine + chineseLine);
 }
-
-const STUDY_PANEL_SCROLL_RESERVE = 140;
-const BOOKMARK_ONLY_SCROLL_RESERVE = 32;
 
 /** Filled bookmark when sentence is saved — distinct red on light and dark themes */
 const BOOKMARK_SAVED_COLOR = '#c41e1a';
@@ -268,38 +310,6 @@ const SentenceBookmarkAnimatedIcon = memo(function SentenceBookmarkAnimatedIcon(
   );
 });
 
-function scrollSentenceIntoScrollView(
-  sentenceNode: View,
-  contentRef: View,
-  scrollViewRef: RefObject<ScrollView | null>,
-  bottomReserve: number,
-) {
-  sentenceNode.measureLayout(
-    contentRef,
-    (_x, y, _w, height) => {
-      const scrollView = scrollViewRef.current as unknown as View | null;
-      if (!scrollView) return;
-      sentenceNode.measureInWindow((_wx, wy, _ww, _wh) => {
-        scrollView.measureInWindow((_sx, sy, _sw, sh) => {
-          const scrollY = y - (wy - sy);
-          const visibleHeight = Math.max(100, sh - bottomReserve);
-          const readableBottom = scrollY + visibleHeight;
-          const needsScroll = y < scrollY || y + height > readableBottom;
-          if (!needsScroll) {
-            return;
-          }
-          const targetY = Math.max(0, y + height / 2 - visibleHeight / 2);
-          scrollViewRef.current?.scrollTo({
-            y: targetY,
-            animated: true,
-          });
-        });
-      });
-    },
-    () => {},
-  );
-}
-
 type ArticleSentenceRowStyles = {
   sentenceWrapper: object;
   sentenceHighlightOverlay: object;
@@ -318,15 +328,15 @@ type ArticleSentenceRowStyles = {
 
 const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   sentenceKey,
-  pIdx,
-  sIdx,
+  paragraphIndex,
+  sentenceIndex,
   words,
   isSelected,
   isSentenceBookmarkedHere,
   sentenceBookmarkEnabled,
   highlightedWordIndex,
-  sentenceMarginBottom,
-  wrapperRef,
+  lineGap,
+  blockMarginBottom,
   onWordPress,
   onSentenceBookmarkPress,
   sentenceChineseText,
@@ -339,7 +349,6 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   chineseFontStyle,
   wordStyles,
   accentColor,
-  textMutedColor,
   bookmarkAccessibilityLabel,
   translateAccessibilityLabel,
   rowStyles,
@@ -350,15 +359,17 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   translationLang,
 }: {
   sentenceKey: string;
-  pIdx: number;
-  sIdx: number;
+  paragraphIndex: number;
+  sentenceIndex: number;
   words: WordSegment[];
   isSelected: boolean;
   isSentenceBookmarkedHere: boolean;
   sentenceBookmarkEnabled: boolean;
   highlightedWordIndex: number | null;
-  sentenceMarginBottom: number;
-  wrapperRef?: (node: View | null) => void;
+  /** Line gap inside wrapped sentence (flex rowGap) */
+  lineGap: number;
+  /** Space below this sentence block (includes paragraph gap when last in paragraph) */
+  blockMarginBottom: number;
   onWordPress: (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => void;
   onSentenceBookmarkPress?: (sentenceKey: string) => void;
   sentenceChineseText: string;
@@ -407,27 +418,26 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
     () => [
       rowStyles.sentenceWrapper,
       {
-        marginBottom: sentenceMarginBottom,
+        marginBottom: blockMarginBottom,
       },
     ],
-    [rowStyles.sentenceWrapper, sentenceMarginBottom],
+    [rowStyles.sentenceWrapper, blockMarginBottom],
   );
 
   const sentenceInnerStyle = useMemo(
     () => [
       rowStyles.sentence,
       {
-        rowGap: sentenceMarginBottom,
+        rowGap: lineGap,
         paddingRight: SENTENCE_TRANSLATE_FAB_RESERVE,
         minHeight: sentenceMinHeight,
       },
     ],
-    [rowStyles.sentence, sentenceMarginBottom, sentenceMinHeight],
+    [rowStyles.sentence, lineGap, sentenceMinHeight],
   );
 
   return (
     <View
-      ref={wrapperRef}
       collapsable={false}
       style={wrapperStyle}
     >
@@ -454,7 +464,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
       ) : null}
       <View style={sentenceInnerStyle}>
         {words.map((word, wIdx) => {
-          const wordKey = `${pIdx}:${sIdx}:${wIdx}`;
+          const wordKey = `${paragraphIndex}:${sentenceIndex}:${wIdx}`;
           const tappable = !isNonTappableSegment(word.t);
           const highlighted = highlightedWordIndex === wIdx;
           const wordPressableLayout = showPinyin
@@ -531,12 +541,16 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
 
 export function ArticleContent({
   parsedContent,
+  listHeader: articleHeader,
+  listFooter: articleFooter,
+  onLastSentenceBecameVisible,
+  contentContainerStyle: contentContainerStyleProp,
+  style: styleProp,
+  refreshControl,
   selectedWord = null,
   highlightedWordKey = null,
   highlightedSentenceKey = null,
   onWordPress,
-  scrollViewRef,
-  contentRef,
   sentenceBookmarkEnabled = false,
   bookmarkedSentenceKey = null,
   onSentenceBookmarkPress,
@@ -552,8 +566,47 @@ export function ArticleContent({
   const deferredFontSize = useDeferredValue(articleFontSize);
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const spacing = LINE_SPACING[lineSpacing];
-  const selectedSentenceRef = useRef<View | null>(null);
-  const bookmarkedSentenceRef = useRef<View | null>(null);
+  const { flatData, sentenceKeyToIndex } = useMemo(
+    () => flattenSentences(parsedContent),
+    [parsedContent],
+  );
+
+  const onLastVisibleRef = useRef(onLastSentenceBecameVisible);
+  onLastVisibleRef.current = onLastSentenceBecameVisible;
+  const lastRowIndexRef = useRef(0);
+  lastRowIndexRef.current = Math.max(0, flatData.length - 1);
+
+  /** Stable handler — `FlatList` should not get a new `onViewableItemsChanged` every render. */
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
+      const last = lastRowIndexRef.current;
+      for (const token of viewableItems) {
+        if (token.isViewable && token.index === last) {
+          onLastVisibleRef.current?.();
+          return;
+        }
+      }
+    },
+  ).current;
+
+  const lastSentenceViewabilityConfig = useMemo(
+    () => ({
+      itemVisiblePercentThreshold: 20,
+      minimumViewTime: 200,
+      waitForInteraction: false,
+    }),
+    [],
+  );
+
+  // List scroll: bookmark + highlight behavior — see `useArticleSmartScroll` in lib/scrolling-utils.ts
+  const { listRef, handleScrollToIndexFailed } = useArticleSmartScroll<ArticleSentenceListItem>({
+    sentenceKeyToIndex,
+    bookmarkedSentenceKey: bookmarkedSentenceKey ?? null,
+    highlightedSentenceKey: highlightedSentenceKey ?? null,
+    hasSelectedWord: selectedWord != null,
+    parsedContentLength: parsedContent.length,
+  });
+
   const {
     sentenceTranslateExpanded,
     translatingSentenceKey,
@@ -567,83 +620,6 @@ export function ArticleContent({
     articleId,
     mergeTranslationFromPost,
   });
-
-  useEffect(() => {
-    if (!highlightedSentenceKey) {
-      selectedSentenceRef.current = null;
-    }
-  }, [highlightedSentenceKey]);
-
-  useEffect(() => {
-    if (!bookmarkedSentenceKey) {
-      bookmarkedSentenceRef.current = null;
-    }
-  }, [bookmarkedSentenceKey]);
-
-  useEffect(() => {
-    if (!highlightedSentenceKey || !scrollViewRef?.current || !contentRef?.current) {
-      return;
-    }
-    const bottomReserve = selectedWord
-      ? STUDY_PANEL_SCROLL_RESERVE
-      : BOOKMARK_ONLY_SCROLL_RESERVE;
-    const task = InteractionManager.runAfterInteractions(() => {
-      const sentenceNode = selectedSentenceRef.current;
-      const content = contentRef.current;
-      if (!sentenceNode || !content) return;
-      scrollSentenceIntoScrollView(
-        sentenceNode,
-        content,
-        scrollViewRef,
-        bottomReserve,
-      );
-    });
-    return () => task.cancel();
-  }, [
-    highlightedSentenceKey,
-    selectedWord,
-    scrollViewRef,
-    contentRef,
-  ]);
-
-  // Scroll to bookmarked sentence when there is no word selection. Use `parsedContent.length`
-  // only in deps — a new `parsed_content` array reference (e.g. after refetch) must not re-run this.
-  useEffect(() => {
-    if (
-      !bookmarkedSentenceKey ||
-      highlightedSentenceKey ||
-      !scrollViewRef?.current ||
-      !contentRef?.current
-    ) {
-      return;
-    }
-    const content = contentRef.current;
-    const tryScroll = () => {
-      const sentenceNode = bookmarkedSentenceRef.current;
-      if (!sentenceNode || !content) return;
-      scrollSentenceIntoScrollView(
-        sentenceNode,
-        content,
-        scrollViewRef,
-        BOOKMARK_ONLY_SCROLL_RESERVE,
-      );
-    };
-    let raf: number | null = null;
-    const task = InteractionManager.runAfterInteractions(() => {
-      tryScroll();
-      raf = requestAnimationFrame(tryScroll);
-    });
-    return () => {
-      task.cancel();
-      if (raf != null) cancelAnimationFrame(raf);
-    };
-  }, [
-    bookmarkedSentenceKey,
-    highlightedSentenceKey,
-    parsedContent.length,
-    scrollViewRef,
-    contentRef,
-  ]);
 
   const handleWordPress = useCallback(
     (wordText: string, pinyinText: string | null, wordKey: string, sentenceKey: string) => {
@@ -709,100 +685,167 @@ export function ArticleContent({
     return { sentenceKey: `${parts[0]}:${parts[1]}`, wordIndex: wIdx };
   }, [highlightedWordKey]);
 
+  const renderItem = useCallback(
+    ({ item }: { item: ArticleSentenceListItem }) => {
+      const { sentenceKey, paragraphIndex, sentenceIndex, sentence, isLastInParagraph } = item;
+      const isSelected = highlightedSentenceKey === sentenceKey;
+      const isSentenceBookmarkedHere =
+        bookmarkedSentenceKey != null && bookmarkedSentenceKey === sentenceKey;
+      const highlightedWordIndex =
+        highlightedWordLocation?.sentenceKey === sentenceKey
+          ? highlightedWordLocation.wordIndex
+          : null;
+      const sentenceCachedTranslation = getCachedSentenceTranslationText(
+        articleTranslations,
+        translationLangProp,
+        sentenceKey,
+      );
+      const translationAvailable = sentenceCachedTranslation != null;
+      const translateIconColor = translationAvailable
+        ? theme.error
+        : theme.readIndicatorMuted;
+      const lineGap = spacing.sentenceMarginBottom;
+      const blockMarginBottom = isLastInParagraph
+        ? spacing.sentenceMarginBottom + spacing.paragraphMarginBottom
+        : spacing.sentenceMarginBottom;
+      return (
+        <MemoArticleSentenceRow
+          sentenceKey={sentenceKey}
+          paragraphIndex={paragraphIndex}
+          sentenceIndex={sentenceIndex}
+          words={sentence.w}
+          isSelected={isSelected}
+          isSentenceBookmarkedHere={isSentenceBookmarkedHere}
+          sentenceBookmarkEnabled={sentenceBookmarkEnabled}
+          highlightedWordIndex={highlightedWordIndex}
+          lineGap={lineGap}
+          blockMarginBottom={blockMarginBottom}
+          onWordPress={handleWordPress}
+          onSentenceBookmarkPress={handleSentenceBookmarkPress}
+          sentenceChineseText={sentenceFullText(sentence)}
+          sentenceTranslateExpanded={isSelected && sentenceTranslateExpanded}
+          onSentenceTranslatePress={handleSentenceTranslatePress}
+          translateIconColor={translateIconColor}
+          sentenceCachedTranslation={sentenceCachedTranslation}
+          showPinyin={showPinyin}
+          fontSize={deferredFontSize}
+          chineseFontStyle={chineseFontStyle}
+          wordStyles={wordStylesBundle}
+          accentColor={theme.accent}
+          textMutedColor={theme.textSecondary}
+          bookmarkAccessibilityLabel={
+            isSentenceBookmarkedHere ? t('removeSentenceBookmark') : t('bookmarkSentence')
+          }
+          translateAccessibilityLabel={
+            sentenceTranslateExpanded && isSelected
+              ? 'Hide sentence translation'
+              : 'Translate sentence'
+          }
+          sentenceTranslateLoading={isSelected && translatingSentenceKey === sentenceKey}
+          articleTranslationsGetLoading={articleTranslationsLoading}
+          articleTranslationsLoadingAccessibilityLabel={t('loading')}
+          sentenceTranslatePanelErrorMessage={isSelected ? sentenceTranslateError : null}
+          translationLang={translationLangProp ?? NativeLanguage.EN}
+          rowStyles={sentenceRowStyles}
+        />
+      );
+    },
+    [
+      articleTranslations,
+      articleTranslationsLoading,
+      bookmarkedSentenceKey,
+      deferredFontSize,
+      handleSentenceTranslatePress,
+      handleWordPress,
+      highlightedSentenceKey,
+      highlightedWordLocation,
+      handleSentenceBookmarkPress,
+      sentenceBookmarkEnabled,
+      sentenceRowStyles,
+      sentenceTranslateError,
+      sentenceTranslateExpanded,
+      showPinyin,
+      t,
+      theme,
+      theme.accent,
+      theme.error,
+      theme.readIndicatorMuted,
+      theme.textSecondary,
+      translatingSentenceKey,
+      translationLangProp,
+      wordStylesBundle,
+      chineseFontStyle,
+      spacing,
+    ],
+  );
+
+  const listHeaderComposed = useMemo(
+    () => (
+      <>
+        {articleHeader}
+        <View style={styles.sentenceListTopSpacer} />
+      </>
+    ),
+    [articleHeader, styles.sentenceListTopSpacer],
+  );
+
+  const listFooterComposed = useMemo(() => {
+    if (articleFooter == null) {
+      return <View style={styles.sentenceListTopSpacer} />;
+    }
+    return (
+      <>
+        <View style={styles.sentenceListTopSpacer} />
+        {articleFooter}
+      </>
+    );
+  }, [articleFooter, styles.sentenceListTopSpacer]);
+
+  const keyExtractor = useCallback((item: ArticleSentenceListItem) => item.sentenceKey, []);
+
+  const listExtraData = useMemo(
+    () =>
+      `${highlightedSentenceKey}\0${bookmarkedSentenceKey}\0${highlightedWordKey}\0${String(
+        sentenceTranslateExpanded,
+      )}`,
+    [
+      highlightedSentenceKey,
+      bookmarkedSentenceKey,
+      highlightedWordKey,
+      sentenceTranslateExpanded,
+    ],
+  );
+
   if (!parsedContent?.length) {
     return null;
   }
 
   return (
-    <View style={styles.container}>
-      {parsedContent.map((paragraph, pIdx) => (
-        <View
-          key={pIdx}
-          style={[styles.paragraph, { marginBottom: spacing.paragraphMarginBottom }]}
-        >
-          {paragraph.s.map((sentence, sIdx) => {
-            const sentenceKey = `${pIdx}:${sIdx}`;
-            const isSelected = highlightedSentenceKey === sentenceKey;
-            const isSentenceBookmarkedHere =
-              bookmarkedSentenceKey != null &&
-              bookmarkedSentenceKey === sentenceKey;
-            const needsScrollTarget = isSelected || isSentenceBookmarkedHere;
-            const highlightedWordIndex =
-              highlightedWordLocation?.sentenceKey === sentenceKey
-                ? highlightedWordLocation.wordIndex
-                : null;
-            const sentenceCachedTranslation = getCachedSentenceTranslationText(
-              articleTranslations,
-              translationLangProp,
-              sentenceKey,
-            );
-            const translationAvailable = sentenceCachedTranslation != null;
-            const translateIconColor = translationAvailable
-              ? theme.error
-              : theme.readIndicatorMuted;
-            return (
-              <MemoArticleSentenceRow
-                key={sentenceKey}
-                sentenceKey={sentenceKey}
-                pIdx={pIdx}
-                sIdx={sIdx}
-                words={sentence.w}
-                isSelected={isSelected}
-                isSentenceBookmarkedHere={isSentenceBookmarkedHere}
-                sentenceBookmarkEnabled={sentenceBookmarkEnabled}
-                highlightedWordIndex={highlightedWordIndex}
-                sentenceMarginBottom={spacing.sentenceMarginBottom}
-                wrapperRef={
-                  needsScrollTarget
-                    ? (node) => {
-                        if (isSelected) {
-                          selectedSentenceRef.current = node;
-                        }
-                        if (isSentenceBookmarkedHere) {
-                          bookmarkedSentenceRef.current = node;
-                        }
-                      }
-                    : undefined
-                }
-                onWordPress={handleWordPress}
-                onSentenceBookmarkPress={handleSentenceBookmarkPress}
-                sentenceChineseText={sentenceFullText(sentence)}
-                sentenceTranslateExpanded={isSelected && sentenceTranslateExpanded}
-                onSentenceTranslatePress={handleSentenceTranslatePress}
-                translateIconColor={translateIconColor}
-                sentenceCachedTranslation={sentenceCachedTranslation}
-                showPinyin={showPinyin}
-                fontSize={deferredFontSize}
-                chineseFontStyle={chineseFontStyle}
-                wordStyles={wordStylesBundle}
-                accentColor={theme.accent}
-                textMutedColor={theme.textSecondary}
-                bookmarkAccessibilityLabel={
-                  isSentenceBookmarkedHere
-                    ? t('removeSentenceBookmark')
-                    : t('bookmarkSentence')
-                }
-                translateAccessibilityLabel={
-                  sentenceTranslateExpanded && isSelected
-                    ? 'Hide sentence translation'
-                    : 'Translate sentence'
-                }
-                sentenceTranslateLoading={
-                  isSelected && translatingSentenceKey === sentenceKey
-                }
-                articleTranslationsGetLoading={articleTranslationsLoading}
-                articleTranslationsLoadingAccessibilityLabel={t('loading')}
-                sentenceTranslatePanelErrorMessage={
-                  isSelected ? sentenceTranslateError : null
-                }
-                translationLang={translationLangProp ?? NativeLanguage.EN}
-                rowStyles={sentenceRowStyles}
-              />
-            );
-          })}
-        </View>
-      ))}
-    </View>
+    <FlatList
+      ref={listRef}
+      style={[styles.listRoot, styleProp]}
+      data={flatData}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      ListHeaderComponent={listHeaderComposed}
+      ListFooterComponent={listFooterComposed}
+      contentContainerStyle={contentContainerStyleProp}
+      extraData={listExtraData}
+      refreshControl={refreshControl}
+      /* Recovery when `scrollToIndex` can’t reach a far row (variable height) — see `scrolling-utils.ts` */
+      onScrollToIndexFailed={handleScrollToIndexFailed}
+      {...(onLastSentenceBecameVisible
+        ? {
+            viewabilityConfig: lastSentenceViewabilityConfig,
+            onViewableItemsChanged,
+          }
+        : {})}
+      removeClippedSubviews={Platform.OS === 'android'}
+      initialNumToRender={12}
+      maxToRenderPerBatch={5}
+      windowSize={7}
+      showsVerticalScrollIndicator={true}
+    />
   );
 }
 
@@ -828,11 +871,12 @@ function createStyles(theme: Theme, isDark: boolean) {
         };
 
   return StyleSheet.create({
-  container: {
-    paddingVertical: 16,
+  listRoot: {
+    flex: 1,
   },
-  paragraph: {
-    flexDirection: 'column',
+  /** Matches former body `paddingVertical` gap after hero / before mark-read. */
+  sentenceListTopSpacer: {
+    height: 16,
   },
   sentenceWrapper: {
     position: 'relative',
