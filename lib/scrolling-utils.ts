@@ -1,18 +1,14 @@
 /**
- * Article body list scrolling — `FlatList` / `VirtualizedList` behavior for sentence rows
+ * Article body list scrolling — `FlashList` behavior for sentence rows
  *
  * ## Context
  *
- * The article body is a **virtualized** `FlatList`: only rows near the viewport are mounted.
+ * The article body is a **virtualized** `FlashList`: rows near the viewport are mounted and recycled.
  * Each row is a **sentence** with **variable height** (word wrap, optional pinyin, translate UI).
  *
- * React Native’s `scrollToIndex({ index, viewPosition })` asks the list to scroll so the item at
- * `index` appears at a given vertical position in the viewport (`viewPosition` is 0 = top, 1 =
- * bottom of the visible area). Internally, the list must know the **pixel offset** of that row.
- * Without `getItemLayout` (we don’t have fixed row heights), it **estimates** from
- * `averageItemLength` — which is often wrong for our rows. For a bookmark **far down** the
- * article, the first `scrollToIndex` may **fail** or land short; the native layer then calls
- * **`onScrollToIndexFailed`** with `{ index, averageItemLength, … }`.
+ * We use **`FlashListRef.scrollToIndex`**, which measures item layouts and performs multi-step
+ * scrolls internally so the target index lands correctly (unlike `FlatList` + bad
+ * `averageItemLength` estimates). There is no separate `onScrollToIndexFailed` hook on FlashList.
  *
  * ## Two scroll “modes”
  *
@@ -24,16 +20,6 @@
  *    **far** bookmarks (`index >= FAR_BOOKMARK_SENTENCE_INDEX`), a long **animated** scroll through
  *    thousands of points feels janky; we use **instant** (non-animated) jumps for coarse
  *    positioning, then **one** final **animated** `scrollToIndex` to polish (`finalizeBookmarkScroll`).
- *
- * ## Recovery when `scrollToIndex` fails (`onScrollToIndexFailed`)
- *
- * 1. Increment a **failure counter** (capped at `MAX_SCROLL_TO_INDEX_RETRIES`).
- * 2. **`scrollToOffset`** to `index * averageItemLength` — gets the window closer so more rows
- *    mount and measurements improve. For far bookmarks this offset jump is **instant** (`animated:
- *    false`) when `useInstantForBookmark` is set; otherwise we keep animation for selection scrolls.
- * 3. After **`scrollRetryDelayAfterOffsetMs`**, call **`scrollToIndex` again** toward the same
- *    target stored in `lastScrollToIndexRequestRef`. This may fire multiple times until the list
- *    can satisfy the scroll or we hit the retry cap.
  *
  * ## Bookmark-specific timing (effects)
  *
@@ -48,26 +34,11 @@
  *     one **animated** `scrollToIndex` after instant steps have (hopefully) brought the target
  *     near the viewport.
  *
- * ## Refs
- *
- * - **`lastScrollToIndexRequestRef`** — last `{ index, viewPosition, useInstantForBookmark? }` we
- *   requested, so `onScrollToIndexFailed` retries the **same** target.
- * - **`scrollToIndexFailureCountRef`** — reset when starting a **new** `scrollListToSentenceKey`
- *   call; increments on each `onScrollToIndexFailed` until cap.
- *
- * @see https://reactnative.dev/docs/flatlist (scrollToIndex, onScrollToIndexFailed)
+ * @see https://shopify.github.io/flash-list/
  */
+import type { FlashListRef } from '@shopify/flash-list';
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
-import {
-  FlatList,
-  InteractionManager,
-} from 'react-native';
-
-/**
- * Max recovery steps from `onScrollToIndexFailed` (offset + retry `scrollToIndex` per step).
- * Prevents an infinite loop if estimates never improve.
- */
-export const MAX_SCROLL_TO_INDEX_RETRIES = 16;
+import { InteractionManager } from 'react-native';
 
 /**
  * List row index from the top of the body at/above this value is treated as a “far” bookmark:
@@ -75,31 +46,11 @@ export const MAX_SCROLL_TO_INDEX_RETRIES = 16;
  */
 export const FAR_BOOKMARK_SENTENCE_INDEX = 32;
 
-/**
- * Delay before retrying `scrollToIndex` after a compensating `scrollToOffset` in
- * `onScrollToIndexFailed`. Slightly longer on later failures to give the list time to mount rows.
- */
-export function scrollRetryDelayAfterOffsetMs(failureCount: number): number {
-  return 360 + Math.min(420, (failureCount - 1) * 55);
-}
-
-/** Last programmatic scroll request — read in `onScrollToIndexFailed` to retry the same target. */
-export type LastScrollToIndexRequest = {
-  index: number;
-  viewPosition: number;
-  /**
-   * When true, `scrollToOffset` / follow-up `scrollToIndex` in the failure handler use
-   * `animated: false` for far-bookmark recovery (avoids long easing from bad estimates).
-   */
-  useInstantForBookmark?: boolean;
-};
-
 type ScrollListOptions = { useInstantForFarBookmark?: boolean };
 
 /**
- * Encapsulates all `FlatList` scrolling for the article body: study highlight, DB bookmark, and
- * `onScrollToIndexFailed` recovery. See the **file-level comment** in `scrolling-utils.ts` for
- * the full picture.
+ * Encapsulates all `FlashList` scrolling for the article body: study highlight and DB bookmark.
+ * See the **file-level comment** in `scrolling-utils.ts` for the full picture.
  */
 export function useArticleSmartScroll<Item>({
   sentenceKeyToIndex,
@@ -108,7 +59,7 @@ export function useArticleSmartScroll<Item>({
   hasSelectedWord,
   parsedContentLength,
 }: {
-  /** Map `sentenceKey` (`"paragraphIdx:sentenceIdx"`) → `FlatList` `data` index. */
+  /** Map `sentenceKey` (`"paragraphIdx:sentenceIdx"`) → `FlashList` `data` index. */
   sentenceKeyToIndex: Map<string, number>;
   /** Current saved bookmark key, or null. */
   bookmarkedSentenceKey: string | null;
@@ -122,15 +73,9 @@ export function useArticleSmartScroll<Item>({
    */
   parsedContentLength: number;
 }): {
-  listRef: RefObject<FlatList<Item> | null>;
-  handleScrollToIndexFailed: (info: {
-    index: number;
-    averageItemLength: number;
-  }) => void;
+  listRef: RefObject<FlashListRef<Item> | null>;
 } {
-  const listRef = useRef<FlatList<Item>>(null);
-  const lastScrollToIndexRequestRef = useRef<LastScrollToIndexRequest | null>(null);
-  const scrollToIndexFailureCountRef = useRef(0);
+  const listRef = useRef<FlashListRef<Item>>(null);
 
   /**
    * Scroll so the row for `sentenceKey` appears at `viewPosition` (0–1) in the viewport.
@@ -144,14 +89,8 @@ export function useArticleSmartScroll<Item>({
       const useInstantForBookmark =
         Boolean(options?.useInstantForFarBookmark) &&
         index >= FAR_BOOKMARK_SENTENCE_INDEX;
-      lastScrollToIndexRequestRef.current = {
-        index,
-        viewPosition,
-        useInstantForBookmark,
-      };
-      scrollToIndexFailureCountRef.current = 0;
       try {
-        listRef.current.scrollToIndex({
+        void listRef.current.scrollToIndex({
           index,
           viewPosition,
           animated: !useInstantForBookmark,
@@ -177,14 +116,8 @@ export function useArticleSmartScroll<Item>({
       if (index < FAR_BOOKMARK_SENTENCE_INDEX) {
         return;
       }
-      lastScrollToIndexRequestRef.current = {
-        index,
-        viewPosition: 0.4,
-        useInstantForBookmark: false,
-      };
-      scrollToIndexFailureCountRef.current = 0;
       try {
-        listRef.current.scrollToIndex({
+        void listRef.current.scrollToIndex({
           index,
           viewPosition: 0.4,
           animated: true,
@@ -242,41 +175,5 @@ export function useArticleSmartScroll<Item>({
     sentenceKeyToIndex,
   ]);
 
-  /**
-   * Wired to `FlatList`’s `onScrollToIndexFailed` — see file-level “Recovery” section.
-   */
-  const handleScrollToIndexFailed = useCallback(
-    (info: { index: number; averageItemLength: number }) => {
-      const target = lastScrollToIndexRequestRef.current;
-      if (!listRef.current || !target) {
-        return;
-      }
-      scrollToIndexFailureCountRef.current += 1;
-      const n = scrollToIndexFailureCountRef.current;
-      if (n > MAX_SCROLL_TO_INDEX_RETRIES) {
-        return;
-      }
-      const instant = Boolean(target.useInstantForBookmark);
-      const offset = Math.max(0, info.index * info.averageItemLength);
-      listRef.current.scrollToOffset({ offset, animated: !instant });
-      const delay = scrollRetryDelayAfterOffsetMs(n);
-      setTimeout(() => {
-        if (!listRef.current) {
-          return;
-        }
-        try {
-          listRef.current.scrollToIndex({
-            index: target.index,
-            viewPosition: target.viewPosition,
-            animated: !instant,
-          });
-        } catch {
-          // ignore
-        }
-      }, delay);
-    },
-    [],
-  );
-
-  return { listRef, handleScrollToIndexFailed };
+  return { listRef };
 }

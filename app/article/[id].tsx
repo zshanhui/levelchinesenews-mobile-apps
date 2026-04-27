@@ -655,7 +655,7 @@ function createStyles(theme: Theme) {
     flex: 1,
     position: 'relative',
   },
-  /** Wraps virtualized `ArticleContent` — scroll lives on the inner `FlatList`. */
+  /** Wraps virtualized `ArticleContent` — scroll lives on the inner `FlashList`. */
   articleScrollContainer: {
     flex: 1,
   },

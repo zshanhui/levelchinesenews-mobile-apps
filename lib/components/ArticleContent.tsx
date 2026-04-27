@@ -9,16 +9,15 @@ import {
 import type { ReactElement, ReactNode } from 'react';
 import { useTranslation } from '../i18n';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FlashList, type ViewToken } from '@shopify/flash-list';
 import {
   Animated,
-  FlatList,
   Platform,
   Pressable,
   type RefreshControlProps,
   StyleSheet,
   Text,
   type ViewStyle,
-  type ViewToken,
   View,
 } from 'react-native';
 import { NativeLanguage } from '../nativeLanguage';
@@ -32,7 +31,7 @@ import type {
   TranslationResponse,
   WordSegment,
 } from '../types';
-/** Sentence `FlatList` scroll (study highlight, DB bookmark, `onScrollToIndexFailed`) — see `useArticleSmartScroll` in `lib/scrolling-utils.ts`. */
+/** Sentence `FlashList` scroll (study highlight, DB bookmark) — see `useArticleSmartScroll` in `lib/scrolling-utils.ts`. */
 import { useArticleSmartScroll } from '../scrolling-utils';
 import { getCachedSentenceTranslationText } from '../useArticleTranslations';
 import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
@@ -583,9 +582,14 @@ export function ArticleContent({
   const lastRowIndexRef = useRef(0);
   lastRowIndexRef.current = Math.max(0, flatData.length - 1);
 
-  /** Stable handler — `FlatList` should not get a new `onViewableItemsChanged` every render. */
+  /** Stable handler — the list should not get a new `onViewableItemsChanged` every render. */
   const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
+    ({
+      viewableItems,
+    }: {
+      viewableItems: ViewToken<ArticleSentenceListItem>[];
+      changed: ViewToken<ArticleSentenceListItem>[];
+    }) => {
       const last = lastRowIndexRef.current;
       for (const token of viewableItems) {
         if (token.isViewable && token.index === last) {
@@ -606,7 +610,7 @@ export function ArticleContent({
   );
 
   // List scroll: bookmark + highlight behavior — see `useArticleSmartScroll` in lib/scrolling-utils.ts
-  const { listRef, handleScrollToIndexFailed } = useArticleSmartScroll<ArticleSentenceListItem>({
+  const { listRef } = useArticleSmartScroll<ArticleSentenceListItem>({
     sentenceKeyToIndex,
     bookmarkedSentenceKey: bookmarkedSentenceKey ?? null,
     highlightedSentenceKey: highlightedSentenceKey ?? null,
@@ -828,7 +832,7 @@ export function ArticleContent({
   }
 
   return (
-    <FlatList
+    <FlashList
       ref={listRef}
       style={[styles.listRoot, styleProp]}
       data={flatData}
@@ -839,18 +843,12 @@ export function ArticleContent({
       contentContainerStyle={contentContainerStyleProp}
       extraData={listExtraData}
       refreshControl={refreshControl}
-      /* Recovery when `scrollToIndex` can’t reach a far row (variable height) — see `scrolling-utils.ts` */
-      onScrollToIndexFailed={handleScrollToIndexFailed}
       {...(onLastSentenceBecameVisible
         ? {
             viewabilityConfig: lastSentenceViewabilityConfig,
             onViewableItemsChanged,
           }
         : {})}
-      removeClippedSubviews={Platform.OS === 'android'}
-      initialNumToRender={12}
-      maxToRenderPerBatch={5}
-      windowSize={7}
       showsVerticalScrollIndicator={true}
     />
   );
