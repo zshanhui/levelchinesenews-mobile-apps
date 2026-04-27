@@ -63,8 +63,13 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     Platform.OS === 'android' ? false : true,
   );
   const [showPinyin, setShowPinyinState] = useState(true);
-  const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('normal');
-  const [fontSize, setFontSizeState] = useState<FontSizeLevel>('md');
+  /** Web: Noto (non-Android default), 22px (xl), relaxed — until AsyncStorage overrides. */
+  const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>(
+    Platform.OS === 'web' ? 'relaxed' : 'normal',
+  );
+  const [fontSize, setFontSizeState] = useState<FontSizeLevel>(
+    Platform.OS === 'web' ? 'xl' : 'md',
+  );
 
   const [fontsLoaded] = useFonts({
     NotoSansSC_400Regular,

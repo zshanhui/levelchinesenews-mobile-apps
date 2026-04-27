@@ -326,6 +326,22 @@ export default function CreateScreen() {
     </View>
   ), [activeTab, myArticles.length, styles, tabs, t]);
 
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.webParseDisabledContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.webParseDisabledText}>
+            {t('parseNotSupportedOnWeb')}
+          </Text>
+        </ScrollView>
+      </View>
+    );
+  }
+
   if (activeTab === 'my-articles') {
     return (
       <View style={styles.container}>
@@ -473,7 +489,7 @@ export default function CreateScreen() {
 
                   <ArticleCard
                     item={lastParsed}
-                    read={Platform.OS === 'web' ? undefined : false}
+                    read={false}
                     onPress={() => router.push(`/article/${lastParsed.id}`)}
                     onRequestTranslation={onRequestTranslation}
                   />
@@ -610,6 +626,19 @@ function createStyles(theme: Theme) {
     },
     flex: {
       flex: 1,
+    },
+    webParseDisabledContent: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingTop: 32,
+      paddingBottom: 32,
+      justifyContent: 'center',
+    },
+    webParseDisabledText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: theme.textSecondary,
+      textAlign: 'center',
     },
     parseScrollContent: {
       paddingHorizontal: 20,

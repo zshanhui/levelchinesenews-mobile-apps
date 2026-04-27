@@ -308,24 +308,28 @@ export default function ArticleDetailScreen() {
       headerShadowVisible: false,
       headerStyle: { backgroundColor: 'transparent' },
       headerTintColor: theme.text,
-      headerLeft: () => (
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={10}
-          style={({ pressed }) => [
-            styles.headerIconBackdrop,
-            pressed && styles.headerIconBackdropPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={t('back')}
-        >
-          <Ionicons
-            name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-            size={24}
-            color={theme.text}
-          />
-        </Pressable>
-      ),
+      ...(Platform.OS === 'web' ? { headerBackVisible: false } : {}),
+      headerLeft:
+        Platform.OS === 'web'
+          ? () => null
+          : () => (
+              <Pressable
+                onPress={() => router.back()}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.headerIconBackdrop,
+                  pressed && styles.headerIconBackdropPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={t('back')}
+              >
+                <Ionicons
+                  name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
+                  size={24}
+                  color={theme.text}
+                />
+              </Pressable>
+            ),
       headerRight: () => (
         <Pressable
           onPress={() => router.push('/settings')}

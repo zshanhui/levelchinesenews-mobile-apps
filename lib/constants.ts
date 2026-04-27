@@ -41,3 +41,6 @@ export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';
 export const STORAGE_KEY_THEME = '@lcn/darkMode';
 export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
+
+/** Web: cap content width (~iPad / tablet) with gutters on large desktops. */
+export const WEB_MAX_VIEWPORT_WIDTH = 800;

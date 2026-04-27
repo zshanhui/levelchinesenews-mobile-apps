@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeContext';
@@ -47,6 +47,7 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   return (
     <Tabs
+      initialRouteName={Platform.OS === 'web' ? 'settings' : undefined}
       screenOptions={{
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textMuted,
@@ -58,12 +59,15 @@ export default function TabLayout() {
         headerTintColor: theme.text,
         headerShadowVisible: false,
         headerTitle: () => <AppHeader theme={theme} />,
-        tabBarStyle: {
-          backgroundColor: theme.surface,
-          borderTopColor: theme.border,
-          borderTopWidth: 1,
-          paddingBottom: insets.bottom + TAB_BAR_EXTRA_BOTTOM_PADDING,
-        },
+        tabBarStyle:
+          Platform.OS === 'web'
+            ? { display: 'none', height: 0 }
+            : {
+                backgroundColor: theme.surface,
+                borderTopColor: theme.border,
+                borderTopWidth: 1,
+                paddingBottom: insets.bottom + TAB_BAR_EXTRA_BOTTOM_PADDING,
+              },
         sceneStyle: { backgroundColor: theme.background },
       }}
     >
@@ -71,6 +75,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('tabs.articles'),
+          /** Web: article list disabled — hide Read tab. */
+          href: Platform.OS === 'web' ? null : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'newspaper' : 'newspaper-outline'} color={color} size={24} />
           ),
@@ -80,6 +86,8 @@ export default function TabLayout() {
         name="create"
         options={{
           title: t('tabs.create'),
+          /** Web: Create / parse is disabled — omit from bottom tab bar. */
+          href: Platform.OS === 'web' ? null : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} color={color} size={24} />
           ),
