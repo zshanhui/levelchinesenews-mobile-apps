@@ -56,7 +56,7 @@ export const translations = {
     configureLocalDict: 'configure local dictionary',
     downloadAndReset: 'download and reset',
     localDatabaseNotSupportedOnWeb:
-      'The local dictionary and other offline database features are not available in the web app. Use the iOS or Android app for these features.',
+      'The local dictionary and other offline database features are not available in the web reader. Download the Android app to use the full features',
     readerPreferences: 'reader preferences',
     useNotoSansSc: 'use noto sans sc for chinese',
     showPinyin: 'show pinyin in articles',
@@ -221,7 +221,7 @@ export const translations = {
     configureLocalDict: 'configurar diccionario local',
     downloadAndReset: 'descargar y restablecer',
     localDatabaseNotSupportedOnWeb:
-      'El diccionario local y otras funciones de base de datos sin conexión no están disponibles en la web. Usa la app de iOS o Android para estas funciones.',
+      'El diccionario local y otras funciones de base de datos sin conexión no están disponibles en el lector web. Descarga la app de Android para usar todas las funciones.',
     readerPreferences: 'preferencias de lectura',
     useNotoSansSc: 'usar Noto Sans SC para chino',
     showPinyin: 'mostrar pinyin en los artículos',
@@ -389,7 +389,7 @@ export const translations = {
     configureLocalDict: 'konfigurasi kamus tempatan',
     downloadAndReset: 'muat turun dan set semula',
     localDatabaseNotSupportedOnWeb:
-      'Kamus tempatan dan ciri pangkalan data luar talian yang lain tidak tersedia dalam app web. Gunakan app iOS atau Android untuk ciri ini.',
+      'Kamus tempatan dan ciri pangkalan data luar talian lain tidak tersedia dalam pembaca web. Muat turun app Android untuk ciri penuh.',
     readerPreferences: 'pilihan pembaca',
     useNotoSansSc: 'gunakan Noto Sans SC untuk Cina',
     showPinyin: 'tunjukkan pinyin dalam artikel',
@@ -557,7 +557,7 @@ export const translations = {
     configureLocalDict: 'konfigurasi kamus lokal',
     downloadAndReset: 'unduh dan reset',
     localDatabaseNotSupportedOnWeb:
-      'Kamus lokal dan fitur database offline lainnya tidak tersedia di aplikasi web. Gunakan aplikasi iOS atau Android untuk fitur ini.',
+      'Kamus lokal dan fitur database offline lainnya tidak tersedia di pembaca web. Unduh aplikasi Android untuk fitur lengkap.',
     readerPreferences: 'preferensi pembaca',
     useNotoSansSc: 'gunakan Noto Sans SC untuk bahasa Tionghoa',
     showPinyin: 'tampilkan pinyin dalam artikel',
@@ -726,7 +726,7 @@ export const translations = {
     configureLocalDict: 'cấu hình từ điển cục bộ',
     downloadAndReset: 'tải xuống và đặt lại',
     localDatabaseNotSupportedOnWeb:
-      'Từ điển cục bộ và các tính năng cơ sở dữ liệu ngoại tuyến khác không có trên bản web. Hãy dùng ứng dụng iOS hoặc Android cho các tính năng này.',
+      'Từ điển cục bộ và các tính năng cơ sở dữ liệu ngoại tuyến khác không có trên trình đọc web. Tải ứng dụng Android để dùng đầy đủ tính năng.',
     readerPreferences: 'tùy chọn đọc',
     useNotoSansSc: 'dùng Noto Sans SC cho chữ Hán',
     showPinyin: 'hiện phiên âm trong bài viết',
@@ -895,7 +895,7 @@ export const translations = {
     configureLocalDict: 'настроить локальный словарь',
     downloadAndReset: 'скачать и сбросить',
     localDatabaseNotSupportedOnWeb:
-      'Локальный словарь и другие функции офлайн-базы данных недоступны в веб-приложении. Используйте приложение для iOS или Android.',
+      'Локальный словарь и другие функции офлайн-базы данных недоступны в веб-читалке. Скачайте приложение для Android, чтобы пользоваться всеми функциями.',
     readerPreferences: 'настройки чтения',
     useNotoSansSc: 'использовать Noto Sans SC для китайского текста',
     showPinyin: 'показывать пиньинь в статьях',
@@ -1064,7 +1064,7 @@ export const translations = {
     configureLocalDict: 'تكوين القاموس المحلي',
     downloadAndReset: 'تنزيل وإعادة تعيين',
     localDatabaseNotSupportedOnWeb:
-      'القاموس المحلي وميزات قاعدة البيانات دون الاتصال غير متوفرة في تطبيق الويب. استخدم تطبيق iOS أو Android لهذه الميزات.',
+      'القاموس المحلي وميزات قاعدة البيانات دون الاتصال غير متوفرة في قارئ الويب. نزّل تطبيق أندرويد لاستخدام جميع الميزات.',
     readerPreferences: 'تفضيلات القارئ',
     useNotoSansSC: 'استخدام Noto Sans SC للنصوص الصينية',
     showPinyin: 'إظهار البينيين في المقالات',
@@ -1230,7 +1230,7 @@ export const translations = {
     configureLocalDict: '配置本地词典',
     downloadAndReset: '下载和重置',
     localDatabaseNotSupportedOnWeb:
-      '网页版不支持本地词典及其他离线数据库功能。请使用 iOS 或 Android 应用使用这些功能。',
+      '网页阅读器不支持本地词典及其他离线数据库功能。请下载 Android 应用以使用完整功能。',
     readerPreferences: '阅读偏好',
     useNotoSansSC: '中文使用思源黑体',
     showPinyin: '在文章中显示拼音',
