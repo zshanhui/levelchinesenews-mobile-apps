@@ -63,7 +63,7 @@ export function SentenceStudyPanel({
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
-  const { chineseFontStyle } = useFont();
+  const { chineseFontStyle, chinesePinyinFontStyle } = useFont();
   const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
   const [lookupComplete, setLookupComplete] = useState(
     () => Platform.OS === 'web',
@@ -183,7 +183,7 @@ export function SentenceStudyPanel({
                 styles.panelPinyin,
                 stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
                 compactMultiSplit && styles.panelPinyinCompact,
-                chineseFontStyle,
+                chinesePinyinFontStyle,
               ]}
             >
               {pinyin}
