@@ -10,7 +10,8 @@
     "test": "jest",
     "eas:preview": "eas build --platform android --profile preview",
     "eas:production": "eas build --platform android --profile production",
-    "eas:local": "eas build --platform android --profile preview --local"
+    "eas:local": "eas build --platform android --profile preview --local",
+    "build:web": "expo export --platform web"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans-sc": "^0.4.2",

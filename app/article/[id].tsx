@@ -11,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -40,6 +41,7 @@ import {
   ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
   STUDY_PANEL_HEIGHT,
 } from '../../lib/constants';
+import { webArticleFontScale } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
@@ -49,6 +51,11 @@ const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 
 /** Space below the transparent header before the article title and metadata. */
 const ARTICLE_SCROLL_TOP_EXTRA = 75;
+
+/** Native headline size */
+const ARTICLE_TITLE_BASE_FONT_SIZE = 22;
+/** Web headline before viewport scaling (`webArticleFontScale`). */
+const ARTICLE_TITLE_BASE_FONT_SIZE_WEB = 28;
 
 /** Extra inset below the header for skeleton (list load + pull-to-refresh). */
 const SKELETON_TOP_EXTRA = 20;
@@ -117,7 +124,16 @@ export default function ArticleDetailScreen() {
 
   const navigation = useNavigation();
   const headerHeight = useHeaderHeight();
+  const { width: windowWidth } = useWindowDimensions();
   const { theme } = useTheme();
+
+  const articleTitleFontSize = useMemo(
+    () =>
+      Platform.OS === 'web'
+        ? Math.round(ARTICLE_TITLE_BASE_FONT_SIZE_WEB * webArticleFontScale(windowWidth))
+        : ARTICLE_TITLE_BASE_FONT_SIZE,
+    [windowWidth],
+  );
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -308,24 +324,28 @@ export default function ArticleDetailScreen() {
       headerShadowVisible: false,
       headerStyle: { backgroundColor: 'transparent' },
       headerTintColor: theme.text,
-      headerLeft: () => (
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={10}
-          style={({ pressed }) => [
-            styles.headerIconBackdrop,
-            pressed && styles.headerIconBackdropPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={t('back')}
-        >
-          <Ionicons
-            name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-            size={24}
-            color={theme.text}
-          />
-        </Pressable>
-      ),
+      ...(Platform.OS === 'web' ? { headerBackVisible: false } : {}),
+      headerLeft:
+        Platform.OS === 'web'
+          ? () => null
+          : () => (
+              <Pressable
+                onPress={() => router.back()}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.headerIconBackdrop,
+                  pressed && styles.headerIconBackdropPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={t('back')}
+              >
+                <Ionicons
+                  name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
+                  size={24}
+                  color={theme.text}
+                />
+              </Pressable>
+            ),
       headerRight: () => (
         <Pressable
           onPress={() => router.push('/settings')}
@@ -391,7 +411,9 @@ export default function ArticleDetailScreen() {
                 parsedContent={article.parsed_content}
                 listHeader={(
                   <>
-                    <Text style={styles.title}>{article.title}</Text>
+                    <Text style={[styles.title, { fontSize: articleTitleFontSize }]}>
+                      {article.title}
+                    </Text>
                     <View style={styles.metaRow}>
                       <View style={styles.meta}>
                         {article.source && (
@@ -551,7 +573,9 @@ export default function ArticleDetailScreen() {
                   collapsable={false}
                   onPress={selectedWord ? onClosePanel : undefined}
                 >
-                  <Text style={styles.title}>{article.title}</Text>
+                  <Text style={[styles.title, { fontSize: articleTitleFontSize }]}>
+                      {article.title}
+                    </Text>
                   <View style={styles.metaRow}>
                     <View style={styles.meta}>
                       {article.source && (
@@ -679,7 +703,6 @@ function createStyles(theme: Theme) {
     paddingTop: 16,
   },
   title: {
-    fontSize: 22,
     fontWeight: '600',
     color: theme.text,
     marginBottom: 8,

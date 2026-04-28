@@ -10,6 +10,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -26,7 +27,44 @@ import { useTheme } from '../../lib/ThemeContext';
 
 const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
-export default function ArticlesScreen() {
+function WebArticleFeedDisabled() {
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: theme.background },
+        flex: { flex: 1 },
+        content: {
+          flexGrow: 1,
+          paddingHorizontal: 24,
+          paddingTop: 32,
+          paddingBottom: 32,
+          justifyContent: 'center',
+        },
+        text: {
+          fontSize: 15,
+          lineHeight: 22,
+          color: theme.textSecondary,
+          textAlign: 'center',
+        },
+      }),
+    [theme],
+  );
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.text}>{t('articleFeedNotSupportedOnWeb')}</Text>
+      </ScrollView>
+    </View>
+  );
+}
+
+function ArticlesListScreen() {
   const { theme } = useTheme();
   const { fancyDisplayFontStyle } = useFont();
   const { t } = useTranslation();
@@ -105,10 +143,6 @@ export default function ArticlesScreen() {
   );
 
   const refreshReadStatesForCurrentItems = useCallback(async () => {
-    if (Platform.OS === 'web') {
-      setReadByArticleId({});
-      return;
-    }
     const ids = itemsRef.current.map((i) => i.id);
     if (ids.length === 0) {
       setReadByArticleId({});
@@ -218,11 +252,7 @@ export default function ArticlesScreen() {
         <ArticleCard
           item={item}
           index={index}
-          read={
-            Platform.OS === 'web'
-              ? undefined
-              : (readByArticleId[item.id] ?? false)
-          }
+          read={readByArticleId[item.id] ?? false}
           onPress={() => router.push(`/article/${item.id}`)}
           onRequestTranslation={onRequestTranslation}
         />
@@ -286,6 +316,13 @@ export default function ArticlesScreen() {
     />
     </>
   );
+}
+
+export default function ArticlesScreen() {
+  if (Platform.OS === 'web') {
+    return <WebArticleFeedDisabled />;
+  }
+  return <ArticlesListScreen />;
 }
 
 function createStyles(theme: Theme) {

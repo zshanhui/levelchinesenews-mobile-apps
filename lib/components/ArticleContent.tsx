@@ -123,6 +123,7 @@ const WordBlock = memo(function WordBlock({
   highlighted,
   fontSize,
   chineseFontStyle,
+  chinesePinyinFontStyle,
   wordStyles,
 }: {
   segment: WordSegment;
@@ -130,6 +131,7 @@ const WordBlock = memo(function WordBlock({
   highlighted: boolean;
   fontSize: number;
   chineseFontStyle: { fontFamily?: string };
+  chinesePinyinFontStyle: { fontFamily?: string };
   wordStyles: { wordBlock: object; wordBlockHighlightBg: object; pinyin: object; word: object };
 }) {
   const text = segment.t;
@@ -141,7 +143,15 @@ const WordBlock = memo(function WordBlock({
         <View style={wordStyles.wordBlockHighlightBg} pointerEvents="none" />
       ) : null}
       {showPinyin && pinyin ? (
-        <Text style={[wordStyles.pinyin, chineseFontStyle]}>{pinyin}</Text>
+        <Text
+          style={[
+            wordStyles.pinyin,
+            chinesePinyinFontStyle,
+            { fontSize: Math.round(fontSize * WORD_PINYIN_TO_BODY_RATIO) },
+          ]}
+        >
+          {pinyin}
+        </Text>
       ) : null}
       <Text style={[wordStyles.word, chineseFontStyle, { fontSize }]} selectable={true}>{text}</Text>
     </View>
@@ -190,8 +200,8 @@ const LINE_SPACING = {
   relaxed: { sentenceMarginBottom: 14, paragraphMarginBottom: 40 },
 };
 
-/** Matches `styles.pinyin` fontSize in WordBlock. */
-const WORD_PINYIN_FONT_SIZE = 11;
+/** Legacy pinyin vs `md` (18px) body — keep proportion when body size changes (e.g. web wide layout). */
+const WORD_PINYIN_TO_BODY_RATIO = 11 / 18;
 
 /**
  * Minimum height for a sentence row so the top-right bookmark control and bottom-right
@@ -200,7 +210,8 @@ const WORD_PINYIN_FONT_SIZE = 11;
  */
 function minSentenceRowHeight(fontSize: number, showPinyin: boolean): number {
   const chineseLine = Math.ceil(fontSize * 1.28);
-  const pinyinLine = showPinyin ? Math.ceil(WORD_PINYIN_FONT_SIZE * 1.25) : 0;
+  const pinyinFontSize = Math.round(fontSize * WORD_PINYIN_TO_BODY_RATIO);
+  const pinyinLine = showPinyin ? Math.ceil(pinyinFontSize * 1.25) : 0;
   return 2 * (pinyinLine + chineseLine);
 }
 
@@ -353,6 +364,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   showPinyin,
   fontSize,
   chineseFontStyle,
+  chinesePinyinFontStyle,
   wordStyles,
   accentColor,
   bookmarkAccessibilityLabel,
@@ -396,6 +408,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   showPinyin: boolean;
   fontSize: number;
   chineseFontStyle: { fontFamily?: string };
+  chinesePinyinFontStyle: { fontFamily?: string };
   wordStyles: {
     wordBlock: object;
     wordBlockHighlightBg: object;
@@ -492,6 +505,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
                 highlighted={highlighted}
                 fontSize={fontSize}
                 chineseFontStyle={chineseFontStyle}
+                chinesePinyinFontStyle={chinesePinyinFontStyle}
                 wordStyles={wordStyles}
               />
             </Pressable>
@@ -509,6 +523,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
                 highlighted={false}
                 fontSize={fontSize}
                 chineseFontStyle={chineseFontStyle}
+                chinesePinyinFontStyle={chinesePinyinFontStyle}
                 wordStyles={wordStyles}
               />
             </Pressable>
@@ -568,7 +583,8 @@ export function ArticleContent({
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { showPinyin, lineSpacing, articleFontSize, chineseFontStyle } = useFont();
+  const { showPinyin, lineSpacing, articleFontSize, chineseFontStyle, chinesePinyinFontStyle } =
+    useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const spacing = LINE_SPACING[lineSpacing];
@@ -742,6 +758,7 @@ export function ArticleContent({
           showPinyin={showPinyin}
           fontSize={deferredFontSize}
           chineseFontStyle={chineseFontStyle}
+          chinesePinyinFontStyle={chinesePinyinFontStyle}
           wordStyles={wordStylesBundle}
           accentColor={theme.accent}
           textMutedColor={theme.textSecondary}
@@ -787,6 +804,7 @@ export function ArticleContent({
       translationLangProp,
       wordStylesBundle,
       chineseFontStyle,
+      chinesePinyinFontStyle,
       spacing,
     ],
   );

@@ -12,6 +12,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'Loading articles…',
+    articleFeedNotSupportedOnWeb:
+      'The article feed is not available in the web app. Use the iOS or Android app to browse news articles.',
     retry: 'Retry',
     noArticlesYet: 'no articles yet',
     addArticlesHint: 'add articles from the create tab by pasting a news url',
@@ -40,6 +42,8 @@ export const translations = {
     parsesRemaining: '{{remaining}} of {{max}} parses remaining today',
     supportedSites: 'supported sites',
     parseArticleUrl: 'Parse article URL',
+    parseNotSupportedOnWeb:
+      'Parsing article URLs is not available in the web app. Use the iOS or Android app to fetch articles from a link.',
     myArticlesFilterUnread: 'unread ({{count}})',
     myArticlesFilterFinished: 'finished ({{count}})',
     myArticlesFilterEmptyUnread: 'no unread articles',
@@ -51,6 +55,8 @@ export const translations = {
     darkMode: 'dark mode (cyberpunk)',
     configureLocalDict: 'configure local dictionary',
     downloadAndReset: 'download and reset',
+    localDatabaseNotSupportedOnWeb:
+      'The local dictionary and other offline database features are not available in the web reader. Download the Android app to use the full features',
     readerPreferences: 'reader preferences',
     useNotoSansSc: 'use noto sans sc for chinese',
     showPinyin: 'show pinyin in articles',
@@ -170,6 +176,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'Cargando artículos…',
+    articleFeedNotSupportedOnWeb:
+      'El feed de artículos no está disponible en la web. Usa la app de iOS o Android para leer noticias.',
     retry: 'Reintentar',
     noArticlesYet: 'aún no hay artículos',
     addArticlesHint:
@@ -199,6 +207,8 @@ export const translations = {
     parsesRemaining: '{{remaining}} de {{max}} análisis restantes hoy',
     supportedSites: 'sitios compatibles',
     parseArticleUrl: 'Analizar URL del artículo',
+    parseNotSupportedOnWeb:
+      'Analizar URLs de artículos no está disponible en la web. Usa la app de iOS o Android para obtener artículos desde un enlace.',
     myArticlesFilterUnread: 'sin leer ({{count}})',
     myArticlesFilterFinished: 'terminados ({{count}})',
     myArticlesFilterEmptyUnread: 'no hay artículos sin leer',
@@ -210,6 +220,8 @@ export const translations = {
     darkMode: 'modo oscuro (cyberpunk)',
     configureLocalDict: 'configurar diccionario local',
     downloadAndReset: 'descargar y restablecer',
+    localDatabaseNotSupportedOnWeb:
+      'El diccionario local y otras funciones de base de datos sin conexión no están disponibles en el lector web. Descarga la app de Android para usar todas las funciones.',
     readerPreferences: 'preferencias de lectura',
     useNotoSansSc: 'usar Noto Sans SC para chino',
     showPinyin: 'mostrar pinyin en los artículos',
@@ -332,6 +344,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'Memuatkan artikel…',
+    articleFeedNotSupportedOnWeb:
+      'Suapan artikel tidak tersedia dalam app web. Gunakan app iOS atau Android untuk membaca berita.',
     retry: 'Cuba semula',
     noArticlesYet: 'belum ada artikel',
     addArticlesHint:
@@ -361,6 +375,8 @@ export const translations = {
     parsesRemaining: '{{remaining}} daripada {{max}} huraian tinggal hari ini',
     supportedSites: 'laman web disokong',
     parseArticleUrl: 'Hurai URL artikel',
+    parseNotSupportedOnWeb:
+      'Hurai URL artikel tidak tersedia dalam app web. Gunakan app iOS atau Android untuk mengambil artikel daripada pautan.',
     myArticlesFilterUnread: 'belum dibaca ({{count}})',
     myArticlesFilterFinished: 'selesai ({{count}})',
     myArticlesFilterEmptyUnread: 'tiada artikel yang belum dibaca',
@@ -372,6 +388,8 @@ export const translations = {
     darkMode: 'mod gelap (cyberpunk)',
     configureLocalDict: 'konfigurasi kamus tempatan',
     downloadAndReset: 'muat turun dan set semula',
+    localDatabaseNotSupportedOnWeb:
+      'Kamus tempatan dan ciri pangkalan data luar talian lain tidak tersedia dalam pembaca web. Muat turun app Android untuk ciri penuh.',
     readerPreferences: 'pilihan pembaca',
     useNotoSansSc: 'gunakan Noto Sans SC untuk Cina',
     showPinyin: 'tunjukkan pinyin dalam artikel',
@@ -494,6 +512,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'Memuat artikel…',
+    articleFeedNotSupportedOnWeb:
+      'Umpan artikel tidak tersedia di aplikasi web. Gunakan aplikasi iOS atau Android untuk membaca berita.',
     retry: 'Coba lagi',
     noArticlesYet: 'belum ada artikel',
     addArticlesHint:
@@ -523,6 +543,8 @@ export const translations = {
     parsesRemaining: '{{remaining}} dari {{max}} penguraian tersisa hari ini',
     supportedSites: 'situs yang didukung',
     parseArticleUrl: 'Urai URL artikel',
+    parseNotSupportedOnWeb:
+      'Mengurai URL artikel tidak tersedia di aplikasi web. Gunakan aplikasi iOS atau Android untuk mengambil artikel dari tautan.',
     myArticlesFilterUnread: 'belum dibaca ({{count}})',
     myArticlesFilterFinished: 'selesai ({{count}})',
     myArticlesFilterEmptyUnread: 'tidak ada artikel yang belum dibaca',
@@ -534,6 +556,8 @@ export const translations = {
     darkMode: 'mode gelap (cyberpunk)',
     configureLocalDict: 'konfigurasi kamus lokal',
     downloadAndReset: 'unduh dan reset',
+    localDatabaseNotSupportedOnWeb:
+      'Kamus lokal dan fitur database offline lainnya tidak tersedia di pembaca web. Unduh aplikasi Android untuk fitur lengkap.',
     readerPreferences: 'preferensi pembaca',
     useNotoSansSc: 'gunakan Noto Sans SC untuk bahasa Tionghoa',
     showPinyin: 'tampilkan pinyin dalam artikel',
@@ -657,6 +681,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'Đang tải bài viết…',
+    articleFeedNotSupportedOnWeb:
+      'Bản web không có bảng tin bài viết. Hãy dùng ứng dụng iOS hoặc Android để đọc tin.',
     retry: 'Thử lại',
     noArticlesYet: 'chưa có bài viết',
     addArticlesHint:
@@ -686,6 +712,8 @@ export const translations = {
     parsesRemaining: 'hôm nay còn {{remaining}}/{{max}} lần phân tích',
     supportedSites: 'trang được hỗ trợ',
     parseArticleUrl: 'Phân tích URL bài viết',
+    parseNotSupportedOnWeb:
+      'Phân tích URL bài viết không có trên bản web. Hãy dùng ứng dụng iOS hoặc Android để tải bài từ liên kết.',
     myArticlesFilterUnread: 'chưa đọc ({{count}})',
     myArticlesFilterFinished: 'đã đọc xong ({{count}})',
     myArticlesFilterEmptyUnread: 'không có bài chưa đọc',
@@ -697,6 +725,8 @@ export const translations = {
     darkMode: 'chế độ tối (cyberpunk)',
     configureLocalDict: 'cấu hình từ điển cục bộ',
     downloadAndReset: 'tải xuống và đặt lại',
+    localDatabaseNotSupportedOnWeb:
+      'Từ điển cục bộ và các tính năng cơ sở dữ liệu ngoại tuyến khác không có trên trình đọc web. Tải ứng dụng Android để dùng đầy đủ tính năng.',
     readerPreferences: 'tùy chọn đọc',
     useNotoSansSc: 'dùng Noto Sans SC cho chữ Hán',
     showPinyin: 'hiện phiên âm trong bài viết',
@@ -820,6 +850,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'Загрузка статей…',
+    articleFeedNotSupportedOnWeb:
+      'Лента статей недоступна в веб-приложении. Используйте приложение для iOS или Android.',
     retry: 'Повторить',
     noArticlesYet: 'пока нет статей',
     addArticlesHint:
@@ -849,6 +881,8 @@ export const translations = {
     parsesRemaining: 'сегодня осталось {{remaining}} из {{max}} разборов',
     supportedSites: 'поддерживаемые сайты',
     parseArticleUrl: 'Разобрать URL статьи',
+    parseNotSupportedOnWeb:
+      'Разбор URL статей недоступен в веб-приложении. Используйте приложение для iOS или Android.',
     myArticlesFilterUnread: 'непрочитанные ({{count}})',
     myArticlesFilterFinished: 'прочитанные ({{count}})',
     myArticlesFilterEmptyUnread: 'нет непрочитанных статей',
@@ -860,6 +894,8 @@ export const translations = {
     darkMode: 'тёмная тема (киберпанк)',
     configureLocalDict: 'настроить локальный словарь',
     downloadAndReset: 'скачать и сбросить',
+    localDatabaseNotSupportedOnWeb:
+      'Локальный словарь и другие функции офлайн-базы данных недоступны в веб-читалке. Скачайте приложение для Android, чтобы пользоваться всеми функциями.',
     readerPreferences: 'настройки чтения',
     useNotoSansSc: 'использовать Noto Sans SC для китайского текста',
     showPinyin: 'показывать пиньинь в статьях',
@@ -983,6 +1019,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: 'جاري تحميل المقالات…',
+    articleFeedNotSupportedOnWeb:
+      'موجز المقالات غير متاح في تطبيق الويب. استخدم تطبيق iOS أو Android لقراءة الأخبار.',
     retry: 'إعادة المحاولة',
     noArticlesYet: 'لا توجد مقالات بعد',
     addArticlesHint:
@@ -1012,6 +1050,8 @@ export const translations = {
     parsesRemaining: '{{remaining}} من {{max}} تحليلات متبقية اليوم',
     supportedSites: 'المواقع المدعومة',
     parseArticleUrl: 'تحليل رابط المقال',
+    parseNotSupportedOnWeb:
+      'تحليل روابط المقالات غير متاح في تطبيق الويب. استخدم تطبيق iOS أو Android لجلب المقالات من الرابط.',
     myArticlesFilterUnread: 'غير مقروء ({{count}})',
     myArticlesFilterFinished: 'مكتمل ({{count}})',
     myArticlesFilterEmptyUnread: 'لا توجد مقالات غير مقروءة',
@@ -1023,6 +1063,8 @@ export const translations = {
     darkMode: 'الوضع الداكن (سايبربانك)',
     configureLocalDict: 'تكوين القاموس المحلي',
     downloadAndReset: 'تنزيل وإعادة تعيين',
+    localDatabaseNotSupportedOnWeb:
+      'القاموس المحلي وميزات قاعدة البيانات دون الاتصال غير متوفرة في قارئ الويب. نزّل تطبيق أندرويد لاستخدام جميع الميزات.',
     readerPreferences: 'تفضيلات القارئ',
     useNotoSansSC: 'استخدام Noto Sans SC للنصوص الصينية',
     showPinyin: 'إظهار البينيين في المقالات',
@@ -1145,6 +1187,8 @@ export const translations = {
 
     // Articles list (index)
     loadingArticles: '加载文章中…',
+    articleFeedNotSupportedOnWeb:
+      '网页版不提供文章资讯流。请使用 iOS 或 Android 应用浏览新闻文章。',
     retry: '重试',
     noArticlesYet: '暂无文章',
     addArticlesHint: '在创建标签页粘贴新闻链接添加文章',
@@ -1172,6 +1216,8 @@ export const translations = {
     parsesRemaining: '今日剩余 {{remaining}}/{{max}} 次解析',
     supportedSites: '支持的网站',
     parseArticleUrl: '解析文章链接',
+    parseNotSupportedOnWeb:
+      '网页版不支持从链接解析文章。请使用 iOS 或 Android 应用从链接抓取文章。',
     myArticlesFilterUnread: '未读 ({{count}})',
     myArticlesFilterFinished: '已读完 ({{count}})',
     myArticlesFilterEmptyUnread: '没有未读文章',
@@ -1183,6 +1229,8 @@ export const translations = {
     darkMode: '深色模式（赛博朋克）',
     configureLocalDict: '配置本地词典',
     downloadAndReset: '下载和重置',
+    localDatabaseNotSupportedOnWeb:
+      '网页阅读器不支持本地词典及其他离线数据库功能。请下载 Android 应用以使用完整功能。',
     readerPreferences: '阅读偏好',
     useNotoSansSC: '中文使用思源黑体',
     showPinyin: '在文章中显示拼音',
