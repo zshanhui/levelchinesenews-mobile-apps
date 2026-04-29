@@ -401,11 +401,7 @@ export default function ArticleDetailScreen() {
       ) : article ? (
         <View style={styles.articleContainer}>
           <BookmarkToast toast={bookmarkToast} onDismiss={dismissBookmarkToast} />
-          <Pressable
-            style={styles.articleScrollContainer}
-            collapsable={false}
-            onPress={selectedWord ? onClosePanel : undefined}
-          >
+          <View style={styles.articleScrollContainer} collapsable={false}>
             {article.parsed_content?.length ? (
               <ArticleContent
                 parsedContent={article.parsed_content}
@@ -622,7 +618,7 @@ export default function ArticleDetailScreen() {
                 </Pressable>
               </ScrollView>
             )}
-          </Pressable>
+          </View>
           {selectedWord && !refreshOverlayVisible ? (
             <View style={styles.studyPanelOverlay} pointerEvents="box-none">
               <SentenceStudyPanel
@@ -632,6 +628,7 @@ export default function ArticleDetailScreen() {
                 highlightedWordKey={highlightedWordKey ?? ''}
                 highlightedSentenceKey={highlightedSentenceKey ?? ''}
                 bottomInset={insets.bottom}
+                onRequestClose={onClosePanel}
               />
             </View>
           ) : null}

@@ -1,8 +1,18 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  PanResponder,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { i18n, useTranslation } from '../i18n';
 import { useFont } from '../FontContext';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
@@ -16,6 +26,15 @@ import type { Theme } from '../theme';
 const showPlecoButton = Platform.OS !== 'web';
 const useOptimisticPlecoOpen = true;
 
+const STUDY_PANEL_ENTER_MS = 280;
+
+/** Smaller = easier to dismiss by dragging down (px). */
+const STUDY_PANEL_DISMISS_DRAG_PX = 72;
+/** Downward velocity above this (px/ms) can dismiss with a short flick. */
+const STUDY_PANEL_DISMISS_VY = 0.42;
+/** Minimum drag distance when using velocity-only dismiss. */
+const STUDY_PANEL_DISMISS_VY_MIN_DY = 22;
+
 export type SentenceStudyPanelProps = {
   word: string;
   pinyin: string | null;
@@ -23,6 +42,8 @@ export type SentenceStudyPanelProps = {
   highlightedWordKey: string;
   highlightedSentenceKey: string;
   bottomInset: number;
+  /** Called after the panel finishes sliding off-screen (downward dismiss). */
+  onRequestClose?: () => void;
 };
 
 function buildPlecoUrl(
@@ -58,8 +79,10 @@ export function SentenceStudyPanel({
   highlightedWordKey,
   highlightedSentenceKey,
   bottomInset,
+  onRequestClose,
 }: SentenceStudyPanelProps) {
   const router = useRouter();
+  const { height: windowHeight } = useWindowDimensions();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
@@ -71,6 +94,85 @@ export function SentenceStudyPanel({
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
   const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
   const stackPinyinUnderWord = word.length >= 4;
+
+  /** Starts below the fold; slides up only when opening from a closed panel (mount or remount). */
+  const translateY = useRef(new Animated.Value(windowHeight)).current;
+  const dragStartRef = useRef(0);
+  const onRequestCloseRef = useRef(onRequestClose);
+  onRequestCloseRef.current = onRequestClose;
+  /** False until the enter animation has run once for this mounted panel. */
+  const hasPlayedEnterAnimationRef = useRef(false);
+
+  useEffect(() => {
+    translateY.stopAnimation();
+    if (!hasPlayedEnterAnimationRef.current) {
+      hasPlayedEnterAnimationRef.current = true;
+      translateY.setValue(windowHeight);
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: STUDY_PANEL_ENTER_MS,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    } else {
+      translateY.setValue(0);
+    }
+  }, [word, translateY, windowHeight]);
+
+  const dismissThreshold = useMemo(
+    () =>
+      Math.min(
+        STUDY_PANEL_DISMISS_DRAG_PX,
+        Math.max(48, windowHeight * 0.14),
+      ),
+    [windowHeight],
+  );
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, g) =>
+          Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderGrant: () => {
+          translateY.stopAnimation((val) => {
+            dragStartRef.current = Number.isFinite(val) ? val : 0;
+          });
+        },
+        onPanResponderMove: (_, g) => {
+          const y = Math.max(0, dragStartRef.current + g.dy);
+          translateY.setValue(y);
+        },
+        onPanResponderRelease: (_, g) => {
+          const y = Math.max(0, dragStartRef.current + g.dy);
+          const close =
+            onRequestCloseRef.current &&
+            (y > dismissThreshold ||
+              (g.vy > STUDY_PANEL_DISMISS_VY && y > STUDY_PANEL_DISMISS_VY_MIN_DY));
+          if (close) {
+            Animated.timing(translateY, {
+              toValue: windowHeight,
+              duration: STUDY_PANEL_ENTER_MS,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: false,
+            }).start(({ finished }) => {
+              if (finished) {
+                onRequestCloseRef.current?.();
+              }
+            });
+          } else {
+            dragStartRef.current = 0;
+            Animated.spring(translateY, {
+              toValue: 0,
+              useNativeDriver: false,
+              friction: 7,
+              tension: 78,
+            }).start();
+          }
+        },
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [dismissThreshold, translateY, windowHeight],
+  );
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -151,13 +253,25 @@ export function SentenceStudyPanel({
   const compactMultiSplit = dictMatches.length >= 3;
 
   return (
-    <View
+    <Animated.View
       style={[
-        styles.panel,
-        compactMultiSplit && styles.panelCompact,
-        { paddingBottom: Math.max(bottomInset, 16) },
+        styles.panelOuter,
+        {
+          transform: [{ translateY }],
+        },
       ]}
+      {...panResponder.panHandlers}
     >
+      <View style={styles.dragHandleTrack}>
+        <View style={styles.dragHandle} />
+      </View>
+      <View
+        style={[
+          styles.panel,
+          compactMultiSplit && styles.panelCompact,
+          { paddingBottom: Math.max(bottomInset, 16) },
+        ]}
+      >
       <View style={[styles.panelHeader, compactMultiSplit && styles.panelHeaderCompact]}>
         <View
           style={[
@@ -343,12 +457,29 @@ export function SentenceStudyPanel({
           )}
         </View>
       ) : null}
-    </View>
+      </View>
+    </Animated.View>
   );
 }
 
 function createStyles(theme: Theme, isDark: boolean) {
   return StyleSheet.create({
+    panelOuter: {
+      width: '100%',
+    },
+    dragHandleTrack: {
+      alignItems: 'center',
+      paddingTop: 8,
+      paddingBottom: 12,
+    },
+    dragHandle: {
+      width: 72,
+      height: 4,
+      borderRadius: 3,
+      backgroundColor: theme.textMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.textSecondary,
+    },
     panel: {
       backgroundColor: theme.surface,
       paddingHorizontal: 20,

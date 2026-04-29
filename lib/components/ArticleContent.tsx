@@ -510,13 +510,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
               />
             </Pressable>
           ) : (
-            <Pressable
-              key={wIdx}
-              style={wordPressableLayout}
-              onPress={() => {}}
-              accessible={false}
-              android_ripple={null}
-            >
+            <View key={wIdx} style={wordPressableLayout}>
               <WordBlock
                 segment={word}
                 showPinyin={showPinyin}
@@ -526,7 +520,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
                 chinesePinyinFontStyle={chinesePinyinFontStyle}
                 wordStyles={wordStyles}
               />
-            </Pressable>
+            </View>
           );
         })}
         {showTranslateControl ? (
