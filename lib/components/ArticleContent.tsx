@@ -482,16 +482,16 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
         </Pressable>
       ) : null}
       <View style={sentenceInnerStyle}>
-        {words.map((word, wIdx) => {
-          const wordKey = `${paragraphIndex}:${sentenceIndex}:${wIdx}`;
+        {words.map((word, wordIndex) => {
+          const wordKey = `${paragraphIndex}:${sentenceIndex}:${wordIndex}`;
           const tappable = !isNonTappableSegment(word.t);
-          const highlighted = highlightedWordIndex === wIdx;
+          const highlighted = highlightedWordIndex === wordIndex;
           const wordPressableLayout = showPinyin
             ? rowStyles.wordPressable
             : rowStyles.wordPressableTight;
           return tappable ? (
             <Pressable
-              key={wIdx}
+              key={wordIndex}
               onPress={() => onWordPress(word.t, word.p ?? null, wordKey, sentenceKey)}
               hitSlop={WORD_SEGMENT_HIT_SLOP}
               style={({ pressed }) => [
@@ -510,7 +510,7 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
               />
             </Pressable>
           ) : (
-            <View key={wIdx} style={wordPressableLayout}>
+            <View key={wordIndex} style={wordPressableLayout}>
               <WordBlock
                 segment={word}
                 showPinyin={showPinyin}
@@ -702,9 +702,9 @@ export function ArticleContent({
     if (!highlightedWordKey) return null;
     const parts = highlightedWordKey.split(':');
     if (parts.length !== 3) return null;
-    const wIdx = Number.parseInt(parts[2]!, 10);
-    if (!Number.isFinite(wIdx)) return null;
-    return { sentenceKey: `${parts[0]}:${parts[1]}`, wordIndex: wIdx };
+    const wordIndex = Number.parseInt(parts[2]!, 10);
+    if (!Number.isFinite(wordIndex)) return null;
+    return { sentenceKey: `${parts[0]}:${parts[1]}`, wordIndex };
   }, [highlightedWordKey]);
 
   const renderItem = useCallback(
