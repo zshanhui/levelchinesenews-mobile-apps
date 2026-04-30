@@ -14,7 +14,6 @@ export function showErrorFeedback(title: string, message?: string): void {
 
 /** Short confirmation after a successful action (toast on Android, alert on iOS). */
 export function showSuccessFeedback(message: string): void {
-  if (Platform.OS === 'web') return;
   if (Platform.OS === 'android') {
     ToastAndroid.show(message, ToastAndroid.SHORT);
     return;

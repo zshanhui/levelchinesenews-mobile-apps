@@ -1,7 +1,5 @@
 /**
  * Saved "my articles" persistence via SQLite.
- * Native only — saved articles + read status are not available on web.
- * All exports no-op when Platform.OS === 'web'.
  *
  * Rows include parsed articles and any article marked read from the public feed
  * (see upsertArticleMarkedRead).
@@ -11,7 +9,6 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 import {
   getLocalDatabase,
   userSavedArticlesTableName,
@@ -54,11 +51,6 @@ function parseArticleListItemJson(raw: string | null): ArticleListItem | null {
   } catch {
     return null;
   }
-}
-
-async function guardWeb(): Promise<boolean> {
-  if (Platform.OS === 'web') return true;
-  return false;
 }
 
 export interface SavedArticleWithMeta {
@@ -144,7 +136,6 @@ function parseSentenceBookmarkPayload(
 
 /** List all saved articles, newest first, with read state. */
 export async function listSavedArticles(): Promise<SavedArticleWithMeta[]> {
-  if (await guardWeb()) return [];
   const db = await getLocalDatabase();
   const rows = await db.getAllAsync<UserSavedArticleRow>(
     `SELECT * FROM ${TABLE} ORDER BY saved_datetime DESC`
@@ -176,7 +167,6 @@ export async function listSavedArticles(): Promise<SavedArticleWithMeta[]> {
 
 /** Insert or update a saved article. On conflict, preserve saved_datetime, marked_read_datetime, sentence_bookmarked. */
 export async function upsertSavedArticle(item: ArticleListItem): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   const savedDatetime = Date.now();
   const json = JSON.stringify(item);
@@ -204,7 +194,6 @@ export async function upsertSavedArticleWithSentenceBookmark(
   indexes: [number, number],
   display: { n: number; t: number } | null = null,
 ): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   const now = Date.now();
   const json = JSON.stringify(item);
@@ -237,7 +226,6 @@ export async function upsertSavedArticleWithSentenceBookmark(
 
 /** Remove an article from "my articles" (deletes the row). */
 export async function removeSavedArticle(articleId: string): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   await db.runAsync(`DELETE FROM ${TABLE} WHERE id = ?`, articleId);
 }
@@ -266,7 +254,6 @@ export function articleDetailToListItem(article: ArticleDetail): ArticleListItem
  * Clears any sentence bookmark on update (finished articles have no bookmark).
  */
 export async function upsertArticleMarkedRead(item: ArticleListItem): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   const now = Date.now();
   const json = JSON.stringify(item);
@@ -289,7 +276,6 @@ export async function upsertArticleMarkedRead(item: ArticleListItem): Promise<vo
 
 /** Set read/finished state for an article. Marking read clears sentence bookmarks. */
 export async function setRead(articleId: string, read: boolean): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   if (read) {
     await db.runAsync(
@@ -309,7 +295,6 @@ export async function setRead(articleId: string, read: boolean): Promise<void> {
 export async function getSentenceBookmark(
   articleId: string,
 ): Promise<[number, number] | null> {
-  if (await guardWeb()) return null;
   const db = await getLocalDatabase();
   const row = await db.getFirstAsync<{ sentence_bookmarked: string | null }>(
     `SELECT sentence_bookmarked FROM ${TABLE} WHERE id = ?`,
@@ -321,7 +306,6 @@ export async function getSentenceBookmark(
 
 /** Clear the sentence bookmark for a saved article. */
 export async function clearSentenceBookmark(articleId: string): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   await db.runAsync(
     `UPDATE ${TABLE} SET sentence_bookmarked = NULL WHERE id = ?`,
@@ -334,7 +318,6 @@ export async function bookmarkArticleSentence(
   articleId: string,
   indexes: [number, number],
 ): Promise<void> {
-  if (await guardWeb()) return;
   const db = await getLocalDatabase();
   const bookmarkJson = JSON.stringify(indexes);
   await db.runAsync(
@@ -346,7 +329,6 @@ export async function bookmarkArticleSentence(
 
 /** Check if an article is in the saved list. */
 export async function isSavedArticle(articleId: string): Promise<boolean> {
-  if (await guardWeb()) return false;
   const db = await getLocalDatabase();
   const row = await db.getFirstAsync<{ count: number }>(
     `SELECT 1 AS count FROM ${TABLE} WHERE id = ?`,
@@ -357,7 +339,6 @@ export async function isSavedArticle(articleId: string): Promise<boolean> {
 
 /** Whether the article has been marked read. */
 export async function getReadState(articleId: string): Promise<boolean> {
-  if (await guardWeb()) return false;
   const db = await getLocalDatabase();
   const row = await db.getFirstAsync<{ marked_read_datetime: number | null }>(
     `SELECT marked_read_datetime FROM ${TABLE} WHERE id = ?`,
@@ -371,7 +352,7 @@ export async function getReadStatesForArticleIds(
   ids: string[],
 ): Promise<Map<string, boolean>> {
   const out = new Map<string, boolean>();
-  if (await guardWeb() || ids.length === 0) return out;
+  if (ids.length === 0) return out;
 
   const unique = [...new Set(ids)];
   for (const id of unique) {
@@ -395,7 +376,6 @@ export async function getReadStatesForArticleIds(
 
 /** One-time migration from AsyncStorage. Call after table exists. */
 export async function migrateFromAsyncStorageIfNeeded(): Promise<void> {
-  if (await guardWeb()) return;
   const raw = await AsyncStorage.getItem(STORAGE_KEY_ARTICLES);
   if (!raw) return;
 

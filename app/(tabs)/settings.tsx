@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   Linking,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -76,14 +75,13 @@ export default function SettingsScreen() {
   const lastVersionTapAtRef = useRef(0);
 
   useEffect(() => {
-    if (!shouldEnableDebugPanel || Platform.OS === 'web') return;
+    if (!shouldEnableDebugPanel) return;
     AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
       setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
     });
   }, [shouldEnableDebugPanel]);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
     getOrCreateInstallationId()
       .then(setInstallationId)
       .catch((err) => {
@@ -114,68 +112,47 @@ export default function SettingsScreen() {
           <Text style={styles.sectionHeaderText}>{t('configurePreferences')}</Text>
         </View>
 
-        {Platform.OS !== 'web' && (
-          <View style={[styles.settingRow, styles.settingRowSpaced]}>
-            <Text style={styles.settingLabel}>
-              {t('darkMode')}
-            </Text>
-            <Switch
-              value={isDark}
-              onValueChange={setDark}
-              trackColor={{ false: theme.border, true: theme.accent + '66' }}
-              thumbColor={isDark ? theme.accent : theme.textMuted}
-            />
-          </View>
-        )}
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={styles.settingLabel}>
+            {t('darkMode')}
+          </Text>
+          <Switch
+            value={isDark}
+            onValueChange={setDark}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={isDark ? theme.accent : theme.textMuted}
+          />
+        </View>
 
         {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
 
-        {Platform.OS === 'web' ? (
-          <View
-            style={[styles.navRow, styles.settingRowSpaced, styles.navRowWebDisabled]}
-            accessibilityRole="text"
-          >
-            <View style={styles.navRowContent}>
-              <View style={[styles.navRowIcon, styles.navRowIconWeb]}>
-                <Ionicons name="book-outline" size={20} color={theme.textMuted} />
-              </View>
-              <View style={styles.navRowTextGroup}>
-                <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
-                <Text style={styles.navRowDescriptionWebOnly}>
-                  {t('localDatabaseNotSupportedOnWeb')}
-                </Text>
-              </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.navRow,
+            styles.settingRowSpaced,
+            pressed && styles.navRowPressed,
+          ]}
+          onPress={() => router.push('/settings/localdict')}
+        >
+          <View style={styles.navRowContent}>
+            <View style={styles.navRowIcon}>
+              <Ionicons name="book-outline" size={20} color={theme.accent} />
+            </View>
+            <View style={styles.navRowTextGroup}>
+              <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
+              <Text style={styles.navRowDescription}>
+                {t('downloadAndReset')}
+              </Text>
             </View>
           </View>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [
-              styles.navRow,
-              styles.settingRowSpaced,
-              pressed && styles.navRowPressed,
-            ]}
-            onPress={() => router.push('/settings/localdict')}
-          >
-            <View style={styles.navRowContent}>
-              <View style={styles.navRowIcon}>
-                <Ionicons name="book-outline" size={20} color={theme.accent} />
-              </View>
-              <View style={styles.navRowTextGroup}>
-                <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
-                <Text style={styles.navRowDescription}>
-                  {t('downloadAndReset')}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.navRowChevron}>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={theme.textMuted}
-              />
-            </View>
-          </Pressable>
-        )}
+          <View style={styles.navRowChevron}>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={theme.textMuted}
+            />
+          </View>
+        </Pressable>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionHeaderText}>{t('readerPreferences')}</Text>
@@ -287,18 +264,14 @@ export default function SettingsScreen() {
                 `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
                 `__DEV__=${__DEV__}`,
                 '',
-                Platform.OS === 'web'
-                  ? 'MY_ARTICLES_LIST=not persisted (web; SQLite not used)'
-                  : `MY_ARTICLES_LIST=SQLite table ${userSavedArticlesTableName}`,
-                ...(Platform.OS === 'web'
-                  ? []
-                  : [
-                      legacyMyArticlesKeyPresent === null
-                        ? 'MY_ARTICLES_LEGACY_ASYNCSTORAGE=checking…'
-                        : legacyMyArticlesKeyPresent
-                          ? `MY_ARTICLES_LEGACY_ASYNCSTORAGE=present (key ${STORAGE_KEY_ARTICLES}; open Create tab to migrate)`
-                          : 'MY_ARTICLES_LEGACY_ASYNCSTORAGE=absent (migrated or never used)',
-                    ]),
+                `MY_ARTICLES_LIST=SQLite table ${userSavedArticlesTableName}`,
+                ...(legacyMyArticlesKeyPresent === null
+                  ? ['MY_ARTICLES_LEGACY_ASYNCSTORAGE=checking…']
+                  : legacyMyArticlesKeyPresent
+                    ? [
+                        `MY_ARTICLES_LEGACY_ASYNCSTORAGE=present (key ${STORAGE_KEY_ARTICLES}; open Create tab to migrate)`,
+                      ]
+                    : ['MY_ARTICLES_LEGACY_ASYNCSTORAGE=absent (migrated or never used)']),
               ].join('\n')}
             </Text>
           </View>
@@ -421,18 +394,6 @@ function createStyles(theme: Theme) {
     fontSize: 12,
     color: theme.textSecondary,
     marginTop: 2,
-  },
-  navRowWebDisabled: {
-    alignItems: 'flex-start',
-  },
-  navRowIconWeb: {
-    backgroundColor: theme.etchedBg,
-  },
-  navRowDescriptionWebOnly: {
-    fontSize: 12,
-    color: theme.textSecondary,
-    marginTop: 6,
-    lineHeight: 18,
   },
   navRowChevron: {
     marginLeft: 8,

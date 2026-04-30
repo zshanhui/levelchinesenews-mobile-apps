@@ -101,7 +101,7 @@ export interface ArticleContentProps {
   highlightedWordKey?: string | null;
   highlightedSentenceKey?: string | null;
   onWordPress?: (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => void;
-  /** Native: show sentence bookmark on the selected sentence (web hides) */
+  /** Show sentence bookmark on the selected sentence */
   sentenceBookmarkEnabled?: boolean;
   /** DB bookmark as `paragraph:sentence` (matches API sentence keys), or null */
   bookmarkedSentenceKey?: string | null;
@@ -201,7 +201,7 @@ const LINE_SPACING = {
   relaxed: { sentenceMarginBottom: 14, paragraphMarginBottom: 40 },
 };
 
-/** Legacy pinyin vs `md` (18px) body — keep proportion when body size changes (e.g. web wide layout). */
+/** Legacy pinyin vs `md` (18px) body — keep proportion when body size changes. */
 const WORD_PINYIN_TO_BODY_RATIO = 11 / 18;
 
 /**

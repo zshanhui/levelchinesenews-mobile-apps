@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Stack } from 'expo-router';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -41,12 +40,10 @@ export default function LocalDictSettingsScreen() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
     refreshRowCount();
   }, [refreshRowCount]);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
     const entriesLoaded = (rowCount ?? 0) > 0;
     const notDownloading = progress === null || progress >= 100;
     if (entriesLoaded && notDownloading) {
@@ -109,29 +106,6 @@ export default function LocalDictSettingsScreen() {
   const isBusy = isDownloading || isResetting;
   const hasEntries = (rowCount ?? 0) > 0;
   const styles = useMemo(() => createStyles(theme), [theme]);
-
-  if (Platform.OS === 'web') {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: t('configureLocalDict'),
-            headerBackTitle: t('back'),
-            headerStyle: { backgroundColor: theme.surface },
-            headerTintColor: theme.text,
-          }}
-        />
-        <ScrollView
-          style={styles.webUnsupportedContainer}
-          contentContainerStyle={styles.webUnsupportedContent}
-        >
-          <Text style={styles.webUnsupportedText}>
-            {t('localDatabaseNotSupportedOnWeb')}
-          </Text>
-        </ScrollView>
-      </>
-    );
-  }
 
   return (
     <>
@@ -250,22 +224,6 @@ export default function LocalDictSettingsScreen() {
 
 function createStyles(theme: import('../../lib/theme').Theme) {
   return StyleSheet.create({
-    webUnsupportedContainer: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    webUnsupportedContent: {
-      flexGrow: 1,
-      padding: 20,
-      paddingBottom: 32,
-      justifyContent: 'center',
-    },
-    webUnsupportedText: {
-      fontSize: 15,
-      color: theme.textSecondary,
-      lineHeight: 22,
-      textAlign: 'center',
-    },
     container: {
       flex: 1,
       backgroundColor: theme.background,

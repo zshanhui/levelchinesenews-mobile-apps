@@ -71,7 +71,6 @@ export function ArticleListFilterShelve({
   }, [visible, sheetHeight, translateY]);
 
   const sortButtonHaptic = useCallback(() => {
-    if (Platform.OS === 'web') return;
     void Haptics.selectionAsync().catch(() => {});
   }, []);
 

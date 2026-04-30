@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { useCallback, useMemo } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from '../i18n';
 import { googleTranslateTargetLangCode, type NativeLanguage } from '../nativeLanguage';
 import type { Theme } from '../theme';
@@ -81,7 +81,7 @@ export function SentenceTranslatePanel({
   } else if (errorMessage) {
     body = (
       <Text
-        style={[styles.errorText, Platform.OS === 'web' && styles.textSelectableWeb]}
+        style={[styles.errorText]}
         selectable
         accessibilityRole="alert"
       >
@@ -91,7 +91,7 @@ export function SentenceTranslatePanel({
   } else if (hasTranslation) {
     body = (
       <Text
-        style={[styles.translation, Platform.OS === 'web' && styles.textSelectableWeb]}
+        style={[styles.translation]}
         selectable
       >
         {trimmedTranslation}
@@ -218,9 +218,6 @@ function createStyles(theme: Theme) {
       lineHeight: 19,
       color: theme.error,
       width: '100%',
-    },
-    textSelectableWeb: {
-      userSelect: 'text',
     },
   });
 }

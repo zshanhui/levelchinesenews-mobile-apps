@@ -6,7 +6,6 @@ import {
   Animated,
   Easing,
   PanResponder,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -23,7 +22,7 @@ import {
 } from '../useLocalDictService';
 import type { Theme } from '../theme';
 
-const showPlecoButton = Platform.OS !== 'web';
+const showPlecoButton = true;
 const useOptimisticPlecoOpen = true;
 
 const STUDY_PANEL_ENTER_MS = 280;
@@ -88,9 +87,7 @@ export function SentenceStudyPanel({
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const { chineseFontStyle, chinesePinyinFontStyle } = useFont();
   const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
-  const [lookupComplete, setLookupComplete] = useState(
-    () => Platform.OS === 'web',
-  );
+  const [lookupComplete, setLookupComplete] = useState(false);
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
   const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
   const stackPinyinUnderWord = word.length >= 4;
@@ -175,12 +172,6 @@ export function SentenceStudyPanel({
   );
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      setDictMatches([]);
-      setHasLocalDictData(false);
-      setLookupComplete(true);
-      return;
-    }
     let cancelled = false;
     setDictMatches([]);
     setLookupComplete(false);
@@ -240,13 +231,9 @@ export function SentenceStudyPanel({
     router.push('/settings/localdict');
   }, [router]);
 
-  const isWeb = Platform.OS === 'web';
-  const showWebLocalDatabaseMessage = isWeb && lookupComplete;
-  const showMissingDictSetup =
-    !isWeb && lookupComplete && !hasLocalDictData;
+  const showMissingDictSetup = lookupComplete && !hasLocalDictData;
   const showDefinitionText =
-    !isWeb &&
-    (!lookupComplete || dictMatches.some((match) => Boolean(match.entry.definitions)));
+    !lookupComplete || dictMatches.some((match) => Boolean(match.entry.definitions));
   const showSplitMatches = dictMatches.length > 1;
   const singleMatch = dictMatches[0] ?? null;
   /** Tighten list + header spacing when many sub-word lines would make the panel very tall. */
@@ -338,23 +325,11 @@ export function SentenceStudyPanel({
           ) : null}
         </View>
       </View>
-      {showWebLocalDatabaseMessage ||
-      showMissingDictSetup ||
-      showDefinitionText ? (
+      {showMissingDictSetup || showDefinitionText ? (
         <View
           style={[styles.panelDefinition, compactMultiSplit && styles.panelDefinitionCompact]}
         >
-          {showWebLocalDatabaseMessage ? (
-            <Text
-              style={[
-                styles.panelDefinitionText,
-                styles.panelDefinitionTextMissing,
-                chineseFontStyle,
-              ]}
-            >
-              {t('localDatabaseNotSupportedOnWeb')}
-            </Text>
-          ) : showMissingDictSetup ? (
+          {showMissingDictSetup ? (
             <View style={styles.panelDefinitionMissingDict}>
               <Text
                 style={[

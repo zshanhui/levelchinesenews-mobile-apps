@@ -82,6 +82,11 @@ export const translations = {
     openSettings: 'Open settings',
     openSourceArticle: 'open source article',
     markRead: 'mark read',
+    appNativePlatformsOnly:
+      'This app is only available on iOS and Android.',
+    readOriginalArticleCta:
+      'We recommend you read and support the original article from {{mediaSource}} as your Chinese improves.',
+    originalArticleSourceFallback: 'the publisher',
     markUnread: 'mark unread',
     markedReadStatus: 'marked read',
     saveToMyArticles: 'Save to my articles',
@@ -247,6 +252,11 @@ export const translations = {
     openSettings: 'Abrir ajustes',
     openSourceArticle: 'abrir artículo fuente',
     markRead: 'marcar como leído',
+    appNativePlatformsOnly:
+      'Esta aplicación solo está disponible en iOS y Android.',
+    readOriginalArticleCta:
+      'Te recomendamos leer y apoyar el artículo original de {{mediaSource}} a medida que mejore tu chino.',
+    originalArticleSourceFallback: 'la fuente',
     markUnread: 'marcar como no leído',
     markedReadStatus: 'marcado como leído',
     saveToMyArticles: 'Guardar en mis artículos',
@@ -415,6 +425,11 @@ export const translations = {
     openSettings: 'Buka tetapan',
     openSourceArticle: 'buka artikel sumber',
     markRead: 'tandai telah dibaca',
+    appNativePlatformsOnly:
+      'Apl ini hanya tersedia di iOS dan Android.',
+    readOriginalArticleCta:
+      'Kami mengesyorkan anda membaca dan menyokong artikel asal daripada {{mediaSource}} apabila tahap bahasa Cina anda bertambah baik.',
+    originalArticleSourceFallback: 'the publisher',
     markUnread: 'tandai belum dibaca',
     markedReadStatus: 'ditandai sebagai dibaca',
     saveToMyArticles: 'Simpan ke artikel saya',
@@ -583,6 +598,11 @@ export const translations = {
     openSettings: 'Buka pengaturan',
     openSourceArticle: 'buka artikel sumber',
     markRead: 'tandai sudah dibaca',
+    appNativePlatformsOnly:
+      'Aplikasi ini hanya tersedia di iOS dan Android.',
+    readOriginalArticleCta:
+      'Kami menyarankan Anda membaca dan mendukung artikel asli dari {{mediaSource}} seiring kemajuan bahasa Mandarin Anda.',
+    originalArticleSourceFallback: 'the publisher',
     markUnread: 'tandai belum dibaca',
     markedReadStatus: 'ditandai sudah dibaca',
     saveToMyArticles: 'Simpan ke artikel saya',
@@ -752,6 +772,11 @@ export const translations = {
     openSettings: 'Mở cài đặt',
     openSourceArticle: 'mở bài viết gốc',
     markRead: 'đánh dấu đã đọc',
+    appNativePlatformsOnly:
+      'Ứng dụng này chỉ có trên iOS và Android.',
+    readOriginalArticleCta:
+      'Chúng tôi khuyên bạn đọc và ủng hộ bài viết gốc từ {{mediaSource}} khi tiếng Trung của bạn tiến bộ.',
+    originalArticleSourceFallback: 'the publisher',
     markUnread: 'đánh dấu chưa đọc',
     markedReadStatus: 'đã đánh dấu đã đọc',
     saveToMyArticles: 'Lưu vào bài viết của tôi',
@@ -921,6 +946,11 @@ export const translations = {
     openSettings: 'Открыть настройки',
     openSourceArticle: 'открыть исходную статью',
     markRead: 'пометить прочитанным',
+    appNativePlatformsOnly:
+      'Это приложение доступно только на iOS и Android.',
+    readOriginalArticleCta:
+      'Рекомендуем читать оригинальную статью на {{mediaSource}} и поддерживать издание по мере роста вашего китайского.',
+    originalArticleSourceFallback: 'the publisher',
     markUnread: 'пометить непрочитанным',
     markedReadStatus: 'отмечено прочитанным',
     saveToMyArticles: 'Сохранить в мои статьи',
@@ -1090,6 +1120,11 @@ export const translations = {
     openSettings: 'فتح الإعدادات',
     openSourceArticle: 'فتح المقال الأصلي',
     markRead: 'تحديد كمقروء',
+    appNativePlatformsOnly:
+      'هذا التطبيق متاح فقط على نظامي iOS وAndroid.',
+    readOriginalArticleCta:
+      'ننصحك بقراءة المقال الأصلي من {{mediaSource}} ودعمه مع تحسّن مستواك في اللغة الصينية.',
+    originalArticleSourceFallback: 'الناشر',
     markUnread: 'إلغاء التحديد كمقروء',
     markedReadStatus: 'مقروء',
     saveToMyArticles: 'حفظ في مقالاتي',
@@ -1256,6 +1291,10 @@ export const translations = {
     openSettings: '打开设置',
     openSourceArticle: '打开原文',
     markRead: '标记已读',
+    appNativePlatformsOnly: '本应用仅提供 iOS 与 Android 版本。',
+    readOriginalArticleCta:
+      '随着中文水平的提高，我们建议您阅读并支持 {{mediaSource}} 的原文。',
+    originalArticleSourceFallback: '出版方',
     markUnread: '标记未读',
     markedReadStatus: '已读',
     saveToMyArticles: '保存到我的文章',

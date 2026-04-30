@@ -7,7 +7,6 @@ import type { ArticleListItem } from '../../lib/types';
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -27,44 +26,7 @@ import { useTheme } from '../../lib/ThemeContext';
 
 const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
-function WebArticleFeedDisabled() {
-  const { theme } = useTheme();
-  const { t } = useTranslation();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        container: { flex: 1, backgroundColor: theme.background },
-        flex: { flex: 1 },
-        content: {
-          flexGrow: 1,
-          paddingHorizontal: 24,
-          paddingTop: 32,
-          paddingBottom: 32,
-          justifyContent: 'center',
-        },
-        text: {
-          fontSize: 15,
-          lineHeight: 22,
-          color: theme.textSecondary,
-          textAlign: 'center',
-        },
-      }),
-    [theme],
-  );
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.text}>{t('articleFeedNotSupportedOnWeb')}</Text>
-      </ScrollView>
-    </View>
-  );
-}
-
-function ArticlesListScreen() {
+export default function ArticlesListScreen() {
   const { theme } = useTheme();
   const { fancyDisplayFontStyle } = useFont();
   const { t } = useTranslation();
@@ -316,13 +278,6 @@ function ArticlesListScreen() {
     />
     </>
   );
-}
-
-export default function ArticlesScreen() {
-  if (Platform.OS === 'web') {
-    return <WebArticleFeedDisabled />;
-  }
-  return <ArticlesListScreen />;
 }
 
 function createStyles(theme: Theme) {

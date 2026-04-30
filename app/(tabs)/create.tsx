@@ -130,7 +130,6 @@ export default function CreateScreen() {
 
   const runSavedArticlesLoad = useCallback(
     async (opts?: { ignoreIfCancelled?: () => boolean }) => {
-      if (Platform.OS === 'web') return;
       setSavedArticlesLoadError(null);
       try {
         await migrateFromAsyncStorageIfNeeded();
@@ -207,7 +206,6 @@ export default function CreateScreen() {
   runSavedArticlesLoadRef.current = runSavedArticlesLoad;
   useFocusEffect(
     useCallback(() => {
-      if (Platform.OS === 'web') return;
       let cancelled = false;
       void runSavedArticlesLoadRef.current({
         ignoreIfCancelled: () => cancelled,
@@ -300,10 +298,7 @@ export default function CreateScreen() {
     [],
   );
 
-  const tabs = useMemo<TabKey[]>(
-    () => (Platform.OS === 'web' ? ['parse'] : ['parse', 'my-articles']),
-    [],
-  );
+  const tabs = useMemo<TabKey[]>(() => ['parse', 'my-articles'], []);
 
   const renderTabBar = useCallback(() => (
     <View style={styles.tabBar}>
@@ -325,22 +320,6 @@ export default function CreateScreen() {
       ))}
     </View>
   ), [activeTab, myArticles.length, styles, tabs, t]);
-
-  if (Platform.OS === 'web') {
-    return (
-      <View style={styles.container}>
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={styles.webParseDisabledContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.webParseDisabledText}>
-            {t('parseNotSupportedOnWeb')}
-          </Text>
-        </ScrollView>
-      </View>
-    );
-  }
 
   if (activeTab === 'my-articles') {
     return (
@@ -626,19 +605,6 @@ function createStyles(theme: Theme) {
     },
     flex: {
       flex: 1,
-    },
-    webParseDisabledContent: {
-      flexGrow: 1,
-      paddingHorizontal: 24,
-      paddingTop: 32,
-      paddingBottom: 32,
-      justifyContent: 'center',
-    },
-    webParseDisabledText: {
-      fontSize: 15,
-      lineHeight: 22,
-      color: theme.textSecondary,
-      textAlign: 'center',
     },
     parseScrollContent: {
       paddingHorizontal: 20,

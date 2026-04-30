@@ -43,7 +43,6 @@ export function TopicsList({ activeTopicKey, onTopicSelect }: TopicsListProps) {
   const { topics, loading, error } = useArticleTopics();
 
   const topicButtonHaptic = useCallback(() => {
-    if (Platform.OS === 'web') return;
     void Haptics.selectionAsync().catch(() => {});
   }, []);
 

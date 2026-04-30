@@ -11,13 +11,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
   type ViewStyle,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArticleContent } from '../../lib/components/ArticleContent';
+import { BottomMediaSourceLink } from '../../lib/components/BottomMediaSourceLink';
 import {
   BookmarkToast,
   type BookmarkToastState,
@@ -38,7 +38,7 @@ import {
   upsertSavedArticleWithSentenceBookmark,
 } from '../../lib/savedArticlesDb';
 import { EXTRA_BOTTOM_PADDING } from '../../lib/constants';
-import { webArticleFontScale } from '../../lib/FontContext';
+import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
@@ -51,8 +51,6 @@ const ARTICLE_SCROLL_TOP_EXTRA = 75;
 
 /** Native headline size */
 const ARTICLE_TITLE_BASE_FONT_SIZE = 22;
-/** Web headline before viewport scaling (`webArticleFontScale`). */
-const ARTICLE_TITLE_BASE_FONT_SIZE_WEB = 28;
 
 /** Extra inset below the header for skeleton (list load + pull-to-refresh). */
 const SKELETON_TOP_EXTRA = 20;
@@ -121,16 +119,9 @@ export default function ArticleDetailScreen() {
 
   const navigation = useNavigation();
   const headerHeight = useHeaderHeight();
-  const { width: windowWidth } = useWindowDimensions();
   const { theme } = useTheme();
+  const { fancyDisplayFontStyle } = useFont();
 
-  const articleTitleFontSize = useMemo(
-    () =>
-      Platform.OS === 'web'
-        ? Math.round(ARTICLE_TITLE_BASE_FONT_SIZE_WEB * webArticleFontScale(windowWidth))
-        : ARTICLE_TITLE_BASE_FONT_SIZE,
-    [windowWidth],
-  );
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -200,7 +191,7 @@ export default function ArticleDetailScreen() {
   );
 
   useEffect(() => {
-    if (Platform.OS === 'web' || !id) {
+    if (!id) {
       setReadState(false);
       setBookmarkedSentenceKey(null);
       return;
@@ -224,14 +215,14 @@ export default function ArticleDetailScreen() {
   }, [id]);
 
   const onMarkRead = useCallback(() => {
-    if (!id || Platform.OS === 'web' || !article) return;
+    if (!id || !article) return;
     void upsertArticleMarkedRead(articleDetailToListItem(article));
     setReadState(true);
     setBookmarkedSentenceKey(null);
   }, [id, article]);
 
   const onMarkUnread = useCallback(() => {
-    if (!id || Platform.OS === 'web') return;
+    if (!id) return;
     void setRead(id, false).then(() => setReadState(false));
   }, [id]);
 
@@ -245,7 +236,7 @@ export default function ArticleDetailScreen() {
 
   const onSentenceBookmarkPress = useCallback(
     async (sentenceKey: string) => {
-      if (!id || Platform.OS === 'web' || !article) return;
+      if (!id || !article) return;
       const parts = sentenceKey.split(':');
       if (parts.length !== 2) return;
       const p = Number(parts[0]);
@@ -321,11 +312,7 @@ export default function ArticleDetailScreen() {
       headerShadowVisible: false,
       headerStyle: { backgroundColor: 'transparent' },
       headerTintColor: theme.text,
-      ...(Platform.OS === 'web' ? { headerBackVisible: false } : {}),
-      headerLeft:
-        Platform.OS === 'web'
-          ? () => null
-          : () => (
+      headerLeft: () => (
               <Pressable
                 onPress={() => router.back()}
                 hitSlop={10}
@@ -404,7 +391,7 @@ export default function ArticleDetailScreen() {
                 parsedContent={article.parsed_content}
                 listHeader={(
                   <>
-                    <Text style={[styles.title, { fontSize: articleTitleFontSize }]}>
+                    <Text style={[styles.title, { fontSize: ARTICLE_TITLE_BASE_FONT_SIZE }]}>
                       {article.title}
                     </Text>
                     <View style={styles.metaRow}>
@@ -450,57 +437,85 @@ export default function ArticleDetailScreen() {
                   </>
                 )}
                 listFooter={
-                  Platform.OS !== 'web' && markReadFooterVisible ? (
-                    <View style={styles.markReadFooter}>
-                      {readState ? (
-                        <View style={styles.markUnreadRow}>
-                          <Pressable
-                            style={({ pressed }) => [
-                              styles.markUnreadButton,
-                              pressed && styles.markUnreadButtonPressed,
-                            ]}
-                            onPress={onMarkUnread}
-                            accessibilityRole="button"
-                            accessibilityLabel={t('markUnread')}
-                          >
-                            <Text style={styles.markUnreadButtonLabel}>
-                              {t('markUnread')}
-                            </Text>
-                          </Pressable>
-                          <View
-                            style={styles.markReadStateIcon}
-                            pointerEvents="none"
-                            accessibilityElementsHidden
-                            importantForAccessibility="no-hide-descendants"
-                          >
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={22}
-                              color={theme.accent}
+                  <>
+                    {markReadFooterVisible ? (
+                      <View style={styles.articleBottomBar}>
+                        <View style={styles.bottomBarLeft}>
+                          {article.source_url ? (
+                            <BottomMediaSourceLink
+                              sourceUrl={article.source_url}
+                              mediaSourceLabel={article.source}
                             />
-                          </View>
+                          ) : null}
                         </View>
-                      ) : (
-                        <Pressable
-                          style={({ pressed }) => [
-                            styles.markReadButton,
-                            pressed && styles.markReadButtonPressed,
-                          ]}
-                          onPress={onMarkRead}
-                          accessibilityRole="button"
-                          accessibilityLabel={t('markRead')}
-                        >
-                          <Text style={styles.markReadButtonLabel}>
-                            {t('markRead')}
-                          </Text>
-                        </Pressable>
-                      )}
-                    </View>
-                  ) : null
+                        <View style={styles.bottomBarRight}>
+                          {readState ? (
+                            <View style={styles.markUnreadRow}>
+                              <Pressable
+                                style={({ pressed }) => [
+                                  styles.markUnreadButton,
+                                  pressed && styles.markUnreadButtonPressed,
+                                ]}
+                                onPress={onMarkUnread}
+                                accessibilityRole="button"
+                                accessibilityLabel={t('markUnread')}
+                              >
+                                <Text
+                                  style={[
+                                    styles.markUnreadButtonLabel,
+                                    fancyDisplayFontStyle,
+                                  ]}
+                                >
+                                  {t('markUnread')}
+                                </Text>
+                              </Pressable>
+                              <View
+                                style={styles.markReadStateIcon}
+                                pointerEvents="none"
+                                accessibilityElementsHidden
+                                importantForAccessibility="no-hide-descendants"
+                              >
+                                <Ionicons
+                                  name="checkmark-circle"
+                                  size={15}
+                                  color={theme.error}
+                                />
+                              </View>
+                            </View>
+                          ) : (
+                            <Pressable
+                              style={({ pressed }) => [
+                                styles.markReadButton,
+                                pressed && styles.markReadButtonPressed,
+                              ]}
+                              onPress={onMarkRead}
+                              accessibilityRole="button"
+                              accessibilityLabel={t('markRead')}
+                            >
+                              <Text
+                                style={[
+                                  styles.markReadButtonLabel,
+                                  fancyDisplayFontStyle,
+                                ]}
+                              >
+                                {t('markRead')}
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      </View>
+                    ) : null}
+                    {article.source_url && !markReadFooterVisible ? (
+                      <View style={styles.bottomMediaLinkStandalone}>
+                        <BottomMediaSourceLink
+                          sourceUrl={article.source_url}
+                          mediaSourceLabel={article.source}
+                        />
+                      </View>
+                    ) : null}
+                  </>
                 }
-                onLastSentenceBecameVisible={
-                  Platform.OS !== 'web' ? onLastSentenceBecameVisible : undefined
-                }
+                onLastSentenceBecameVisible={onLastSentenceBecameVisible}
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
@@ -521,7 +536,7 @@ export default function ArticleDetailScreen() {
                 highlightedWordKey={highlightedWordKey}
                 highlightedSentenceKey={highlightedSentenceKey}
                 onWordPress={onWordPress}
-                sentenceBookmarkEnabled={Platform.OS !== 'web'}
+                sentenceBookmarkEnabled
                 bookmarkedSentenceKey={bookmarkedSentenceKey}
                 onSentenceBookmarkPress={onSentenceBookmarkPress}
                 articleTranslations={articleTranslations}
@@ -554,7 +569,7 @@ export default function ArticleDetailScreen() {
                   collapsable={false}
                   onPress={selectedWord ? onClosePanel : undefined}
                 >
-                  <Text style={[styles.title, { fontSize: articleTitleFontSize }]}>
+                  <Text style={[styles.title, { fontSize: ARTICLE_TITLE_BASE_FONT_SIZE }]}>
                       {article.title}
                     </Text>
                   <View style={styles.metaRow}>
@@ -600,6 +615,14 @@ export default function ArticleDetailScreen() {
                   <Text style={styles.emptyContent}>
                     {t('noContentAvailable')}
                   </Text>
+                  {article.source_url ? (
+                    <View style={styles.bottomMediaLinkStandalone}>
+                      <BottomMediaSourceLink
+                        sourceUrl={article.source_url}
+                        mediaSourceLabel={article.source}
+                      />
+                    </View>
+                  ) : null}
                 </Pressable>
               </ScrollView>
             )}
@@ -729,50 +752,75 @@ function createStyles(theme: Theme) {
     color: theme.textMuted,
     fontStyle: 'italic',
   },
-  markReadFooter: {
+  articleBottomBar: {
     marginTop: 10,
     width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  bottomBarLeft: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 4,
+  },
+  bottomBarRight: {
+    flexShrink: 0,
     alignItems: 'flex-end',
   },
+  bottomMediaLinkStandalone: {
+    marginTop: 20,
+    width: '100%',
+  },
   markReadButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 8,
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: theme.accent,
+    borderColor: `${theme.error}55`,
   },
   markReadButtonPressed: {
-    opacity: 0.55,
+    opacity: 0.82,
   },
   markReadButtonLabel: {
-    color: theme.accent,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13,
+    lineHeight: 19,
+    color: theme.error,
+    letterSpacing: 0.2,
+    textShadowColor: theme.background,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 3,
   },
   markUnreadRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'flex-end',
+    gap: 8,
   },
   markUnreadButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 8,
     backgroundColor: theme.etchedBg,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: `${theme.error}55`,
   },
   markReadStateIcon: {
     justifyContent: 'center',
+    paddingBottom: 2,
   },
   markUnreadButtonPressed: {
-    opacity: 0.6,
+    opacity: 0.82,
   },
   markUnreadButtonLabel: {
     color: theme.textSecondary,
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    lineHeight: 19,
+    letterSpacing: 0.2,
+    textShadowColor: theme.background,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 3,
   },
   headerIconBackdrop: {
     width: 30,

@@ -51,7 +51,7 @@ export function BookmarkToast({ toast, onDismiss }: BookmarkToastProps) {
     return () => clearTimeout(timer);
   }, [toast, onDismiss]);
 
-  if (!toast || Platform.OS === 'web') {
+  if (!toast) {
     return null;
   }
 
