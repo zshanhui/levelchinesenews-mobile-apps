@@ -37,10 +37,7 @@ import {
   upsertArticleMarkedRead,
   upsertSavedArticleWithSentenceBookmark,
 } from '../../lib/savedArticlesDb';
-import {
-  ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
-  STUDY_PANEL_HEIGHT,
-} from '../../lib/constants';
+import { EXTRA_BOTTOM_PADDING } from '../../lib/constants';
 import { webArticleFontScale } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
@@ -509,15 +506,8 @@ export default function ArticleDetailScreen() {
                   {
                     paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
                     paddingHorizontal: 20,
+                    paddingBottom: EXTRA_BOTTOM_PADDING,
                   },
-                  selectedWord
-                    ? {
-                        paddingBottom:
-                          32 +
-                          STUDY_PANEL_HEIGHT +
-                          ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
-                      }
-                    : {},
                 ]}
                 style={styles.scroll}
                 refreshControl={
@@ -545,15 +535,10 @@ export default function ArticleDetailScreen() {
                 style={styles.scroll}
                 contentContainerStyle={[
                   styles.scrollContent,
-                  { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA },
-                  selectedWord
-                    ? {
-                        paddingBottom:
-                          32 +
-                          STUDY_PANEL_HEIGHT +
-                          ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
-                      }
-                    : {},
+                  {
+                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA,
+                    paddingBottom: EXTRA_BOTTOM_PADDING,
+                  },
                 ]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -693,7 +678,7 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.background,
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: EXTRA_BOTTOM_PADDING,
   },
   content: {
     paddingHorizontal: 20,

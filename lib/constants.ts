@@ -27,9 +27,8 @@ export const THUMB_MAX_HEIGHT = 70;
 export const TRANSLATION_COUNTDOWN_SECONDS = 15;
 
 // Article detail
-export const STUDY_PANEL_HEIGHT = 150;
-/** Extra scroll padding so the last sentence can sit above the study panel (incl. multi-line 字 splits). */
-export const ARTICLE_STUDY_EXTRA_BOTTOM_PADDING = 140;
+/** Article `FlashList` / `ScrollView` bottom padding: base 32 + after-last-sentence 140 + study region 150. */
+export const EXTRA_BOTTOM_PADDING = 300;
 export const MAX_CACHED_ARTICLE_DETAILS = 500;
 /** 1 week in ms; cached article details younger than this skip background revalidation. */
 export const ARTICLE_DETAIL_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

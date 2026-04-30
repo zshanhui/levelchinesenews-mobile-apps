@@ -17,6 +17,7 @@ import {
   type RefreshControlProps,
   StyleSheet,
   Text,
+  type ViewabilityConfig,
   type ViewStyle,
   View,
 } from 'react-native';
@@ -611,23 +612,76 @@ export function ArticleContent({
   ).current;
 
   const lastSentenceViewabilityConfig = useMemo(
-    () => ({
-      itemVisiblePercentThreshold: 20,
-      minimumViewTime: 200,
-      waitForInteraction: false,
-    }),
+    () =>
+      ({
+        itemVisiblePercentThreshold: 20,
+        minimumViewTime: 200,
+        waitForInteraction: false,
+      }) satisfies ViewabilityConfig,
+    [],
+  );
+
+  /** Rows where 100% of the cell is inside the list viewport (study scroll skips if focused sentence matches). */
+  const fullSentenceViewabilityConfig = useMemo(
+    () =>
+      ({
+        itemVisiblePercentThreshold: 100,
+        minimumViewTime: 0,
+        waitForInteraction: false,
+      }) satisfies ViewabilityConfig,
     [],
   );
 
   // List scroll: bookmark + highlight behavior — see `useArticleSmartScroll` in lib/scrolling-utils.ts
-  const { listRef } = useArticleSmartScroll<ArticleSentenceListItem>({
+  const { listRef, fullyVisibleSentenceKeysRef } = useArticleSmartScroll<ArticleSentenceListItem>({
     sentenceKeyToIndex,
     bookmarkedSentenceKey: bookmarkedSentenceKey ?? null,
     highlightedSentenceKey: highlightedSentenceKey ?? null,
-    hasSelectedWord: selectedWord != null,
     parsedContentLength: parsedContent.length,
     articleId: articleId ?? null,
+    sentenceListLength: flatData.length,
   });
+
+  const onFullyVisibleItemsChanged = useCallback(
+    ({
+      viewableItems,
+    }: {
+      viewableItems: ViewToken<ArticleSentenceListItem>[];
+      changed: ViewToken<ArticleSentenceListItem>[];
+    }) => {
+      const next = new Set<string>();
+      for (const t of viewableItems) {
+        if (t.isViewable && t.item?.sentenceKey) {
+          next.add(t.item.sentenceKey);
+        }
+      }
+      fullyVisibleSentenceKeysRef.current = next;
+    },
+    [fullyVisibleSentenceKeysRef],
+  );
+
+  const viewabilityConfigCallbackPairs = useMemo(() => {
+    const fullPair = {
+      viewabilityConfig: fullSentenceViewabilityConfig,
+      onViewableItemsChanged: onFullyVisibleItemsChanged,
+    };
+    if (!onLastSentenceBecameVisible) {
+      return [fullPair];
+    }
+    return [
+      {
+        viewabilityConfig: lastSentenceViewabilityConfig,
+        onViewableItemsChanged,
+      },
+      fullPair,
+    ];
+  }, [
+    fullSentenceViewabilityConfig,
+    lastSentenceViewabilityConfig,
+    onFullyVisibleItemsChanged,
+    onLastSentenceBecameVisible,
+    onViewableItemsChanged,
+  ]);
 
   const {
     sentenceTranslateExpanded,
@@ -856,12 +910,7 @@ export function ArticleContent({
       contentContainerStyle={contentContainerStyleProp}
       extraData={listExtraData}
       refreshControl={refreshControl}
-      {...(onLastSentenceBecameVisible
-        ? {
-            viewabilityConfig: lastSentenceViewabilityConfig,
-            onViewableItemsChanged,
-          }
-        : {})}
+      viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
       showsVerticalScrollIndicator={true}
     />
   );

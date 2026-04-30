@@ -5,7 +5,8 @@
     "GLITCHTIP",
     "landingsite",
     "lcnicons",
-    "lcnlocaldb"
+    "lcnlocaldb",
+    "viewability"
   ],
   "i18n-ally.localesPaths": "lib/i18n"
 }

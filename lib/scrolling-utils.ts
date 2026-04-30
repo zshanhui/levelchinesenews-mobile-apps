@@ -6,14 +6,15 @@
  * The article body is a **virtualized** `FlashList`: rows near the viewport are mounted and recycled.
  * Each row is a **sentence** with **variable height** (word wrap, optional pinyin, translate UI).
  *
- * We use **`FlashListRef.scrollToIndex`**, which measures item layouts and performs multi-step
- * scrolls internally so the target index lands correctly (unlike `FlatList` + bad
- * `averageItemLength` estimates). There is no separate `onScrollToIndexFailed` hook on FlashList.
+ * We use **`FlashListRef.scrollToIndex`** for most rows; for the **last** sentence row,
+ * `scrollToIndex` + `viewPosition` is unreliable near the list end (FlashList scrolls the wrong
+ * way). For that row we **`scrollToEnd`** instead.
  *
  * ## Two scroll “modes”
  *
- * 1. **Study / selection** — user tapped a word; we scroll the highlighted sentence into view.
- *    We use **animated** `scrollToIndex` for a normal smooth scroll.
+ * 1. **Study / selection** — user tapped a word; we scroll the highlighted sentence into view
+ *    only if it is **not** already fully visible (see `fullyVisibleSentenceKeysRef` in `ArticleContent`).
+ *    We use **animated** `scrollToIndex` when scrolling is needed.
  *
  * 2. **Saved sentence bookmark** — DB stores `(paragraphIndex, sentenceIndex)`; we scroll to that
  *    sentence on load. For **near** bookmarks (low list index), animated scroll is fine. For
@@ -23,8 +24,8 @@
  *
  * ## Bookmark-specific timing (effects)
  *
- * - **Highlight effect** — when `highlightedSentenceKey` is set, scroll after
- *   `InteractionManager.runAfterInteractions` so we don’t fight the transition.
+ * - **Highlight effect** — when `highlightedSentenceKey` is set, scroll after an idle tick
+ *   (`requestIdleCallback` / `setImmediate` fallback) so we don’t fight the transition.
  * - **Bookmark effect** — runs when there is a bookmark and **no** sentence highlight (study
  *   takes priority). It runs **once per session** (`articleId` + bookmark key + content length):
  *   after the first auto-scroll (or after skipping because study was active), closing study mode
@@ -40,7 +41,29 @@
  */
 import type { FlashListRef } from '@shopify/flash-list';
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
-import { InteractionManager } from 'react-native';
+
+/**
+ * Schedules work after the current batch of work / gestures (replacing deprecated
+ * `InteractionManager.runAfterInteractions`; RN docs suggest `requestIdleCallback`).
+ */
+function scheduleAfterInteractions(callback: () => void): { cancel: () => void } {
+  const g = globalThis as typeof globalThis & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
+    cancelIdleCallback?: (id: number) => void;
+  };
+  if (typeof g.requestIdleCallback === 'function') {
+    const id = g.requestIdleCallback(callback, { timeout: 500 });
+    return {
+      cancel: () => {
+        g.cancelIdleCallback?.(id);
+      },
+    };
+  }
+  const immediateId = setImmediate(callback);
+  return {
+    cancel: () => clearImmediate(immediateId),
+  };
+}
 
 /**
  * List row index from the top of the body at/above this value is treated as a “far” bookmark:
@@ -58,9 +81,9 @@ export function useArticleSmartScroll<Item>({
   sentenceKeyToIndex,
   bookmarkedSentenceKey,
   highlightedSentenceKey,
-  hasSelectedWord,
   parsedContentLength,
   articleId,
+  sentenceListLength,
 }: {
   /** Map `sentenceKey` (`"paragraphIdx:sentenceIdx"`) → `FlashList` `data` index. */
   sentenceKeyToIndex: Map<string, number>;
@@ -68,8 +91,6 @@ export function useArticleSmartScroll<Item>({
   bookmarkedSentenceKey: string | null;
   /** When set (user is in “study” mode), bookmark auto-scroll is skipped. */
   highlightedSentenceKey: string | null;
-  /** Affects `viewPosition` when scrolling to the highlighted sentence (word panel vs sentence-only). */
-  hasSelectedWord: boolean;
   /**
    * Paragraph count (or any stable length signal for `parsed_content`); when it changes, bookmark
    * effect re-runs (e.g. after refetch) without depending on a new `parsedContent` **reference** only.
@@ -77,10 +98,15 @@ export function useArticleSmartScroll<Item>({
   parsedContentLength: number;
   /** Article id — part of the bookmark auto-scroll session key (new article → new session). */
   articleId?: string | null;
+  /** `flatData.length` — used to detect the last sentence row for `scrollToEnd` vs `scrollToIndex`. */
+  sentenceListLength: number;
 }): {
   listRef: RefObject<FlashListRef<Item> | null>;
+  /** Sentence keys (`paragraph:sentence`) whose row is 100% visible; updated by `ArticleContent` viewable tracking. */
+  fullyVisibleSentenceKeysRef: RefObject<Set<string>>;
 } {
   const listRef = useRef<FlashListRef<Item>>(null);
+  const fullyVisibleSentenceKeysRef = useRef<Set<string>>(new Set());
   const bookmarkSessionKeyRef = useRef<string | null>(null);
   /** True after we handled initial bookmark behavior for this session (scroll or skip due to study). */
   const initialBookmarkAutoScrollConsumedRef = useRef(false);
@@ -96,8 +122,10 @@ export function useArticleSmartScroll<Item>({
 
   /**
    * Scroll so the row for `sentenceKey` appears at `viewPosition` (0–1) in the viewport.
+   * For the **last** row in the list, uses `scrollToEnd` instead of `scrollToIndex` (avoids bad
+   * end-of-list behavior in FlashList).
    * Optional `useInstantForFarBookmark`: only for bookmark flows; for indices >=
-   * `FAR_BOOKMARK_SENTENCE_INDEX`, use non-animated first `scrollToIndex` (see file doc).
+   * `FAR_BOOKMARK_SENTENCE_INDEX`, use non-animated first scroll (see file doc).
    */
   const scrollListToSentenceKey = useCallback(
     (sentenceKey: string, viewPosition: number, options?: ScrollListOptions) => {
@@ -106,17 +134,30 @@ export function useArticleSmartScroll<Item>({
       const useInstantForBookmark =
         Boolean(options?.useInstantForFarBookmark) &&
         index >= FAR_BOOKMARK_SENTENCE_INDEX;
+      const animated = !useInstantForBookmark;
+
+      const lastIndex =
+        sentenceListLength > 0 ? sentenceListLength - 1 : -1;
+      if (index === lastIndex) {
+        try {
+          void listRef.current.scrollToEnd({ animated });
+        } catch {
+          // e.g. index temporarily invalid while `data` updates
+        }
+        return;
+      }
+
       try {
         void listRef.current.scrollToIndex({
           index,
           viewPosition,
-          animated: !useInstantForBookmark,
+          animated,
         });
       } catch {
         // e.g. index temporarily invalid while `data` updates
       }
     },
-    [sentenceKeyToIndex],
+    [sentenceKeyToIndex, sentenceListLength],
   );
 
   /**
@@ -133,17 +174,23 @@ export function useArticleSmartScroll<Item>({
       if (index < FAR_BOOKMARK_SENTENCE_INDEX) {
         return;
       }
+      const lastIndex =
+        sentenceListLength > 0 ? sentenceListLength - 1 : -1;
       try {
-        void listRef.current.scrollToIndex({
-          index,
-          viewPosition: 0.4,
-          animated: true,
-        });
+        if (index === lastIndex) {
+          void listRef.current.scrollToEnd({ animated: true });
+        } else {
+          void listRef.current.scrollToIndex({
+            index,
+            viewPosition: 0.4,
+            animated: true,
+          });
+        }
       } catch {
         // ignore
       }
     },
-    [bookmarkedSentenceKey, sentenceKeyToIndex],
+    [bookmarkedSentenceKey, sentenceKeyToIndex, sentenceListLength],
   );
 
   // --- Study: scroll to the sentence the user selected (word highlight / sentence focus) ---
@@ -152,12 +199,18 @@ export function useArticleSmartScroll<Item>({
     if (!highlightedSentenceKey) {
       return;
     }
-    const viewPosition = hasSelectedWord ? 0.22 : 0.38;
-    const task = InteractionManager.runAfterInteractions(() => {
-      scrollListToSentenceKey(highlightedSentenceKey, viewPosition);
+    const viewPosition = 0.4; // same for word + sentence-only focus
+    const key = highlightedSentenceKey;
+    const task = scheduleAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        if (fullyVisibleSentenceKeysRef.current.has(key)) {
+          return;
+        }
+        scrollListToSentenceKey(key, viewPosition);
+      });
     });
     return () => task.cancel();
-  }, [hasSelectedWord, highlightedSentenceKey, scrollListToSentenceKey]);
+  }, [highlightedSentenceKey, scrollListToSentenceKey]);
 
   // --- Bookmark: scroll to the saved sentence (no study highlight), once per screen session ---
 
@@ -182,7 +235,7 @@ export function useArticleSmartScroll<Item>({
     const bookmarkIndex = sentenceKeyToIndex.get(key) ?? 0;
     const isFarBookmark = bookmarkIndex >= FAR_BOOKMARK_SENTENCE_INDEX;
     const backupDelaysMs = isFarBookmark ? [800, 2200, 4000] : [450, 1200];
-    const task = InteractionManager.runAfterInteractions(tryScroll);
+    const task = scheduleAfterInteractions(tryScroll);
     const timeoutIds = backupDelaysMs.map((ms) => setTimeout(tryScroll, ms));
     const lastBackupMs = backupDelaysMs[backupDelaysMs.length - 1] ?? 0;
     const finalizeId = isFarBookmark
@@ -202,5 +255,5 @@ export function useArticleSmartScroll<Item>({
     sentenceKeyToIndex,
   ]);
 
-  return { listRef };
+  return { listRef, fullyVisibleSentenceKeysRef };
 }
