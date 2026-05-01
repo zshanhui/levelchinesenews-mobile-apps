@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content';
 import { siteConfig } from '../config/site';
 
 const expoUrl = siteConfig.cta.expoUrl.trim();
-const githubUrl = siteConfig.cta.githubUrl.trim();
+// const githubUrl = siteConfig.cta.githubUrl.trim();
 const posts = (await getCollection('blog'))
   .filter((entry) => !entry.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
@@ -72,6 +72,7 @@ const latestPostDate = latestPost
             </button>
           )
         }
+        {/* GitHub CTA temporarily disabled
         {
           githubUrl ? (
             <a class="button button-secondary" href={githubUrl}>
@@ -83,6 +84,7 @@ const latestPostDate = latestPost
             </button>
           )
         }
+        */}
       </div>
       {
         latestPost ? (
