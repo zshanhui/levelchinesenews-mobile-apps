@@ -2,8 +2,8 @@ export const siteConfig = {
   brandName: 'LevelChineseNews',
   contactEmail: 'levelchinese.app@proton.me',
   cta: {
-    expoLabel: 'Download Android v0.6.1 .apk',
-    expoUrl: 'https://github.com/zshanhui/levelchinesenews-mobile-apps/releases/tag/v0.6.1rc',
+    expoLabel: 'Download Android v0.6.2 .apk',
+    expoUrl: 'https://expo.dev/artifacts/eas/qggpHEewCAsHqvSp82y6hW.apk',
     githubLabel: 'View on GitHub',
     githubUrl: 'https://github.com/zshanhui/levelchinesenews-mobile-apps',
   },
