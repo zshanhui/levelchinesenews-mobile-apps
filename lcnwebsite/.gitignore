@@ -25,3 +25,7 @@ workers/.dev.vars
 
 # jetbrains setting folder
 .idea/
+
+drafts/*
+notes/*
+.ideas
