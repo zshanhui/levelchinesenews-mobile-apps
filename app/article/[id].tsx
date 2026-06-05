@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
 import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -54,6 +55,12 @@ const ARTICLE_TITLE_BASE_FONT_SIZE = 22;
 
 /** Extra inset below the header for skeleton (list load + pull-to-refresh). */
 const SKELETON_TOP_EXTRA = 20;
+
+/** Minimum comfortable tap target for transparent header icon buttons. */
+const HEADER_ICON_SIZE = 44;
+const HEADER_ICON_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+/** Extra tappable margin on the screen edge for headerRight controls. */
+const HEADER_RIGHT_HIT_SLOP = { top: 8, bottom: 8, left: 12, right: 16 } as const;
 
 type ArticleSkeletonLayerStyles = {
   refreshOverlay: ViewStyle;
@@ -305,6 +312,11 @@ export default function ArticleDetailScreen() {
     return () => subscription.remove();
   }, [id, restoreSelectionFromParams]);
 
+  const openSettings = useCallback(() => {
+    void Haptics.selectionAsync().catch(() => {});
+    router.push('/settings');
+  }, []);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: '',
@@ -312,10 +324,12 @@ export default function ArticleDetailScreen() {
       headerShadowVisible: false,
       headerStyle: { backgroundColor: 'transparent' },
       headerTintColor: theme.text,
+      headerLeftContainerStyle: styles.headerSideContainer,
+      headerRightContainerStyle: styles.headerRightContainer,
       headerLeft: () => (
               <Pressable
                 onPress={() => router.back()}
-                hitSlop={10}
+                hitSlop={HEADER_ICON_HIT_SLOP}
                 style={({ pressed }) => [
                   styles.headerIconBackdrop,
                   pressed && styles.headerIconBackdropPressed,
@@ -326,14 +340,14 @@ export default function ArticleDetailScreen() {
                 <Ionicons
                   name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
                   size={24}
-                  color={theme.text}
+                  color={theme.accent}
                 />
               </Pressable>
             ),
       headerRight: () => (
         <Pressable
-          onPress={() => router.push('/settings')}
-          hitSlop={10}
+          onPress={openSettings}
+          hitSlop={HEADER_RIGHT_HIT_SLOP}
           style={({ pressed }) => [
             styles.headerIconBackdrop,
             pressed && styles.headerIconBackdropPressed,
@@ -341,16 +355,20 @@ export default function ArticleDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('openSettings')}
         >
-          <Ionicons name="settings-outline" size={22} color={theme.text} />
+          <Ionicons name="settings-outline" size={24} color={theme.accent} />
         </Pressable>
       ),
     });
   }, [
     navigation,
+    openSettings,
     t,
+    theme.accent,
     theme.text,
     styles.headerIconBackdrop,
     styles.headerIconBackdropPressed,
+    styles.headerSideContainer,
+    styles.headerRightContainer,
   ]);
 
   return (
@@ -822,13 +840,19 @@ function createStyles(theme: Theme) {
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 3,
   },
+  headerSideContainer: {
+    paddingHorizontal: 4,
+  },
+  headerRightContainer: {
+    paddingRight: 8,
+    paddingLeft: 4,
+  },
   headerIconBackdrop: {
-    width: 30,
-    height: 30,
-    borderRadius: 20,
+    width: HEADER_ICON_SIZE,
+    height: HEADER_ICON_SIZE,
+    borderRadius: HEADER_ICON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 2,
     backgroundColor: `${theme.surfaceElevated}E8`,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.border,
