@@ -124,22 +124,22 @@ const WordBlock = memo(function WordBlock({
   showPinyin,
   highlighted,
   fontSize,
-  chineseFontStyle,
-  chinesePinyinFontStyle,
+  articleContentFontStyle,
+  articleContentPinyinFontStyle,
   wordStyles,
 }: {
   segment: WordSegment;
   showPinyin: boolean;
   highlighted: boolean;
   fontSize: number;
-  chineseFontStyle: { fontFamily?: string };
-  chinesePinyinFontStyle: { fontFamily?: string };
+  articleContentFontStyle: { fontFamily?: string };
+  articleContentPinyinFontStyle: { fontFamily?: string };
   wordStyles: { wordBlock: object; wordBlockHighlightBg: object; pinyin: object; word: object };
 }) {
   const text = segment.t;
   const pinyin = segment.p ?? '';
   const pinyinFontSize = Math.round(fontSize * WORD_PINYIN_TO_BODY_RATIO);
-  const useNoto = chinesePinyinFontStyle.fontFamily != null;
+  const useNoto = articleContentPinyinFontStyle.fontFamily != null;
   const notoStack = notoWordStackTextStyles(pinyinFontSize, fontSize, useNoto);
 
   return (
@@ -151,7 +151,7 @@ const WordBlock = memo(function WordBlock({
         <Text
           style={[
             wordStyles.pinyin,
-            chinesePinyinFontStyle,
+            articleContentPinyinFontStyle,
             { fontSize: pinyinFontSize },
             notoStack.pinyin,
           ]}
@@ -160,7 +160,7 @@ const WordBlock = memo(function WordBlock({
         </Text>
       ) : null}
       <Text
-        style={[wordStyles.word, chineseFontStyle, { fontSize }, notoStack.word]}
+        style={[wordStyles.word, articleContentFontStyle, { fontSize }, notoStack.word]}
         selectable={true}
       >
         {text}
@@ -396,8 +396,8 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   sentenceCachedTranslation,
   showPinyin,
   fontSize,
-  chineseFontStyle,
-  chinesePinyinFontStyle,
+  articleContentFontStyle,
+  articleContentPinyinFontStyle,
   wordStyles,
   accentColor,
   bookmarkAccessibilityLabel,
@@ -440,8 +440,8 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
   translationLang: NativeLanguage;
   showPinyin: boolean;
   fontSize: number;
-  chineseFontStyle: { fontFamily?: string };
-  chinesePinyinFontStyle: { fontFamily?: string };
+  articleContentFontStyle: { fontFamily?: string };
+  articleContentPinyinFontStyle: { fontFamily?: string };
   wordStyles: {
     wordBlock: object;
     wordBlockHighlightBg: object;
@@ -537,8 +537,8 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
                 showPinyin={showPinyin}
                 highlighted={highlighted}
                 fontSize={fontSize}
-                chineseFontStyle={chineseFontStyle}
-                chinesePinyinFontStyle={chinesePinyinFontStyle}
+                articleContentFontStyle={articleContentFontStyle}
+                articleContentPinyinFontStyle={articleContentPinyinFontStyle}
                 wordStyles={wordStyles}
               />
             </Pressable>
@@ -549,8 +549,8 @@ const MemoArticleSentenceRow = memo(function MemoArticleSentenceRow({
                 showPinyin={showPinyin}
                 highlighted={false}
                 fontSize={fontSize}
-                chineseFontStyle={chineseFontStyle}
-                chinesePinyinFontStyle={chinesePinyinFontStyle}
+                articleContentFontStyle={articleContentFontStyle}
+                articleContentPinyinFontStyle={articleContentPinyinFontStyle}
                 wordStyles={wordStyles}
               />
             </View>
@@ -610,7 +610,7 @@ export function ArticleContent({
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { showPinyin, lineSpacing, articleFontSize, chineseFontStyle, chinesePinyinFontStyle } =
+  const { showPinyin, lineSpacing, articleFontSize, articleContentFontStyle, articleContentPinyinFontStyle } =
     useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
@@ -837,8 +837,8 @@ export function ArticleContent({
           sentenceCachedTranslation={sentenceCachedTranslation}
           showPinyin={showPinyin}
           fontSize={deferredFontSize}
-          chineseFontStyle={chineseFontStyle}
-          chinesePinyinFontStyle={chinesePinyinFontStyle}
+          articleContentFontStyle={articleContentFontStyle}
+          articleContentPinyinFontStyle={articleContentPinyinFontStyle}
           wordStyles={wordStylesBundle}
           accentColor={theme.accent}
           textMutedColor={theme.textSecondary}
@@ -883,8 +883,8 @@ export function ArticleContent({
       translatingSentenceKey,
       translationLangProp,
       wordStylesBundle,
-      chineseFontStyle,
-      chinesePinyinFontStyle,
+      articleContentFontStyle,
+      articleContentPinyinFontStyle,
       spacing,
     ],
   );

@@ -33,15 +33,15 @@ const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
   xl: 22,
 };
 
-/** OS default for Chinese text when bundled Noto Sans SC is off. */
-export const systemChineseFontLabel =
+/** OS default for article content when bundled Noto Sans SC is off. */
+export const systemArticleContentFontLabel =
   Platform.select({
     ios: 'PingFang SC',
     android: 'Android Default',
     default: 'System',
   }) ?? 'System';
 
-export const bundledChineseFontLabel = 'Noto Sans SC';
+export const bundledArticleContentFontLabel = 'Noto Sans SC';
 
 type FontContextValue = {
   /** Whether to use Noto Sans SC for Chinese text */
@@ -56,12 +56,12 @@ type FontContextValue = {
   /** Font size level for article content */
   fontSize: FontSizeLevel;
   setFontSize: (value: FontSizeLevel) => void;
-  /** Style to apply to Text for Chinese body (hanzi) */
-  chineseFontStyle: { fontFamily?: string };
-  /** Lighter weight for pinyin above characters (Noto 200) */
-  chinesePinyinFontStyle: { fontFamily?: string };
-  /** Bold/emphasis — same glyph source as body (no heavier weight bundled) */
-  chineseFontBoldStyle: { fontFamily?: string };
+  /** Style to apply to article content body text (hanzi) */
+  articleContentFontStyle: { fontFamily?: string };
+  /** Lighter weight for pinyin above characters in article content (Noto 200) */
+  articleContentPinyinFontStyle: { fontFamily?: string };
+  /** Bold/emphasis in article content — same glyph source as body (no heavier weight bundled) */
+  articleContentFontBoldStyle: { fontFamily?: string };
   /** Playfair Display semibold for decorative UI (e.g. Load more) */
   fancyDisplayFontStyle: { fontFamily?: string };
   /** Resolved numeric font size for article content */
@@ -138,17 +138,17 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY_FONT_SIZE, value);
   }, []);
 
-  const chineseFontStyle =
+  const articleContentFontStyle =
     useNotoSansSC && fontsLoaded
       ? { fontFamily: 'NotoSansSC_400Regular' as const }
       : {};
 
-  const chinesePinyinFontStyle =
+  const articleContentPinyinFontStyle =
     useNotoSansSC && fontsLoaded
       ? { fontFamily: 'NotoSansSC_200ExtraLight' as const }
       : {};
 
-  const chineseFontBoldStyle =
+  const articleContentFontBoldStyle =
     useNotoSansSC && fontsLoaded
       ? { fontFamily: 'NotoSansSC_400Regular' as const, fontWeight: '600' as const }
       : {};
@@ -171,9 +171,9 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     setLineSpacing,
     fontSize,
     setFontSize,
-    chineseFontStyle,
-    chinesePinyinFontStyle,
-    chineseFontBoldStyle,
+    articleContentFontStyle,
+    articleContentPinyinFontStyle,
+    articleContentFontBoldStyle,
     fancyDisplayFontStyle,
     articleFontSize,
     fontsReady: !useNotoSansSC || fontsLoaded,

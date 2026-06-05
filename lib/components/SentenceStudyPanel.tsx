@@ -85,7 +85,7 @@ export function SentenceStudyPanel({
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
-  const { chineseFontStyle, chinesePinyinFontStyle } = useFont();
+  const { articleContentFontStyle, articleContentPinyinFontStyle } = useFont();
   const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
   const [lookupComplete, setLookupComplete] = useState(false);
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
@@ -273,7 +273,7 @@ export function SentenceStudyPanel({
             style={[
               styles.panelWord,
               compactMultiSplit && styles.panelWordCompact,
-              chineseFontStyle,
+              articleContentFontStyle,
             ]}
           >
             {word}
@@ -284,7 +284,7 @@ export function SentenceStudyPanel({
                 styles.panelPinyin,
                 stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
                 compactMultiSplit && styles.panelPinyinCompact,
-                chinesePinyinFontStyle,
+                articleContentPinyinFontStyle,
               ]}
             >
               {pinyin}
@@ -335,7 +335,7 @@ export function SentenceStudyPanel({
                 style={[
                   styles.panelDefinitionText,
                   styles.panelDefinitionTextMissing,
-                  chineseFontStyle,
+                  articleContentFontStyle,
                 ]}
               >
                 {t('loadLocalDictFirstHint')}
@@ -389,7 +389,7 @@ export function SentenceStudyPanel({
                       style={[
                         styles.panelDefinitionItemWord,
                         compactMultiSplit && styles.panelDefinitionItemWordCompact,
-                        chineseFontStyle,
+                        articleContentFontStyle,
                       ]}
                     >
                       {match.lookupText}
@@ -399,7 +399,7 @@ export function SentenceStudyPanel({
                         style={[
                           styles.panelDefinitionItemPinyin,
                           compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
-                          chineseFontStyle,
+                          articleContentFontStyle,
                         ]}
                       >
                         {match.entry.pinyin}
@@ -411,7 +411,7 @@ export function SentenceStudyPanel({
                       styles.panelDefinitionText,
                       compactMultiSplit && styles.panelDefinitionTextSplitCompact,
                       styles.panelDefinitionTextLoaded,
-                      chineseFontStyle,
+                      articleContentFontStyle,
                     ]}
                   >
                     {match.entry.definitions}
@@ -424,7 +424,7 @@ export function SentenceStudyPanel({
               style={[
                 styles.panelDefinitionText,
                 singleMatch?.entry.definitions ? styles.panelDefinitionTextLoaded : null,
-                chineseFontStyle,
+                articleContentFontStyle,
               ]}
             >
               {singleMatch?.entry.definitions ?? t('nativeLanguageDefinitionPlaceholder')}

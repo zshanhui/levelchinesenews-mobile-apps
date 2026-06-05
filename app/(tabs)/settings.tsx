@@ -14,7 +14,7 @@ import {
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
-import { bundledChineseFontLabel, systemChineseFontLabel, useFont } from '../../lib/FontContext';
+import { bundledArticleContentFontLabel, systemArticleContentFontLabel, useFont } from '../../lib/FontContext';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
@@ -159,7 +159,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={styles.sectionLabel}>{t('chineseFont')}</Text>
+          <Text style={styles.sectionLabel}>{t('articleContentFont')}</Text>
           <View style={styles.segmentedRow}>
             <Pressable
               onPress={() => setUseNotoSansSC(false)}
@@ -169,7 +169,7 @@ export default function SettingsScreen() {
               ]}
               accessibilityRole="radio"
               accessibilityState={{ selected: !useNotoSansSC }}
-              accessibilityLabel={systemChineseFontLabel}
+              accessibilityLabel={systemArticleContentFontLabel}
             >
               <Text
                 style={[
@@ -177,7 +177,7 @@ export default function SettingsScreen() {
                   !useNotoSansSC && styles.segmentLabelSelected,
                 ]}
               >
-                {systemChineseFontLabel}
+                {systemArticleContentFontLabel}
               </Text>
               <Text
                 style={[
@@ -185,7 +185,7 @@ export default function SettingsScreen() {
                   !useNotoSansSC && styles.segmentNumbersSelected,
                 ]}
               >
-                {t('chineseFontPreview')}
+                {t('articleContentFontPreview')}
               </Text>
             </Pressable>
             <Pressable
@@ -197,7 +197,7 @@ export default function SettingsScreen() {
               ]}
               accessibilityRole="radio"
               accessibilityState={{ selected: useNotoSansSC }}
-              accessibilityLabel={bundledChineseFontLabel}
+              accessibilityLabel={bundledArticleContentFontLabel}
             >
               <Text
                 style={[
@@ -205,7 +205,7 @@ export default function SettingsScreen() {
                   useNotoSansSC && styles.segmentLabelSelected,
                 ]}
               >
-                {bundledChineseFontLabel}
+                {bundledArticleContentFontLabel}
               </Text>
               <Text
                 style={[
@@ -213,7 +213,7 @@ export default function SettingsScreen() {
                   useNotoSansSC && styles.segmentNumbersSelected,
                 ]}
               >
-                {t('chineseFontPreview')}
+                {t('articleContentFontPreview')}
               </Text>
             </Pressable>
           </View>
