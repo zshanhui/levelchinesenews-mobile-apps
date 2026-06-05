@@ -14,7 +14,7 @@ import {
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
-import { useFont } from '../../lib/FontContext';
+import { bundledChineseFontLabel, systemChineseFontLabel, useFont } from '../../lib/FontContext';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
@@ -158,16 +158,65 @@ export default function SettingsScreen() {
           <Text style={styles.sectionHeaderText}>{t('readerPreferences')}</Text>
         </View>
 
-        <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={styles.settingLabel}>
-            {t('useNotoSansSc')}
-          </Text>
-          <Switch
-            value={useNotoSansSC}
-            onValueChange={setUseNotoSansSC}
-            trackColor={{ false: theme.border, true: theme.accent + '66' }}
-            thumbColor={useNotoSansSC ? theme.accent : theme.textMuted}
-          />
+        <View style={styles.etchedSection}>
+          <Text style={styles.sectionLabel}>{t('chineseFont')}</Text>
+          <View style={styles.segmentedRow}>
+            <Pressable
+              onPress={() => setUseNotoSansSC(false)}
+              style={[
+                styles.segmentButton,
+                !useNotoSansSC && styles.segmentButtonSelected,
+              ]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: !useNotoSansSC }}
+              accessibilityLabel={systemChineseFontLabel}
+            >
+              <Text
+                style={[
+                  styles.segmentLabel,
+                  !useNotoSansSC && styles.segmentLabelSelected,
+                ]}
+              >
+                {systemChineseFontLabel}
+              </Text>
+              <Text
+                style={[
+                  styles.segmentNumbers,
+                  !useNotoSansSC && styles.segmentNumbersSelected,
+                ]}
+              >
+                {t('chineseFontPreview')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setUseNotoSansSC(true)}
+              style={[
+                styles.segmentButton,
+                styles.segmentButtonLast,
+                useNotoSansSC && styles.segmentButtonSelected,
+              ]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: useNotoSansSC }}
+              accessibilityLabel={bundledChineseFontLabel}
+            >
+              <Text
+                style={[
+                  styles.segmentLabel,
+                  useNotoSansSC && styles.segmentLabelSelected,
+                ]}
+              >
+                {bundledChineseFontLabel}
+              </Text>
+              <Text
+                style={[
+                  styles.segmentNumbers,
+                  useNotoSansSC && styles.segmentNumbersSelected,
+                ]}
+              >
+                {t('chineseFontPreview')}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>

@@ -58,7 +58,8 @@ export const translations = {
     localDatabaseNotSupportedOnWeb:
       'The local dictionary and other offline database features are not available in the web reader. Download the Android app to use the full features',
     readerPreferences: 'reader preferences',
-    useNotoSansSc: 'use noto sans sc for chinese',
+    chineseFont: 'chinese font',
+    chineseFontPreview: '中文阅读',
     showPinyin: 'show pinyin in articles',
     adjustLineSpacing: 'adjust line spacing in article content view',
     lineSpacingCompact: 'compact',

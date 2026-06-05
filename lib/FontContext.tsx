@@ -33,6 +33,16 @@ const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
   xl: 22,
 };
 
+/** OS default for Chinese text when bundled Noto Sans SC is off. */
+export const systemChineseFontLabel =
+  Platform.select({
+    ios: 'PingFang SC',
+    android: 'Android Default',
+    default: 'System',
+  }) ?? 'System';
+
+export const bundledChineseFontLabel = 'Noto Sans SC';
+
 type FontContextValue = {
   /** Whether to use Noto Sans SC for Chinese text */
   useNotoSansSC: boolean;
