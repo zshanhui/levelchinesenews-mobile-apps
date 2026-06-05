@@ -17,6 +17,7 @@ import {
   type RefreshControlProps,
   StyleSheet,
   Text,
+  type TextStyle,
   type ViewabilityConfig,
   type ViewStyle,
   View,
@@ -137,6 +138,9 @@ const WordBlock = memo(function WordBlock({
 }) {
   const text = segment.t;
   const pinyin = segment.p ?? '';
+  const pinyinFontSize = Math.round(fontSize * WORD_PINYIN_TO_BODY_RATIO);
+  const useNoto = chinesePinyinFontStyle.fontFamily != null;
+  const notoStack = notoWordStackTextStyles(pinyinFontSize, fontSize, useNoto);
 
   return (
     <View style={wordStyles.wordBlock}>
@@ -148,13 +152,19 @@ const WordBlock = memo(function WordBlock({
           style={[
             wordStyles.pinyin,
             chinesePinyinFontStyle,
-            { fontSize: Math.round(fontSize * WORD_PINYIN_TO_BODY_RATIO) },
+            { fontSize: pinyinFontSize },
+            notoStack.pinyin,
           ]}
         >
           {pinyin}
         </Text>
       ) : null}
-      <Text style={[wordStyles.word, chineseFontStyle, { fontSize }]} selectable={true}>{text}</Text>
+      <Text
+        style={[wordStyles.word, chineseFontStyle, { fontSize }, notoStack.word]}
+        selectable={true}
+      >
+        {text}
+      </Text>
     </View>
   );
 });
@@ -203,6 +213,28 @@ const LINE_SPACING = {
 
 /** Legacy pinyin vs `md` (18px) body — keep proportion when body size changes. */
 const WORD_PINYIN_TO_BODY_RATIO = 11 / 18;
+
+/** Noto Sans SC has taller line boxes than the system UI font; tighten the pinyin↔hanzi stack. */
+function notoWordStackTextStyles(
+  pinyinFontSize: number,
+  bodyFontSize: number,
+  useNoto: boolean,
+): { pinyin: TextStyle; word: TextStyle } {
+  if (!useNoto) return { pinyin: {}, word: {} };
+  const androidFontPadding =
+    Platform.OS === 'android' ? ({ includeFontPadding: false } as const) : {};
+  return {
+    pinyin: {
+      lineHeight: Math.round(pinyinFontSize * 1.25),
+      ...androidFontPadding,
+    },
+    word: {
+      marginTop: -Math.max(1, Math.round(bodyFontSize * 0.1)),
+      lineHeight: Math.round(bodyFontSize * 1.8),
+      ...androidFontPadding,
+    },
+  };
+}
 
 /**
  * Minimum height for a sentence row so the top-right bookmark control and bottom-right
