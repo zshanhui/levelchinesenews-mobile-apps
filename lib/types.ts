@@ -95,3 +95,36 @@ export interface TranslationResponse {
   cached: boolean;
   provider?: string | null;
 }
+
+/** One cached sentence audio clip from GET /api/v1/audio */
+export interface StoredAudioEntry {
+  audio_url: string;
+  source_text_hash: string;
+  provider: string;
+  content_type: string;
+  duration_ms?: number | null;
+  created_at: string;
+}
+
+/** GET /api/v1/audio?article_id= — cached sentence audio per voice */
+export interface ArticleAudioResponse {
+  article_id: string;
+  /** Map sentence key `paragraph_index:sentence_index` → voice_id → entry */
+  article_sentence: Record<string, Record<string, StoredAudioEntry>>;
+  /** Reserved for whole-article audio; `null` until implemented */
+  article_full: Record<string, StoredAudioEntry> | null;
+}
+
+/** One selectable TTS voice from GET /api/v1/audio/voices */
+export interface TtsVoiceEntry {
+  voice_id: string;
+  label: string;
+  provider: string;
+  is_default: boolean;
+}
+
+/** GET /api/v1/audio/voices */
+export interface TtsVoicesResponse {
+  default_voice_id: string;
+  voices: TtsVoiceEntry[];
+}

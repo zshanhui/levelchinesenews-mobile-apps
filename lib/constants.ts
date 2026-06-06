@@ -10,6 +10,8 @@ export const POST_TIMEOUT_MS = 10_000;
 export const TRANSLATION_POST_TIMEOUT_MS = 15_000;
 export const GENERATE_SUMMARY_TIMEOUT_MS = 60_000;
 export const ARTICLE_REQUEST_TIMEOUT_MS = 8000;
+/** Max wait for MP3 load/buffer before reporting playback failure. */
+export const AUDIO_PLAY_LOAD_TIMEOUT_MS = 15_000;
 
 // Articles list
 export const PAGE_SIZE = 15;

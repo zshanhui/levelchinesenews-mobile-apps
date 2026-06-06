@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
-import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
@@ -15,9 +15,9 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArticleContent } from '../../lib/components/ArticleContent';
+import { ArticleDetailHeader } from '../../lib/components/ArticleDetailHeader';
 import { BottomMediaSourceLink } from '../../lib/components/BottomMediaSourceLink';
 import {
   BookmarkToast,
@@ -25,9 +25,6 @@ import {
 } from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
-import { ShareLinkButton } from '../../lib/components/ShareLinkButton';
-import { resolveImageUrl } from '../../lib/api';
-import { formatPublishedDate } from '../../lib/formatPublishedDate';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
 import {
   articleDetailToListItem,
@@ -44,15 +41,13 @@ import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
+import { useArticleAudio } from '../../lib/useArticleAudio';
 import { useArticleTranslations } from '../../lib/useArticleTranslations';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 
 /** Space below the transparent header before the article title and metadata. */
 const ARTICLE_SCROLL_TOP_EXTRA = 75;
-
-/** Native headline size */
-const ARTICLE_TITLE_BASE_FONT_SIZE = 22;
 
 /** Extra inset below the header for skeleton (list load + pull-to-refresh). */
 const SKELETON_TOP_EXTRA = 20;
@@ -125,6 +120,13 @@ export default function ArticleDetailScreen() {
     refetch: refetchArticleTranslations,
   } = useArticleTranslations(id, Boolean(article));
 
+  const {
+    articleAudio,
+    voiceId: audioVoiceId,
+    loading: articleAudioLoading,
+    refetch: refetchArticleAudio,
+  } = useArticleAudio(id, Boolean(article));
+
   const navigation = useNavigation();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
@@ -133,13 +135,7 @@ export default function ArticleDetailScreen() {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const SourceLabel = () => {
-    if (usingCache) {
-      return <Text style={styles.metaText}>{t('cached')}</Text>;
-    }
-    return null;
-  };
-  const insets = useSafeAreaInsets();
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToastState | null>(
     null,
   );
@@ -177,14 +173,14 @@ export default function ArticleDetailScreen() {
     const started = Date.now();
     try {
       await refresh();
-      await refetchArticleTranslations();
+      await Promise.all([refetchArticleTranslations(), refetchArticleAudio()]);
     } finally {
       const elapsed = Date.now() - started;
       const remain = Math.max(0, ARTICLE_REFRESH_MIN_OVERLAY_MS - elapsed);
       await new Promise<void>((resolve) => setTimeout(resolve, remain));
       setRefreshOverlayVisible(false);
     }
-  }, [refresh, refetchArticleTranslations]);
+  }, [refresh, refetchArticleAudio, refetchArticleTranslations]);
 
   const restoreSelectionFromParams = useCallback(
     (params: { word?: string; wordKey?: string; sentenceKey?: string }) => {
@@ -199,13 +195,9 @@ export default function ArticleDetailScreen() {
   );
 
   useEffect(() => {
-    if (!id) {
-      setReadState(false);
-      setBookmarkedSentenceKey(null);
-      return;
-    }
     setReadState(false);
     setBookmarkedSentenceKey(null);
+    if (!id) return;
     let cancelled = false;
     Promise.all([getReadState(id), getSentenceBookmark(id)]).then(
       ([read, bookmarkIdx]) => {
@@ -360,29 +352,26 @@ export default function ArticleDetailScreen() {
         </Pressable>
       ),
     });
-  }, [
-    navigation,
-    openSettings,
-    t,
-    theme.accent,
-    theme.text,
-    styles.headerIconBackdrop,
-    styles.headerIconBackdropPressed,
-    styles.headerSideContainer,
-    styles.headerRightContainer,
-  ]);
+  }, [navigation, openSettings, t, theme, styles]);
+
+  const articleHeaderProps = useMemo(
+    () =>
+      article
+        ? {
+            articleId: id,
+            title: article.title,
+            source: article.source,
+            sourceUrl: article.source_url,
+            publishedDate: article.published_date,
+            mainImage: article.main_image,
+            usingCache,
+          }
+        : null,
+    [article, id, usingCache],
+  );
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: '',
-          headerTransparent: true,
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: 'transparent' },
-          headerTintColor: theme.text,
-        }}
-      />
       {loading && !article ? (
         <View style={styles.articleContainer}>
           <ArticleSkeletonLoadingLayer
@@ -405,57 +394,10 @@ export default function ArticleDetailScreen() {
         <View style={styles.articleContainer}>
           <BookmarkToast toast={bookmarkToast} onDismiss={dismissBookmarkToast} />
           <View style={styles.articleScrollContainer} collapsable={false}>
-            {article.parsed_content?.length ? (
+            {article.parsed_content?.length && articleHeaderProps ? (
               <ArticleContent
                 parsedContent={article.parsed_content}
-                listHeader={(
-                  <>
-                    <Text style={[styles.title, { fontSize: ARTICLE_TITLE_BASE_FONT_SIZE }]}>
-                      {article.title}
-                    </Text>
-                    <View style={styles.metaRow}>
-                      <View style={styles.meta}>
-                        {article.source && (
-                          <View style={styles.metaSource}>
-                            <Text style={styles.metaText}>{article.source}</Text>
-                            {article.source_url ? (
-                              <Pressable
-                                onPress={() => Linking.openURL(article.source_url!)}
-                                hitSlop={8}
-                                accessibilityRole="link"
-                                accessibilityLabel={t('openSourceArticle')}
-                              >
-                                <Ionicons name="open-outline" size={16} color={theme.accent} />
-                              </Pressable>
-                            ) : null}
-                          </View>
-                        )}
-                        {article.published_date ? (
-                          <View style={styles.metaDateRow}>
-                            <Text style={styles.metaText}>
-                              {formatPublishedDate(article.published_date)}
-                            </Text>
-                            {SourceLabel()}
-                          </View>
-                        ) : (
-                          SourceLabel()
-                        )}
-                      </View>
-                      <ShareLinkButton articleId={id} articleTitle={article.title} />
-                    </View>
-                    {((): React.ReactNode => {
-                      const imageUri = resolveImageUrl(article.main_image);
-                      return imageUri ? (
-                        <Image
-                          source={{ uri: imageUri }}
-                          style={styles.image}
-                          contentFit="cover"
-                          accessibilityIgnoresInvertColors
-                        />
-                      ) : null;
-                    })()}
-                  </>
-                )}
+                listHeader={<ArticleDetailHeader {...articleHeaderProps} />}
                 listFooter={
                   <>
                     {markReadFooterVisible ? (
@@ -541,7 +483,6 @@ export default function ArticleDetailScreen() {
                   {
                     paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
                     paddingHorizontal: 20,
-                    paddingBottom: EXTRA_BOTTOM_PADDING,
                   },
                 ]}
                 style={styles.scroll}
@@ -552,7 +493,6 @@ export default function ArticleDetailScreen() {
                     tintColor={theme.accent}
                   />
                 }
-                selectedWord={selectedWord}
                 highlightedWordKey={highlightedWordKey}
                 highlightedSentenceKey={highlightedSentenceKey}
                 onWordPress={onWordPress}
@@ -562,6 +502,9 @@ export default function ArticleDetailScreen() {
                 articleTranslations={articleTranslations}
                 translationLang={translationLang}
                 articleTranslationsLoading={articleTranslationsLoading}
+                articleAudio={articleAudio}
+                audioVoiceId={audioVoiceId}
+                articleAudioLoading={articleAudioLoading}
                 articleId={id}
                 mergeTranslationFromPost={mergeTranslationFromPost}
               />
@@ -572,7 +515,6 @@ export default function ArticleDetailScreen() {
                   styles.scrollContent,
                   {
                     paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA,
-                    paddingBottom: EXTRA_BOTTOM_PADDING,
                   },
                 ]}
                 showsVerticalScrollIndicator={false}
@@ -589,50 +531,7 @@ export default function ArticleDetailScreen() {
                   collapsable={false}
                   onPress={selectedWord ? onClosePanel : undefined}
                 >
-                  <Text style={[styles.title, { fontSize: ARTICLE_TITLE_BASE_FONT_SIZE }]}>
-                      {article.title}
-                    </Text>
-                  <View style={styles.metaRow}>
-                    <View style={styles.meta}>
-                      {article.source && (
-                        <View style={styles.metaSource}>
-                          <Text style={styles.metaText}>{article.source}</Text>
-                          {article.source_url ? (
-                            <Pressable
-                              onPress={() => Linking.openURL(article.source_url!)}
-                              hitSlop={8}
-                              accessibilityRole="link"
-                              accessibilityLabel={t('openSourceArticle')}
-                            >
-                              <Ionicons name="open-outline" size={16} color={theme.accent} />
-                            </Pressable>
-                          ) : null}
-                        </View>
-                      )}
-                      {article.published_date ? (
-                        <View style={styles.metaDateRow}>
-                          <Text style={styles.metaText}>
-                            {formatPublishedDate(article.published_date)}
-                          </Text>
-                          {SourceLabel()}
-                        </View>
-                      ) : (
-                        SourceLabel()
-                      )}
-                    </View>
-                    <ShareLinkButton articleId={id} articleTitle={article.title} />
-                  </View>
-                  {((): React.ReactNode => {
-                    const imageUri = resolveImageUrl(article.main_image);
-                    return imageUri ? (
-                      <Image
-                        source={{ uri: imageUri }}
-                        style={styles.image}
-                        contentFit="cover"
-                        accessibilityIgnoresInvertColors
-                      />
-                    ) : null;
-                  })()}
+                  {articleHeaderProps ? <ArticleDetailHeader {...articleHeaderProps} /> : null}
                   <Text style={styles.emptyContent}>
                     {t('noContentAvailable')}
                   </Text>
@@ -656,7 +555,7 @@ export default function ArticleDetailScreen() {
                 articleId={id ?? ''}
                 highlightedWordKey={highlightedWordKey ?? ''}
                 highlightedSentenceKey={highlightedSentenceKey ?? ''}
-                bottomInset={insets.bottom}
+                bottomInset={bottomInset}
                 onRequestClose={onClosePanel}
               />
             </View>
@@ -727,46 +626,6 @@ function createStyles(theme: Theme) {
   content: {
     paddingHorizontal: 20,
     paddingTop: 16,
-  },
-  title: {
-    fontWeight: '600',
-    color: theme.text,
-    marginBottom: 8,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  meta: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 12,
-    minWidth: 0,
-  },
-  metaSource: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  metaDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  metaText: {
-    fontSize: 13,
-    color: theme.textSecondary,
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 16 / 10, // 10% taller than 16:9
-    borderRadius: 8,
-    backgroundColor: theme.border,
-    marginBottom: 16,
   },
   emptyContent: {
     fontSize: 16,

@@ -23,6 +23,7 @@ module.exports = {
           origin: readerWebOrigin,
         },
       ],
+      'expo-audio',
       ...(base.expo.plugins ?? []),
       [
         '@sentry/react-native/expo',
