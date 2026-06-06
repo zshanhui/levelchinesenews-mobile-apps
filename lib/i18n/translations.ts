@@ -52,9 +52,9 @@ export const translations = {
     // Settings
     settings: 'settings',
     configurePreferences: 'language and general preferences',
-    darkMode: 'dark mode (cyberpunk)',
+    darkMode: 'Dark mode / Light mode',
     configureLocalDict: 'configure local dictionary',
-    downloadAndReset: 'download and reset',
+    downloadAndReset: 'download and remove dictionaries',
     localDatabaseNotSupportedOnWeb:
       'The local dictionary and other offline database features are not available in the web reader. Download the Android app to use the full features',
     readerPreferences: 'reader preferences',

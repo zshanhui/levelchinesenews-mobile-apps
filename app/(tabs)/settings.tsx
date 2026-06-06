@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { capitalizeFirstWord } from '../../lib/text-utils';
 import { useTranslation } from '../../lib/i18n';
 import {
   Linking,
@@ -13,8 +14,12 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
-import { bundledArticleContentFontLabel, systemArticleContentFontLabel, useFont } from '../../lib/FontContext';
+import type {
+  FontSizeLevel,
+  LineSpacingLevel,
+} from '../../lib/FontContext';
+import { useFont } from '../../lib/FontContext';
+import { FontSelectorPanel } from '../../lib/components/FontSelectorPanel';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
@@ -56,8 +61,6 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'dev';
   const shouldEnableDebugPanel = process.env.EXPO_PUBLIC_DEBUG === '1';
   const {
-    useNotoSansSC,
-    setUseNotoSansSC,
     showPinyin,
     setShowPinyin,
     lineSpacing,
@@ -109,11 +112,13 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={true}
       >
         <View style={[styles.sectionHeader, styles.sectionHeaderFirst]}>
-          <Text style={styles.sectionHeaderText}>{t('configurePreferences')}</Text>
+          <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('configurePreferences'))}
+          </Text>
         </View>
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={styles.settingLabel}>
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
             {t('darkMode')}
           </Text>
           <Switch
@@ -139,9 +144,11 @@ export default function SettingsScreen() {
               <Ionicons name="book-outline" size={20} color={theme.accent} />
             </View>
             <View style={styles.navRowTextGroup}>
-              <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
+              <Text style={[styles.navRowLabel, fancyDisplayFontStyle]}>
+                {capitalizeFirstWord(t('configureLocalDict'))}
+              </Text>
               <Text style={styles.navRowDescription}>
-                {t('downloadAndReset')}
+                {capitalizeFirstWord(t('downloadAndReset'))}
               </Text>
             </View>
           </View>
@@ -155,73 +162,16 @@ export default function SettingsScreen() {
         </Pressable>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>{t('readerPreferences')}</Text>
+          <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('readerPreferences'))}
+          </Text>
         </View>
 
-        <View style={styles.etchedSection}>
-          <Text style={styles.sectionLabel}>{t('articleContentFont')}</Text>
-          <View style={styles.segmentedRow}>
-            <Pressable
-              onPress={() => setUseNotoSansSC(false)}
-              style={[
-                styles.segmentButton,
-                !useNotoSansSC && styles.segmentButtonSelected,
-              ]}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: !useNotoSansSC }}
-              accessibilityLabel={systemArticleContentFontLabel}
-            >
-              <Text
-                style={[
-                  styles.segmentLabel,
-                  !useNotoSansSC && styles.segmentLabelSelected,
-                ]}
-              >
-                {systemArticleContentFontLabel}
-              </Text>
-              <Text
-                style={[
-                  styles.segmentNumbers,
-                  !useNotoSansSC && styles.segmentNumbersSelected,
-                ]}
-              >
-                {t('articleContentFontPreview')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setUseNotoSansSC(true)}
-              style={[
-                styles.segmentButton,
-                styles.segmentButtonLast,
-                useNotoSansSC && styles.segmentButtonSelected,
-              ]}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: useNotoSansSC }}
-              accessibilityLabel={bundledArticleContentFontLabel}
-            >
-              <Text
-                style={[
-                  styles.segmentLabel,
-                  useNotoSansSC && styles.segmentLabelSelected,
-                ]}
-              >
-                {bundledArticleContentFontLabel}
-              </Text>
-              <Text
-                style={[
-                  styles.segmentNumbers,
-                  useNotoSansSC && styles.segmentNumbersSelected,
-                ]}
-              >
-                {t('articleContentFontPreview')}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
+        <FontSelectorPanel />
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={styles.settingLabel}>
-            {t('showPinyin')}
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('showPinyin'))}
           </Text>
           <Switch
             value={showPinyin}
@@ -232,8 +182,8 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={styles.sectionLabel}>
-            {t('adjustLineSpacing')}
+          <Text style={[styles.sectionLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('adjustLineSpacing'))}
           </Text>
           <View style={styles.segmentedRow}>
             {LINE_SPACING_OPTIONS.map((opt) => (
@@ -268,8 +218,8 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={styles.sectionLabel}>
-            {t('adjustFontSize')}
+          <Text style={[styles.sectionLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('adjustFontSize'))}
           </Text>
           <View style={styles.segmentedRow}>
             {FONT_SIZE_OPTIONS.map((opt, index) => (
