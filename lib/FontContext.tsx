@@ -30,12 +30,13 @@ export type { ArticleFontOption, RemoteFontStatus };
 export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
 export type FontSizeLevel = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
-  xs: 14,
-  sm: 16,
+/** Minor third (×1.2) scale anchored at md = 18px. */
+export const ARTICLE_FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
+  xs: 13,
+  sm: 15,
   md: 18,
-  lg: 20,
-  xl: 22,
+  lg: 22,
+  xl: 26,
 };
 
 /** OS default for article content when bundled Noto Sans SC is off. */
@@ -136,7 +137,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     : {};
 
   const articleFontSize = useMemo(
-    () => FONT_SIZE_MAP[fontSize],
+    () => ARTICLE_FONT_SIZE_MAP[fontSize],
     [fontSize],
   );
 

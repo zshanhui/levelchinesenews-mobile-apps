@@ -18,7 +18,7 @@ import type {
   FontSizeLevel,
   LineSpacingLevel,
 } from '../../lib/FontContext';
-import { useFont } from '../../lib/FontContext';
+import { ARTICLE_FONT_SIZE_MAP, useFont } from '../../lib/FontContext';
 import { FontSelectorPanel } from '../../lib/components/FontSelectorPanel';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
@@ -44,16 +44,7 @@ const LINE_SPACING_OPTIONS: {
   { value: 'relaxed', labelKey: 'lineSpacingRelaxed', numbersKey: 'lineSpacingNumbersRelaxed' },
 ];
 
-const FONT_SIZE_OPTIONS: {
-  value: FontSizeLevel;
-  label: string;
-}[] = [
-  { value: 'xs', label: '14' },
-  { value: 'sm', label: '16' },
-  { value: 'md', label: '18' },
-  { value: 'lg', label: '20' },
-  { value: 'xl', label: '22' },
-];
+const FONT_SIZE_LEVELS: FontSizeLevel[] = ['xs', 'sm', 'md', 'lg', 'xl'];
 
 export default function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
@@ -222,23 +213,23 @@ export default function SettingsScreen() {
             {capitalizeFirstWord(t('adjustFontSize'))}
           </Text>
           <View style={styles.segmentedRow}>
-            {FONT_SIZE_OPTIONS.map((opt, index) => (
+            {FONT_SIZE_LEVELS.map((level, index) => (
               <Pressable
-                key={opt.value}
-                onPress={() => setFontSize(opt.value)}
+                key={level}
+                onPress={() => setFontSize(level)}
                 style={[
                   styles.segmentButton,
-                  index === FONT_SIZE_OPTIONS.length - 1 && styles.segmentButtonLast,
-                  fontSize === opt.value && styles.segmentButtonSelected,
+                  index === FONT_SIZE_LEVELS.length - 1 && styles.segmentButtonLast,
+                  fontSize === level && styles.segmentButtonSelected,
                 ]}
               >
                 <Text
                   style={[
                     styles.segmentLabel,
-                    fontSize === opt.value && styles.segmentLabelSelected,
+                    fontSize === level && styles.segmentLabelSelected,
                   ]}
                 >
-                  {opt.label}
+                  {ARTICLE_FONT_SIZE_MAP[level]}
                 </Text>
               </Pressable>
             ))}
