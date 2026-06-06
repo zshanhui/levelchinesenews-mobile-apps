@@ -27,7 +27,21 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.wuweilabs.levelchinesenews"
+      "package": "com.wuweilabs.levelchinesenews",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "reader.levelchinese.app",
+              "pathPrefix": "/article"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/lcnicons-v4/web/icon-192.png"

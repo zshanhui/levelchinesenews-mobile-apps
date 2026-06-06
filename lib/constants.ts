@@ -27,7 +27,7 @@ export const THUMB_MAX_HEIGHT = 70;
 export const TRANSLATION_COUNTDOWN_SECONDS = 15;
 
 // Article detail
-/** Public web reader base URL for share links. */
+/** Public web reader base URL for share links and Android App Links (must match app.json intentFilters). */
 export const READER_WEB_BASE_URL = 'https://reader.levelchinese.app';
 
 export function buildArticleShareUrl(articleId: string): string {
