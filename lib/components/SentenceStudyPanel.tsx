@@ -13,7 +13,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { i18n, useTranslation } from '../i18n';
-import { useFont } from '../FontContext';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import { useTheme } from '../ThemeContext';
 import {
@@ -85,7 +84,6 @@ export function SentenceStudyPanel({
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
-  const { articleContentFontStyle, articleContentPinyinFontStyle } = useFont();
   const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
   const [lookupComplete, setLookupComplete] = useState(false);
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
@@ -273,7 +271,6 @@ export function SentenceStudyPanel({
             style={[
               styles.panelWord,
               compactMultiSplit && styles.panelWordCompact,
-              articleContentFontStyle,
             ]}
           >
             {word}
@@ -284,7 +281,6 @@ export function SentenceStudyPanel({
                 styles.panelPinyin,
                 stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
                 compactMultiSplit && styles.panelPinyinCompact,
-                articleContentPinyinFontStyle,
               ]}
             >
               {pinyin}
@@ -335,7 +331,6 @@ export function SentenceStudyPanel({
                 style={[
                   styles.panelDefinitionText,
                   styles.panelDefinitionTextMissing,
-                  articleContentFontStyle,
                 ]}
               >
                 {t('loadLocalDictFirstHint')}
@@ -389,7 +384,6 @@ export function SentenceStudyPanel({
                       style={[
                         styles.panelDefinitionItemWord,
                         compactMultiSplit && styles.panelDefinitionItemWordCompact,
-                        articleContentFontStyle,
                       ]}
                     >
                       {match.lookupText}
@@ -399,7 +393,6 @@ export function SentenceStudyPanel({
                         style={[
                           styles.panelDefinitionItemPinyin,
                           compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
-                          articleContentFontStyle,
                         ]}
                       >
                         {match.entry.pinyin}
@@ -411,7 +404,6 @@ export function SentenceStudyPanel({
                       styles.panelDefinitionText,
                       compactMultiSplit && styles.panelDefinitionTextSplitCompact,
                       styles.panelDefinitionTextLoaded,
-                      articleContentFontStyle,
                     ]}
                   >
                     {match.entry.definitions}
@@ -424,7 +416,6 @@ export function SentenceStudyPanel({
               style={[
                 styles.panelDefinitionText,
                 singleMatch?.entry.definitions ? styles.panelDefinitionTextLoaded : null,
-                articleContentFontStyle,
               ]}
             >
               {singleMatch?.entry.definitions ?? t('nativeLanguageDefinitionPlaceholder')}
