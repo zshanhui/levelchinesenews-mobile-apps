@@ -81,6 +81,7 @@ export const translations = {
     seed: 'seed',
     noContentAvailable: 'no content available',
     openSettings: 'Open settings',
+    shareArticle: 'Share article link',
     openSourceArticle: 'open source article',
     markRead: 'mark read',
     appNativePlatformsOnly:
@@ -251,6 +252,7 @@ export const translations = {
     seed: 'semilla',
     noContentAvailable: 'no hay contenido disponible',
     openSettings: 'Abrir ajustes',
+    shareArticle: 'Compartir enlace del artículo',
     openSourceArticle: 'abrir artículo fuente',
     markRead: 'marcar como leído',
     appNativePlatformsOnly:
@@ -424,6 +426,7 @@ export const translations = {
     seed: 'data contoh',
     noContentAvailable: 'tiada kandungan tersedia',
     openSettings: 'Buka tetapan',
+    shareArticle: 'Kongsi pautan artikel',
     openSourceArticle: 'buka artikel sumber',
     markRead: 'tandai telah dibaca',
     appNativePlatformsOnly:
@@ -597,6 +600,7 @@ export const translations = {
     seed: 'data contoh',
     noContentAvailable: 'tidak ada konten',
     openSettings: 'Buka pengaturan',
+    shareArticle: 'Bagikan tautan artikel',
     openSourceArticle: 'buka artikel sumber',
     markRead: 'tandai sudah dibaca',
     appNativePlatformsOnly:
@@ -771,6 +775,7 @@ export const translations = {
     seed: 'dữ liệu mẫu',
     noContentAvailable: 'không có nội dung',
     openSettings: 'Mở cài đặt',
+    shareArticle: 'Chia sẻ liên kết bài viết',
     openSourceArticle: 'mở bài viết gốc',
     markRead: 'đánh dấu đã đọc',
     appNativePlatformsOnly:
@@ -945,6 +950,7 @@ export const translations = {
     seed: 'демо-данные',
     noContentAvailable: 'нет содержимого',
     openSettings: 'Открыть настройки',
+    shareArticle: 'Поделиться ссылкой на статью',
     openSourceArticle: 'открыть исходную статью',
     markRead: 'пометить прочитанным',
     appNativePlatformsOnly:
@@ -1119,6 +1125,7 @@ export const translations = {
     seed: 'بيانات تجريبية',
     noContentAvailable: 'لا يوجد محتوى متاح',
     openSettings: 'فتح الإعدادات',
+    shareArticle: 'مشاركة رابط المقال',
     openSourceArticle: 'فتح المقال الأصلي',
     markRead: 'تحديد كمقروء',
     appNativePlatformsOnly:
@@ -1290,6 +1297,7 @@ export const translations = {
     seed: '示例数据',
     noContentAvailable: '暂无内容',
     openSettings: '打开设置',
+    shareArticle: '分享文章链接',
     openSourceArticle: '打开原文',
     markRead: '标记已读',
     appNativePlatformsOnly: '本应用仅提供 iOS 与 Android 版本。',

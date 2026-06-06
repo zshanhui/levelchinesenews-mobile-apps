@@ -25,6 +25,7 @@ import {
 } from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
+import { ShareLinkButton } from '../../lib/components/ShareLinkButton';
 import { resolveImageUrl } from '../../lib/api';
 import { formatPublishedDate } from '../../lib/formatPublishedDate';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
@@ -440,6 +441,7 @@ export default function ArticleDetailScreen() {
                           SourceLabel()
                         )}
                       </View>
+                      <ShareLinkButton articleId={id} articleTitle={article.title} />
                     </View>
                     {((): React.ReactNode => {
                       const imageUri = resolveImageUrl(article.main_image);
@@ -618,6 +620,7 @@ export default function ArticleDetailScreen() {
                         SourceLabel()
                       )}
                     </View>
+                    <ShareLinkButton articleId={id} articleTitle={article.title} />
                   </View>
                   {((): React.ReactNode => {
                     const imageUri = resolveImageUrl(article.main_image);

@@ -27,6 +27,13 @@ export const THUMB_MAX_HEIGHT = 70;
 export const TRANSLATION_COUNTDOWN_SECONDS = 15;
 
 // Article detail
+/** Public web reader base URL for share links. */
+export const READER_WEB_BASE_URL = 'https://reader.levelchinese.app';
+
+export function buildArticleShareUrl(articleId: string): string {
+  return `${READER_WEB_BASE_URL}/article/${articleId}`;
+}
+
 /** Article `FlashList` / `ScrollView` bottom padding: base 32 + after-last-sentence 140 + study region 150. */
 export const EXTRA_BOTTOM_PADDING = 300;
 export const MAX_CACHED_ARTICLE_DETAILS = 500;
