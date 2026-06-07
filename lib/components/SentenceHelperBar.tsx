@@ -11,6 +11,7 @@ const BAR_PADDING_VERTICAL = 4;
 const BAR_PADDING_LEFT = 8;
 const BAR_PADDING_RIGHT = 6;
 const ACTION_GAP = 8;
+const BAR_CORNER_RADIUS = 7;
 
 type SentenceHelperBarProps = {
   onAudioPress: () => void;
@@ -85,7 +86,7 @@ function createBarStyles(theme: Theme, isDark: boolean) {
   return StyleSheet.create({
     bar: {
       alignSelf: 'flex-end',
-      width: '50%',
+      width: '33%',
       flexDirection: 'row',
       justifyContent: 'flex-end',
       alignItems: 'center',
@@ -95,7 +96,10 @@ function createBarStyles(theme: Theme, isDark: boolean) {
       paddingRight: BAR_PADDING_RIGHT,
       /** Lighter than `etchedBg` panels, warmer than pure white — sits on page `background`. */
       backgroundColor: theme.surface,
-      borderRadius: 7,
+      borderTopLeftRadius: BAR_CORNER_RADIUS * 3,
+      borderTopRightRadius: BAR_CORNER_RADIUS,
+      borderBottomRightRadius: BAR_CORNER_RADIUS,
+      borderBottomLeftRadius: BAR_CORNER_RADIUS,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.border,
       ...barShadow,
