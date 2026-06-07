@@ -1,6 +1,6 @@
 {
   "name": "mobile-apps-levelchinesenews",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
