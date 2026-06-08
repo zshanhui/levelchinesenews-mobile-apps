@@ -1,6 +1,6 @@
 ---
 title: Free Native News Websites for Reading More Chinese in 2026
-description: ""
+description: "Reading real news is one of the fastest ways to pick up useful Chinese past intermediate level. A walkthrough of free native outlets we read daily—from Zaobao and ThePaper to Huxiu and more with indepth notes on difficulty and what each covers best."
 pubDate: 2026-06-01
 lastUpdatedAt: 2026-06-08
 postType: htlarticle
