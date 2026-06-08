@@ -1,9 +1,4 @@
 import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display';
-/** Deep paths avoid `@expo-google-fonts/noto-sans-sc` barrel (pulls all ~9 weights, ~90 MB). */
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const NotoSansSC_200ExtraLight = require('@expo-google-fonts/noto-sans-sc/200ExtraLight/NotoSansSC_200ExtraLight.ttf');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const NotoSansSC_400Regular = require('@expo-google-fonts/noto-sans-sc/400Regular/NotoSansSC_400Regular.ttf');
 import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -16,22 +11,43 @@ import {
 } from 'react';
 import { Platform } from 'react-native';
 import {
-  STORAGE_KEY_FONT,
   STORAGE_KEY_FONT_SIZE,
   STORAGE_KEY_LINE_SPACING,
   STORAGE_KEY_PINYIN,
 } from './constants';
+import {
+  type ArticleFontId,
+  type RemoteFontId,
+} from './fonts/remoteFonts';
+import {
+  useArticleFont,
+  type ArticleFontOption,
+  type RemoteFontStatus,
+} from './fonts/useArticleFont';
+
+export type { ArticleFontOption, RemoteFontStatus };
 
 export type LineSpacingLevel = 'compact' | 'normal' | 'relaxed';
 export type FontSizeLevel = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-const FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
-  xs: 14,
-  sm: 16,
+/** Minor third (×1.2) scale anchored at md = 18px. */
+export const ARTICLE_FONT_SIZE_MAP: Record<FontSizeLevel, number> = {
+  xs: 13,
+  sm: 15,
   md: 18,
-  lg: 20,
-  xl: 22,
+  lg: 22,
+  xl: 26,
 };
+
+/** OS default for article content when bundled Noto Sans SC is off. */
+export const systemArticleContentFontLabel =
+  Platform.select({
+    ios: 'PingFang SC',
+    android: 'Android Default',
+    default: 'System',
+  }) ?? 'System';
+
+export const bundledArticleContentFontLabel = 'Noto Sans SC';
 
 type FontContextValue = {
   /** Whether to use Noto Sans SC for Chinese text */
@@ -46,43 +62,36 @@ type FontContextValue = {
   /** Font size level for article content */
   fontSize: FontSizeLevel;
   setFontSize: (value: FontSizeLevel) => void;
-  /** Style to apply to Text for Chinese body (hanzi) */
-  chineseFontStyle: { fontFamily?: string };
-  /** Lighter weight for pinyin above characters (Noto 200) */
-  chinesePinyinFontStyle: { fontFamily?: string };
-  /** Bold/emphasis — same glyph source as body (no heavier weight bundled) */
-  chineseFontBoldStyle: { fontFamily?: string };
+  /** Style to apply to article content body text (hanzi) */
+  articleContentFontStyle: { fontFamily?: string };
+  /** Lighter weight for pinyin above characters in article content (Noto 200) */
+  articleContentPinyinFontStyle: { fontFamily?: string };
+  /** Bold/emphasis in article content — same glyph source as body (no heavier weight bundled) */
+  articleContentFontBoldStyle: { fontFamily?: string };
   /** Playfair Display semibold for decorative UI (e.g. Load more) */
   fancyDisplayFontStyle: { fontFamily?: string };
   /** Resolved numeric font size for article content */
   articleFontSize: number;
   /** Whether fonts are ready (when useNotoSansSC is true) */
   fontsReady: boolean;
+  selectedArticleFontId: ArticleFontId;
+  articleFontOptions: ArticleFontOption[];
+  selectArticleFont: (fontId: ArticleFontId) => Promise<void>;
+  downloadArticleFont: (fontId: RemoteFontId) => Promise<void>;
+  clearRemoteFonts: () => Promise<void>;
 };
 
 const FontContext = createContext<FontContextValue | null>(null);
 
 export function FontProvider({ children }: { children: React.ReactNode }) {
-  const [useNotoSansSC, setUseNotoSansSCState] = useState(
-    Platform.OS === 'android' ? false : true,
-  );
+  const articleFont = useArticleFont(systemArticleContentFontLabel);
   const [showPinyin, setShowPinyinState] = useState(true);
   const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('normal');
   const [fontSize, setFontSizeState] = useState<FontSizeLevel>('md');
 
   const [fontsLoaded] = useFonts({
-    NotoSansSC_200ExtraLight,
-    NotoSansSC_400Regular,
     PlayfairDisplay_600SemiBold,
   });
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY_FONT).then((stored) => {
-      if (stored !== null) {
-        setUseNotoSansSCState(stored === 'true');
-      }
-    });
-  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY_PINYIN).then((stored) => {
@@ -108,11 +117,6 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const setUseNotoSansSC = useCallback((value: boolean) => {
-    setUseNotoSansSCState(value);
-    AsyncStorage.setItem(STORAGE_KEY_FONT, String(value));
-  }, []);
-
   const setShowPinyin = useCallback((value: boolean) => {
     setShowPinyinState(value);
     AsyncStorage.setItem(STORAGE_KEY_PINYIN, String(value));
@@ -128,45 +132,35 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY_FONT_SIZE, value);
   }, []);
 
-  const chineseFontStyle =
-    useNotoSansSC && fontsLoaded
-      ? { fontFamily: 'NotoSansSC_400Regular' as const }
-      : {};
-
-  const chinesePinyinFontStyle =
-    useNotoSansSC && fontsLoaded
-      ? { fontFamily: 'NotoSansSC_200ExtraLight' as const }
-      : {};
-
-  const chineseFontBoldStyle =
-    useNotoSansSC && fontsLoaded
-      ? { fontFamily: 'NotoSansSC_400Regular' as const, fontWeight: '600' as const }
-      : {};
-
   const fancyDisplayFontStyle = fontsLoaded
     ? { fontFamily: 'PlayfairDisplay_600SemiBold' as const }
     : {};
 
   const articleFontSize = useMemo(
-    () => FONT_SIZE_MAP[fontSize],
+    () => ARTICLE_FONT_SIZE_MAP[fontSize],
     [fontSize],
   );
 
   const value: FontContextValue = {
-    useNotoSansSC,
-    setUseNotoSansSC,
+    useNotoSansSC: articleFont.useNotoSansSC,
+    setUseNotoSansSC: articleFont.setUseNotoSansSC,
     showPinyin,
     setShowPinyin,
     lineSpacing,
     setLineSpacing,
     fontSize,
     setFontSize,
-    chineseFontStyle,
-    chinesePinyinFontStyle,
-    chineseFontBoldStyle,
+    articleContentFontStyle: articleFont.articleContentFontStyle,
+    articleContentPinyinFontStyle: articleFont.articleContentPinyinFontStyle,
+    articleContentFontBoldStyle: articleFont.articleContentFontBoldStyle,
     fancyDisplayFontStyle,
     articleFontSize,
-    fontsReady: !useNotoSansSC || fontsLoaded,
+    fontsReady: articleFont.fontsReady,
+    selectedArticleFontId: articleFont.selectedArticleFontId,
+    articleFontOptions: articleFont.articleFontOptions,
+    selectArticleFont: articleFont.selectArticleFont,
+    downloadArticleFont: articleFont.downloadArticleFont,
+    clearRemoteFonts: articleFont.clearRemoteFonts,
   };
 
   return (

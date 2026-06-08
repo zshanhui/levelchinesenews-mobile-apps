@@ -10,6 +10,8 @@ export const POST_TIMEOUT_MS = 10_000;
 export const TRANSLATION_POST_TIMEOUT_MS = 15_000;
 export const GENERATE_SUMMARY_TIMEOUT_MS = 60_000;
 export const ARTICLE_REQUEST_TIMEOUT_MS = 8000;
+/** Max wait for MP3 load/buffer before reporting playback failure. */
+export const AUDIO_PLAY_LOAD_TIMEOUT_MS = 15_000;
 
 // Articles list
 export const PAGE_SIZE = 15;
@@ -27,6 +29,13 @@ export const THUMB_MAX_HEIGHT = 70;
 export const TRANSLATION_COUNTDOWN_SECONDS = 15;
 
 // Article detail
+/** Public web reader base URL for share links and Android App Links (must match app.json intentFilters). */
+export const READER_WEB_BASE_URL = 'https://reader.levelchinese.app';
+
+export function buildArticleShareUrl(articleId: string): string {
+  return `${READER_WEB_BASE_URL}/article/${articleId}`;
+}
+
 /** Article `FlashList` / `ScrollView` bottom padding: base 32 + after-last-sentence 140 + study region 150. */
 export const EXTRA_BOTTOM_PADDING = 300;
 export const MAX_CACHED_ARTICLE_DETAILS = 500;
@@ -35,6 +44,8 @@ export const ARTICLE_DETAIL_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Font / Settings storage
 export const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';
+export const STORAGE_KEY_ARTICLE_FONT = '@lcn/articleFont';
+export const STORAGE_KEY_REMOTE_FONTS = '@lcn/remoteFonts';
 export const STORAGE_KEY_PINYIN = '@lcn/showPinyin';
 export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';

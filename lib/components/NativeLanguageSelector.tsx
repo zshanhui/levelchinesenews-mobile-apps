@@ -49,9 +49,6 @@ export function NativeLanguageSelector() {
   return (
     <>
       <View style={styles.etchedSection}>
-        <Text style={styles.sectionLabel}>
-          {t('nativeLanguage')}
-        </Text>
         <Text style={styles.nativeLanguageHint}>
           {t('nativeLanguageHint')}
         </Text>
@@ -132,14 +129,9 @@ function createStyles(theme: Theme) {
       borderBottomColor: theme.etchedBorderDark,
       borderRightColor: theme.etchedBorderDark,
     },
-    sectionLabel: {
-      fontSize: 13,
-      color: theme.text,
-    },
     nativeLanguageHint: {
       fontSize: 12,
       color: theme.textSecondary,
-      marginTop: 4,
       lineHeight: 16,
     },
     dropdown: {

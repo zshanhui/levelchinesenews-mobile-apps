@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { capitalizeFirstWord } from '../../lib/text-utils';
 import { useTranslation } from '../../lib/i18n';
 import {
   Linking,
@@ -13,8 +14,12 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
-import { useFont } from '../../lib/FontContext';
+import type {
+  FontSizeLevel,
+  LineSpacingLevel,
+} from '../../lib/FontContext';
+import { ARTICLE_FONT_SIZE_MAP, useFont } from '../../lib/FontContext';
+import { FontSelectorPanel } from '../../lib/components/FontSelectorPanel';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
@@ -39,16 +44,7 @@ const LINE_SPACING_OPTIONS: {
   { value: 'relaxed', labelKey: 'lineSpacingRelaxed', numbersKey: 'lineSpacingNumbersRelaxed' },
 ];
 
-const FONT_SIZE_OPTIONS: {
-  value: FontSizeLevel;
-  label: string;
-}[] = [
-  { value: 'xs', label: '14' },
-  { value: 'sm', label: '16' },
-  { value: 'md', label: '18' },
-  { value: 'lg', label: '20' },
-  { value: 'xl', label: '22' },
-];
+const FONT_SIZE_LEVELS: FontSizeLevel[] = ['xs', 'sm', 'md', 'lg', 'xl'];
 
 export default function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
@@ -56,8 +52,6 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'dev';
   const shouldEnableDebugPanel = process.env.EXPO_PUBLIC_DEBUG === '1';
   const {
-    useNotoSansSC,
-    setUseNotoSansSC,
     showPinyin,
     setShowPinyin,
     lineSpacing,
@@ -109,11 +103,13 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={true}
       >
         <View style={[styles.sectionHeader, styles.sectionHeaderFirst]}>
-          <Text style={styles.sectionHeaderText}>{t('configurePreferences')}</Text>
+          <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('configurePreferences'))}
+          </Text>
         </View>
 
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={styles.settingLabel}>
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
             {t('darkMode')}
           </Text>
           <Switch
@@ -139,9 +135,11 @@ export default function SettingsScreen() {
               <Ionicons name="book-outline" size={20} color={theme.accent} />
             </View>
             <View style={styles.navRowTextGroup}>
-              <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
+              <Text style={[styles.navRowLabel, fancyDisplayFontStyle]}>
+                {capitalizeFirstWord(t('configureLocalDict'))}
+              </Text>
               <Text style={styles.navRowDescription}>
-                {t('downloadAndReset')}
+                {capitalizeFirstWord(t('downloadAndReset'))}
               </Text>
             </View>
           </View>
@@ -155,24 +153,16 @@ export default function SettingsScreen() {
         </Pressable>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>{t('readerPreferences')}</Text>
-        </View>
-
-        <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={styles.settingLabel}>
-            {t('useNotoSansSc')}
+          <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('readerPreferences'))}
           </Text>
-          <Switch
-            value={useNotoSansSC}
-            onValueChange={setUseNotoSansSC}
-            trackColor={{ false: theme.border, true: theme.accent + '66' }}
-            thumbColor={useNotoSansSC ? theme.accent : theme.textMuted}
-          />
         </View>
 
+        <FontSelectorPanel />
+
         <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={styles.settingLabel}>
-            {t('showPinyin')}
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('showPinyin'))}
           </Text>
           <Switch
             value={showPinyin}
@@ -183,8 +173,8 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={styles.sectionLabel}>
-            {t('adjustLineSpacing')}
+          <Text style={[styles.sectionLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('adjustLineSpacing'))}
           </Text>
           <View style={styles.segmentedRow}>
             {LINE_SPACING_OPTIONS.map((opt) => (
@@ -219,27 +209,27 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.etchedSection}>
-          <Text style={styles.sectionLabel}>
-            {t('adjustFontSize')}
+          <Text style={[styles.sectionLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('adjustFontSize'))}
           </Text>
           <View style={styles.segmentedRow}>
-            {FONT_SIZE_OPTIONS.map((opt, index) => (
+            {FONT_SIZE_LEVELS.map((level, index) => (
               <Pressable
-                key={opt.value}
-                onPress={() => setFontSize(opt.value)}
+                key={level}
+                onPress={() => setFontSize(level)}
                 style={[
                   styles.segmentButton,
-                  index === FONT_SIZE_OPTIONS.length - 1 && styles.segmentButtonLast,
-                  fontSize === opt.value && styles.segmentButtonSelected,
+                  index === FONT_SIZE_LEVELS.length - 1 && styles.segmentButtonLast,
+                  fontSize === level && styles.segmentButtonSelected,
                 ]}
               >
                 <Text
                   style={[
                     styles.segmentLabel,
-                    fontSize === opt.value && styles.segmentLabelSelected,
+                    fontSize === level && styles.segmentLabelSelected,
                   ]}
                 >
-                  {opt.label}
+                  {ARTICLE_FONT_SIZE_MAP[level]}
                 </Text>
               </Pressable>
             ))}

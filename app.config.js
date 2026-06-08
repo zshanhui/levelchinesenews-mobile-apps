@@ -10,10 +10,20 @@ const glitchTipUrl = withTrailingSlash(
   process.env.GLITCHTIP_URL ?? 'https://app.glitchtip.com/',
 );
 
+/** Must match READER_WEB_BASE_URL in lib/constants.ts and android.intentFilters host. */
+const readerWebOrigin = 'https://reader.levelchinese.app';
+
 module.exports = {
   expo: {
     ...base.expo,
     plugins: [
+      [
+        'expo-router',
+        {
+          origin: readerWebOrigin,
+        },
+      ],
+      'expo-audio',
       ...(base.expo.plugins ?? []),
       [
         '@sentry/react-native/expo',

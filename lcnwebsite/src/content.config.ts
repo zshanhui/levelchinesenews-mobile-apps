@@ -1,6 +1,9 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
+/** Allowed `postType` values in blog frontmatter. */
+const blogPostTypeEnum = z.enum(['news', 'htlarticle', 'newslesson']);
+
 const blog = defineCollection({
   loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
   schema: z.object({
@@ -8,6 +11,8 @@ const blog = defineCollection({
     description: z.string(),
     pubDate: z.date(),
     draft: z.boolean().optional().default(false),
+    lastUpdatedAt: z.date().optional(),
+    postType: blogPostTypeEnum.default('news'),
   }),
 });
 

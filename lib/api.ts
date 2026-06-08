@@ -81,6 +81,15 @@ export function apiWriteUrl(path: string, params?: Record<string, string | numbe
 
 /** Resolve main_image to an absolute URL. When backend uses local storage, it returns paths like /api/v1/images/foo.jpg. */
 export function resolveImageUrl(url: string | null | undefined): string | null {
+  return resolveApiAssetUrl(url);
+}
+
+/** Resolve cached audio `audio_url` (absolute or `/api/v1/audio/*.mp3`) for playback. */
+export function resolveAudioUrl(url: string | null | undefined): string | null {
+  return resolveApiAssetUrl(url);
+}
+
+function resolveApiAssetUrl(url: string | null | undefined): string | null {
   if (!url || !url.trim()) return null;
   const trimmed = url.trim();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
