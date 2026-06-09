@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap');
-
 :root {
   --bg: #f5f0e8;
   --surface: #faf8f4;
@@ -10,6 +8,7 @@
   --text-muted: #8a8278;
   --accent: #8b1a1a;
   --accent-pressed: #6b1212;
+  --font-body: 'Source Han Serif SC VF', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif;
   --font-heading: 'Playfair Display', 'Iowan Old Style', 'Times New Roman', serif;
 }
 
@@ -26,7 +25,7 @@ body {
 }
 
 body {
-  font-family: "Noto Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   font-size: 15px;
@@ -56,11 +55,11 @@ a {
   margin: 0 auto;
 }
 
-/* Blog (listing + posts) and about: 16px body copy; headings keep their own sizes (rem). */
+/* Blog (listing + posts) and about: larger body copy for reading; headings keep their own sizes (rem). */
 .news-wrap,
 .post-wrap,
 .about-wrap {
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .site-header {
