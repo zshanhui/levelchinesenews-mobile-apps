@@ -1,5 +1,5 @@
 ---
-title: 小厂，被困在 AI 时代
+title: 小厂，被困在 AI 时代, HSK5 reading
 description: "为什么小厂互联网公司不容易转型AI - Why smaller Chinese internet companies struggle with AI"
 level: HSK5
 source: https://www.huxiu.com/article/4865449.html
