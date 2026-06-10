@@ -29,3 +29,5 @@ workers/.dev.vars
 drafts/*
 notes/*
 .ideas
+src/content/notes
+.plans/*
