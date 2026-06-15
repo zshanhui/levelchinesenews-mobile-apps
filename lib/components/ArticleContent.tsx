@@ -496,7 +496,7 @@ export function ArticleContent({
   return (
     <FlashList
       ref={listRef}
-      style={[listStyles.listRoot, styleProp]}
+      style={StyleSheet.flatten([listStyles.listRoot, styleProp])}
       data={flatData}
       keyExtractor={keyExtractor}
       renderItem={renderItem}

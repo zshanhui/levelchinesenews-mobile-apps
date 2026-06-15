@@ -108,8 +108,8 @@ function createStyles(theme: Theme) {
     },
     thumbnail: {
       width: THUMB_WIDTH,
+      backgroundColor: theme.border,
       borderRadius: 8,
-      ...block,
     },
     textColumn: {
       flex: 1,

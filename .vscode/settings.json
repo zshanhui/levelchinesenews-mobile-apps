@@ -9,5 +9,14 @@
     "lcnlocaldb",
     "viewability"
   ],
-  "i18n-ally.localesPaths": "lib/i18n"
+  "i18n-ally.localesPaths": "lib/i18n",
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "files.associations": {
+    "**/node_modules/**/tsconfig.json": "jsonc"
+  },
+  "typescript.tsserver.watchOptions": {
+    "excludeDirectories": ["**/node_modules/**"]
+  }
 }

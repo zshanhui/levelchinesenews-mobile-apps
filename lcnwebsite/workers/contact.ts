@@ -1,3 +1,5 @@
+/// <reference path="./worker-configuration.d.ts" />
+
 /**
  * POST application/x-www-form-urlencoded from the static site contact form.
  * Sends email via Resend, then redirects back to the site with ?success=1 or ?error=1.
