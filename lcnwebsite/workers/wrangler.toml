@@ -8,6 +8,7 @@ compatibility_date = "2024-12-01"
 [vars]
 # Recipient inbox for contact submissions
 CONTACT_TO_EMAIL = "shanhui@proton.me"
+BUG_REPORT_EMAIL = "bugreport@levelchinese.app"
 # Sender — must be verified in Resend (add your domain or use Resend onboarding address for testing)
 MAIL_FROM = "LevelChinese News <contact@levelchinese.app>"
 # Match your production site (trailingSlash: never → /contact?…)
