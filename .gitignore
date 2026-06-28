@@ -44,5 +44,3 @@ yarn-error.*
 .java-version
 .localdata/
 *.apk
-
-bugfixagent

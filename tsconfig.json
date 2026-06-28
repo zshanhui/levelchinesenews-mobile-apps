@@ -4,5 +4,5 @@
     "strict": true,
     "jsx": "react-native"
   },
-  "exclude": ["node_modules", "bugfixagent", "lcnwebsite"]
+  "exclude": ["node_modules", "lcnwebsite"]
 }
