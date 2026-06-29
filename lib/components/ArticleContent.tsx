@@ -29,7 +29,6 @@ import type {
 import { useArticleSmartScroll } from '../scrolling-utils';
 import { resolveAudioUrl } from '../api';
 import {
-  DEFAULT_ARTICLE_AUDIO_VOICE_ID,
   getCachedSentenceAudioEntry,
   hasCachedSentenceAudio,
 } from '../useArticleAudio';
@@ -107,8 +106,6 @@ export interface ArticleContentProps {
   articleTranslationsLoading?: boolean;
   /** Cached sentence audio (GET /audio) */
   articleAudio?: ArticleAudioResponse | null;
-  /** App voice key used for `articleAudio` fetch (e.g. `lei-jun`) */
-  audioVoiceId?: string;
   /** True while GET /audio is in flight */
   articleAudioLoading?: boolean;
 }
@@ -140,7 +137,6 @@ export function ArticleContent({
   mergeTranslationFromPost,
   articleTranslationsLoading = false,
   articleAudio = null,
-  audioVoiceId = DEFAULT_ARTICLE_AUDIO_VOICE_ID,
   articleAudioLoading = false,
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
@@ -288,12 +284,12 @@ export function ArticleContent({
 
   const handleAudioPress = useCallback(
     (sentenceKey: string) => {
-      const entry = getCachedSentenceAudioEntry(articleAudio, audioVoiceId, sentenceKey);
+      const entry = getCachedSentenceAudioEntry(articleAudio, sentenceKey);
       const url = resolveAudioUrl(entry?.audio_url);
       if (!url) return;
       playSentenceAudio(sentenceKey, url);
     },
-    [articleAudio, audioVoiceId, playSentenceAudio],
+    [articleAudio, playSentenceAudio],
   );
 
   const stopSentenceAudioRef = useRef(stopSentenceAudio);
@@ -348,7 +344,7 @@ export function ArticleContent({
       const translateIconColor = translationAvailable
         ? theme.error
         : theme.readIndicatorMuted;
-      const audioAvailable = hasCachedSentenceAudio(articleAudio, audioVoiceId, sentenceKey);
+      const audioAvailable = hasCachedSentenceAudio(articleAudio, sentenceKey);
       const audioIconColor = audioAvailable ? theme.error : theme.readIndicatorMuted;
       const sentenceAudioLoading =
         isSelected &&
@@ -413,7 +409,6 @@ export function ArticleContent({
     [
       articleAudio,
       articleAudioLoading,
-      audioVoiceId,
       articleTranslations,
       articleTranslationsLoading,
       bookmarkedSentenceKey,
@@ -465,9 +460,11 @@ export function ArticleContent({
 
   const keyExtractor = useCallback((item: ArticleSentenceListItem) => item.sentenceKey, []);
 
+  // FlashList only re-renders rows when `data` or `extraData` changes. Audio lives
+  // outside row items, so fingerprint voice + sentence keys to bust row memoization.
   const articleAudioCacheKey = useMemo(() => {
     if (!articleAudio?.article_sentence) return '0';
-    return Object.keys(articleAudio.article_sentence).join('|');
+    return `${articleAudio.default_voice_id}\0${Object.keys(articleAudio.article_sentence).join('|')}`;
   }, [articleAudio]);
 
   const listExtraData = useMemo(

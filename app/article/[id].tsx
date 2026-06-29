@@ -122,7 +122,6 @@ export default function ArticleDetailScreen() {
 
   const {
     articleAudio,
-    voiceId: audioVoiceId,
     loading: articleAudioLoading,
     refetch: refetchArticleAudio,
   } = useArticleAudio(id, Boolean(article));
@@ -503,7 +502,6 @@ export default function ArticleDetailScreen() {
                 translationLang={translationLang}
                 articleTranslationsLoading={articleTranslationsLoading}
                 articleAudio={articleAudio}
-                audioVoiceId={audioVoiceId}
                 articleAudioLoading={articleAudioLoading}
                 articleId={id}
                 mergeTranslationFromPost={mergeTranslationFromPost}

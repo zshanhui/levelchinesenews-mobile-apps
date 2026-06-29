@@ -100,15 +100,32 @@ export interface TranslationResponse {
 export interface StoredAudioEntry {
   audio_url: string;
   source_text_hash: string;
-  provider: string;
   content_type: string;
   duration_ms?: number | null;
   created_at: string;
 }
 
+/** POST /api/v1/audio body discriminator; extend when adding request kinds. */
+export enum AudioKind {
+  ArticleSentence = 'article_sentence',
+}
+
+/** POST /api/v1/audio */
+export interface AudioPostResponse {
+  kind: AudioKind;
+  article_id: string;
+  paragraph_index: number;
+  sentence_index: number;
+  voice_id: string;
+  audio_url: string;
+  cached: boolean;
+}
+
 /** GET /api/v1/audio?article_id= — cached sentence audio per voice */
 export interface ArticleAudioResponse {
   article_id: string;
+  /** App voice key for this article (same rule as POST /audio when voice_id is omitted) */
+  default_voice_id: string;
   /** Map sentence key `paragraph_index:sentence_index` → voice_id → entry */
   article_sentence: Record<string, Record<string, StoredAudioEntry>>;
   /** Reserved for whole-article audio; `null` until implemented */
@@ -119,7 +136,6 @@ export interface ArticleAudioResponse {
 export interface TtsVoiceEntry {
   voice_id: string;
   label: string;
-  provider: string;
   is_default: boolean;
 }
 

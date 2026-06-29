@@ -1,8 +1,8 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# EAS uses this file instead of .gitignore when present.
 
 # dependencies
 node_modules/
-.pnpm-store/
 
 # Expo
 .expo/
@@ -45,3 +45,13 @@ yarn-error.*
 .java-version
 .localdata/
 *.apk
+
+# EAS-specific: not needed for mobile builds
+.pnpm-store/
+lcnwebsite/
+.plans/
+.cursor/
+.vscode/
+docs/
+.git
+.git/

@@ -8,6 +8,8 @@ export const REQUEST_TIMEOUT_MS = 3000;
 export const POST_TIMEOUT_MS = 10_000;
 /** POST `/translations` (sentence) — longer than generic POSTs (LLM / network). */
 export const TRANSLATION_POST_TIMEOUT_MS = 15_000;
+/** POST `/audio` (sentence TTS) — generation can be slow. */
+export const AUDIO_POST_TIMEOUT_MS = 45_000;
 export const GENERATE_SUMMARY_TIMEOUT_MS = 60_000;
 export const ARTICLE_REQUEST_TIMEOUT_MS = 8000;
 /** Max wait for MP3 load/buffer before reporting playback failure. */
