@@ -61,8 +61,8 @@ export function useCreateSentenceAudio() {
       try {
         const prev = audioPostLockTail;
         let releaseLock!: () => void;
-        audioPostLockTail = new Promise<void>((r) => {
-          releaseLock = r;
+        audioPostLockTail = new Promise<void>((resolve: () => void) => {
+          releaseLock = resolve;
         });
         await prev;
         try {

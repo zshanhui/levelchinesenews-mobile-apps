@@ -2,7 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "lib": ["DOM", "ESNext"],
+    "target": "ESNext"
   },
   "exclude": ["node_modules", "lcnwebsite"]
 }
