@@ -97,9 +97,9 @@ const SentenceExampleRow = memo(function SentenceExampleRow({
 });
 
 export default function SentenceExamplesScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
 
   const [query, setQuery] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
@@ -353,7 +353,7 @@ export default function SentenceExamplesScreen() {
   );
 }
 
-function createStyles(theme: Theme) {
+function createStyles(theme: Theme, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -397,7 +397,8 @@ function createStyles(theme: Theme) {
       width: 44,
       height: 44,
       borderRadius: 10,
-      backgroundColor: theme.accent,
+      // Solid neon accent reads too bright as a fill in dark mode
+      backgroundColor: isDark ? theme.accentPressed : theme.accent,
       alignItems: 'center',
       justifyContent: 'center',
     },

@@ -22,6 +22,7 @@ import {
 import type { ArticleListItem } from '../types';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { CyberpunkImageOverlay } from './CyberpunkImageOverlay';
 
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
@@ -168,12 +169,15 @@ export function ArticleCard({
           }
         >
           {imageUri ? (
-            <Image
-              source={{ uri: imageUri }}
-              style={[styles.thumbnail, { width: THUMB_WIDTH, height: thumbHeight }]}
-              contentFit="cover"
-              accessibilityIgnoresInvertColors
-            />
+            <>
+              <Image
+                source={{ uri: imageUri }}
+                style={[styles.thumbnail, { width: THUMB_WIDTH, height: thumbHeight }]}
+                contentFit="cover"
+                accessibilityIgnoresInvertColors
+              />
+              {isDark ? <CyberpunkImageOverlay /> : null}
+            </>
           ) : (
             <LinearGradient
               colors={thumbnailGradientColors}

@@ -3,7 +3,7 @@
     "name": "LevelChineseNews",
     "slug": "react-native-apps-lcn",
     "scheme": "lcn",
-    "version": "0.7.2",
+    "version": "0.7.5",
     "orientation": "portrait",
     "icon": "./assets/lcnicons-v4/ios/m1024.png",
     "userInterfaceStyle": "light",

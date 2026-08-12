@@ -1,9 +1,14 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeContext';
+
+function triggerTabHaptic() {
+  void Haptics.selectionAsync().catch(() => {});
+}
 
 /** Extra space below tab icons/labels (safe area is added on top of this). */
 const TAB_BAR_EXTRA_BOTTOM_PADDING = 10;
@@ -65,6 +70,9 @@ export default function TabLayout() {
           paddingBottom: insets.bottom + TAB_BAR_EXTRA_BOTTOM_PADDING,
         },
         sceneStyle: { backgroundColor: theme.background },
+      }}
+      screenListeners={{
+        tabPress: triggerTabHaptic,
       }}
     >
       <Tabs.Screen

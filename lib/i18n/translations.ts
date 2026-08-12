@@ -36,11 +36,11 @@ export const translations = {
     newArticleCreated: 'new article created',
     articleAlreadyCreated:
       'This article was already created — no need to fetch again',
-    fetchAnotherArticle: 'fetch another article',
-    enterUrl: 'Enter a supported url to fetch an article',
+    fetchAnotherArticle: 'Parse another article',
+    enterUrl: 'Parse article url',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'daily limit reached — come back tomorrow',
-    parsesRemaining: '{{remaining}} of {{max}} parses remaining today',
+    parsesRemaining: '{{remaining}} out of {{max}} articles remaining today',
     supportedSites: 'supported sites',
     parseArticleUrl: 'Parse article URL',
     parseNotSupportedOnWeb:
@@ -208,11 +208,11 @@ export const translations = {
     newArticleCreated: 'nuevo artículo creado',
     articleAlreadyCreated:
       'Este artículo ya fue creado — no es necesario analizarlo de nuevo',
-    fetchAnotherArticle: 'analizar otro artículo',
-    enterUrl: 'Introduce una url compatible para obtener un artículo',
+    fetchAnotherArticle: 'Analizar otro artículo',
+    enterUrl: 'Analizar URL del artículo',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'límite diario alcanzado — vuelve mañana',
-    parsesRemaining: '{{remaining}} de {{max}} análisis restantes hoy',
+    parsesRemaining: '{{remaining}} de {{max}} artículos restantes hoy',
     supportedSites: 'sitios compatibles',
     parseArticleUrl: 'Analizar URL del artículo',
     parseNotSupportedOnWeb:
@@ -382,11 +382,11 @@ export const translations = {
     newArticleCreated: 'artikel baharu dicipta',
     articleAlreadyCreated:
       'Artikel ini telah dicipta — tidak perlu dimuat semula',
-    fetchAnotherArticle: 'hurai artikel lain',
-    enterUrl: 'Masukkan url yang disokong untuk memuat artikel',
+    fetchAnotherArticle: 'Hurai artikel lain',
+    enterUrl: 'Hurai URL artikel',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'had harian dicapai — kembali esok',
-    parsesRemaining: '{{remaining}} daripada {{max}} huraian tinggal hari ini',
+    parsesRemaining: '{{remaining}} daripada {{max}} artikel tinggal hari ini',
     supportedSites: 'laman web disokong',
     parseArticleUrl: 'Hurai URL artikel',
     parseNotSupportedOnWeb:
@@ -556,11 +556,11 @@ export const translations = {
     newArticleCreated: 'artikel baru dibuat',
     articleAlreadyCreated:
       'Artikel ini sudah dibuat — tidak perlu diambil lagi',
-    fetchAnotherArticle: 'ambil artikel lain',
-    enterUrl: 'Masukkan URL yang didukung untuk mengambil artikel',
+    fetchAnotherArticle: 'Urai artikel lain',
+    enterUrl: 'Urai URL artikel',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'batas harian tercapai — kembali besok',
-    parsesRemaining: '{{remaining}} dari {{max}} penguraian tersisa hari ini',
+    parsesRemaining: '{{remaining}} dari {{max}} artikel tersisa hari ini',
     supportedSites: 'situs yang didukung',
     parseArticleUrl: 'Urai URL artikel',
     parseNotSupportedOnWeb:
@@ -731,11 +731,11 @@ export const translations = {
     newArticleCreated: 'đã tạo bài viết mới',
     articleAlreadyCreated:
       'Bài viết này đã được tạo — không cần tải lại',
-    fetchAnotherArticle: 'lấy bài viết khác',
-    enterUrl: 'Nhập URL được hỗ trợ để lấy bài viết',
+    fetchAnotherArticle: 'Phân tích bài viết khác',
+    enterUrl: 'Phân tích URL bài viết',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'đã hết hạn mức trong ngày — quay lại vào ngày mai',
-    parsesRemaining: 'hôm nay còn {{remaining}}/{{max}} lần phân tích',
+    parsesRemaining: 'hôm nay còn {{remaining}}/{{max}} bài viết',
     supportedSites: 'trang được hỗ trợ',
     parseArticleUrl: 'Phân tích URL bài viết',
     parseNotSupportedOnWeb:
@@ -906,11 +906,11 @@ export const translations = {
     newArticleCreated: 'создана новая статья',
     articleAlreadyCreated:
       'Эта статья уже создана — повторно загружать не нужно',
-    fetchAnotherArticle: 'загрузить другую статью',
-    enterUrl: 'Введите поддерживаемый URL, чтобы загрузить статью',
+    fetchAnotherArticle: 'Разобрать другую статью',
+    enterUrl: 'Разобрать URL статьи',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'дневной лимит исчерпан — зайдите завтра',
-    parsesRemaining: 'сегодня осталось {{remaining}} из {{max}} разборов',
+    parsesRemaining: 'сегодня осталось {{remaining}} из {{max}} статей',
     supportedSites: 'поддерживаемые сайты',
     parseArticleUrl: 'Разобрать URL статьи',
     parseNotSupportedOnWeb:
@@ -1081,11 +1081,11 @@ export const translations = {
     newArticleCreated: 'تم إنشاء مقال جديد',
     articleAlreadyCreated:
       'تم إنشاء هذا المقال مسبقًا — لا حاجة لجلبها مرة أخرى',
-    fetchAnotherArticle: 'جلب مقال آخر',
-    enterUrl: 'أدخل رابطًا مدعومًا لجلب مقال',
+    fetchAnotherArticle: 'تحليل مقال آخر',
+    enterUrl: 'تحليل رابط المقال',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: 'تم الوصول للحد اليومي — عد غدًا',
-    parsesRemaining: '{{remaining}} من {{max}} تحليلات متبقية اليوم',
+    parsesRemaining: '{{remaining}} من {{max}} مقالات متبقية اليوم',
     supportedSites: 'المواقع المدعومة',
     parseArticleUrl: 'تحليل رابط المقال',
     parseNotSupportedOnWeb:
@@ -1254,10 +1254,10 @@ export const translations = {
     newArticleCreated: '新文章已创建',
     articleAlreadyCreated: '该文章已创建 — 无需再次获取',
     fetchAnotherArticle: '解析另一篇文章',
-    enterUrl: '输入支持的链接以获取文章',
+    enterUrl: '解析文章链接',
     urlPlaceholder: 'https://zaobao.com/...',
     dailyLimitReached: '今日限额已用完 — 明天再来',
-    parsesRemaining: '今日剩余 {{remaining}}/{{max}} 次解析',
+    parsesRemaining: '今日剩余 {{remaining}}/{{max}} 篇文章',
     supportedSites: '支持的网站',
     parseArticleUrl: '解析文章链接',
     parseNotSupportedOnWeb:
