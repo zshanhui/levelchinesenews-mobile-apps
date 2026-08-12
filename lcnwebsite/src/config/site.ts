@@ -1,5 +1,5 @@
 export const siteConfig = {
-  brandName: 'LevelChinese',
+  brandName: 'LevelChineseNews',
   contactEmail: 'contact@levelchinese.app',
   cta: {
     expoLabel: 'Download Android v0.7.6 apk',

@@ -109,64 +109,151 @@ const latestPostDate = latestPost
     </div>
   </section>
 
-  <section class="section landing-section">
-    <h2>Key Features</h2>
-    <div class="features-grid">
-      <article class="card">
-        <h3>Real News, Most Content</h3>
-        <p>We only support real news sites from genuine sources and current events.</p>
+  <section class="section landing-section features-showcase" aria-labelledby="features-heading">
+    <header class="features-intro">
+      <h2 id="features-heading">Key Features</h2>
+      <p>Reading tools that stay out of the way — until you need them.</p>
+    </header>
+
+    <div class="feature-rows">
+      <article class="feature-row">
+        <div class="feature-media">
+          <img
+            src="/screenshots/showcase/articles-list-01.jpg"
+            alt="News article list with fresh daily Chinese content"
+            loading="lazy"
+            width="540"
+            height="1170"
+          />
+        </div>
+        <div class="feature-copy">
+          <span class="feature-index" aria-hidden="true">01</span>
+          <h3>Real news, every day</h3>
+          <p>Genuine articles from publishers like Zaobao and Huaqiu — current events, not textbook drills.</p>
+        </div>
       </article>
-      <article class="card">
-        <h3>Best Chinese Reader for Learners</h3>
-        <p>The reader is crafted for Chinese learners, with light and dark mode plus adjustable spacing and font size.</p>
+
+      <article class="feature-row feature-row--reverse">
+        <div class="feature-media">
+          <img
+            src="/screenshots/showcase/reader-screen-01.jpg"
+            alt="Article reader with pinyin and popup dictionary"
+            loading="lazy"
+            width="540"
+            height="1170"
+          />
+        </div>
+        <div class="feature-copy">
+          <span class="feature-index" aria-hidden="true">02</span>
+          <h3>Reader built for learners</h3>
+          <p>Pinyin and word segmentation toggle on or off. Light and dark mode, with font size and spacing you control.</p>
+        </div>
       </article>
-      <article class="card">
-        <h3>Local Dictionary</h3>
-        <p>Built-in offline-first dictionary with Pleco integration support.</p>
+
+      <article class="feature-row">
+        <div class="feature-media">
+          <img
+            src="/screenshots/showcase/article-reader-translation-02.jpg"
+            alt="Sentence-level translation beside Chinese text"
+            loading="lazy"
+            width="540"
+            height="1170"
+          />
+        </div>
+        <div class="feature-copy">
+          <span class="feature-index" aria-hidden="true">03</span>
+          <h3>Translate any sentence</h3>
+          <p>One tap for high-quality translations in English, Spanish, Indonesian, Malay, Russian, Arabic, and more.</p>
+        </div>
       </article>
-      <article class="card">
-        <h3>Pinyin and Segmentation</h3>
-        <p>Chinese is hard, so segmentation and pinyin can be turned on or off while reading.</p>
+
+      <article class="feature-row feature-row--reverse">
+        <div class="feature-media">
+          <img
+            src="/screenshots/release-v0.7/reader-screen-audiopb.jpg"
+            alt="Tap speaker icon to hear a sentence read aloud"
+            loading="lazy"
+            width="540"
+            height="1170"
+          />
+        </div>
+        <div class="feature-copy">
+          <span class="feature-index" aria-hidden="true">04</span>
+          <h3>Hear every sentence</h3>
+          <p>Sentence audio is available across articles — tap the speaker to hear Mandarin read aloud as you study.</p>
+        </div>
       </article>
-      <article class="card">
-        <h3>Sentence Level Translations</h3>
-        <p>High-quality translations for every sentence in English, Spanish, Indonesian Malay, Russian, and Arabic.</p>
+
+      <article class="feature-row">
+        <div class="feature-media">
+          <img
+            src="/screenshots/showcase/lcn-example-sentences-search.jpg"
+            alt="Search example sentences by Chinese word"
+            loading="lazy"
+            width="540"
+            height="1170"
+          />
+        </div>
+        <div class="feature-copy">
+          <span class="feature-index" aria-hidden="true">05</span>
+          <h3>Find example sentences</h3>
+          <p>Search any Chinese word and open real news sentences from our corpus, then jump into the full article.</p>
+        </div>
       </article>
-      <article class="card">
-        <h3>Place Bookmarks</h3>
-        <p>Bookmark the exact sentence so you can jump back to where you left off in long articles.</p>
-      </article>
-      <article class="card">
-        <h3>Built to be Offline and Privacy First</h3>
-        <p>Most features work offline and your data stays on your device, not on our servers.</p>
-      </article>
-      <article class="card">
-        <h3>Never Ads, Always Free and Open</h3>
-        <p>The app will never have ads, and most features remain free. The project is open source.</p>
+
+      <article class="feature-row feature-row--reverse">
+        <div class="feature-media">
+          <img
+            src="/screenshots/showcase/local-dict-settings.jpg"
+            alt="Offline local dictionary settings with CE-DICT"
+            loading="lazy"
+            width="540"
+            height="1170"
+          />
+        </div>
+        <div class="feature-copy">
+          <span class="feature-index" aria-hidden="true">06</span>
+          <h3>Dictionary that works offline</h3>
+          <p>Built-in CE-DICT lookups on device, plus Pleco integration when you want a deeper dive.</p>
+        </div>
       </article>
     </div>
+
+    <ul class="trust-strip" aria-label="Product principles">
+      <li>
+        <strong>Sentence bookmarks</strong>
+        <span>Pick up exactly where you left off</span>
+      </li>
+      <li>
+        <strong>Offline &amp; private</strong>
+        <span>Your data stays on your device</span>
+      </li>
+      <li>
+        <strong>Free &amp; open</strong>
+        <span>No ads. Most features stay free</span>
+      </li>
+    </ul>
   </section>
 
-  <section class="section landing-section">
-    <h2>Features Planned</h2>
-    <div class="features-grid">
-      <article class="card">
-        <h3>Simplify Articles (coming soon)</h3>
-        <p>Use AI to simplify news articles at 1x and 2x levels, making them easier for HSK4-HSK6 readers.</p>
-      </article>
-      <article class="card">
-        <h3>Anki Integration (coming soon)</h3>
-        <p>Export words with sentence context and definitions to Anki in one click.</p>
-      </article>
-      <article class="card">
-        <h3>Article Vocab Preview</h3>
-        <p>Review new words, including person, place, and organization names before reading.</p>
-      </article>
-      <article class="card">
-        <h3>High Quality Audio</h3>
-        <p>We are building high-quality read-along audio for selected articles.</p>
-      </article>
-    </div>
+  <section class="section landing-section planned-section" aria-labelledby="planned-heading">
+    <header class="features-intro">
+      <h2 id="planned-heading">Coming next</h2>
+      <p>What we are building toward in upcoming releases.</p>
+    </header>
+    <ol class="planned-list">
+      <li>
+        <h3>Simplify articles</h3>
+        <p>AI-assisted 1x and 2x versions of native news for HSK4–HSK6 readers.</p>
+      </li>
+      <li>
+        <h3>Anki integration</h3>
+        <p>Export words with sentence context and definitions in one tap.</p>
+      </li>
+      <li>
+        <h3>Article vocab preview</h3>
+        <p>Scan names, places, and new words before you start reading.</p>
+      </li>
+    </ol>
   </section>
 
   <section class="section landing-section faq">
@@ -238,6 +325,23 @@ const latestPostDate = latestPost
 
   prevButton?.addEventListener('click', () => updateSlides(currentIndex - 1));
   nextButton?.addEventListener('click', () => updateSlides(currentIndex + 1));
+
+  const featureRows = document.querySelectorAll('.feature-row');
+  if ('IntersectionObserver' in window && featureRows.length) {
+    const reveal = new IntersectionObserver(
+      (entries, observer) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.15 },
+    );
+    featureRows.forEach((row) => reveal.observe(row));
+  } else {
+    featureRows.forEach((row) => row.classList.add('is-visible'));
+  }
 </script>
 
 <style>
@@ -614,27 +718,174 @@ const latestPostDate = latestPost
     text-underline-offset: 2px;
   }
 
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    justify-items: stretch;
+  .features-intro {
+    max-width: 36rem;
+    margin-bottom: 1.75rem;
   }
 
-  .features-grid .card {
-    max-width: 600px;
-    width: 100%;
+  .features-showcase > *,
+  .planned-section > * {
+    width: min(900px, 100%);
+    margin-inline: auto;
+  }
+
+  .features-intro h2 {
+    margin-bottom: 0.4rem;
+  }
+
+  .features-intro p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1.02rem;
+    line-height: 1.45;
+  }
+
+  .feature-rows {
+    display: grid;
+    gap: 2.25rem;
+  }
+
+  .feature-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 22rem);
+    justify-content: center;
+    column-gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.55s ease,
+      transform 0.55s ease;
+  }
+
+  .feature-row.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .feature-row--reverse {
+    grid-template-columns: minmax(0, 22rem) auto;
+  }
+
+  .feature-row--reverse .feature-media {
+    order: 2;
+  }
+
+  .feature-row--reverse .feature-copy {
+    order: 1;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .feature-row--reverse .feature-index {
+    margin-inline: 0;
+  }
+
+  .feature-media {
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .feature-media img {
+    width: min(100%, 250px);
+    height: auto;
+    max-height: min(68vh, 520px);
+    aspect-ratio: 9 / 19.5;
+    object-fit: cover;
+    object-position: top center;
+    border-radius: 28px;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, var(--accent) 12%);
+    background: var(--surface);
+    box-shadow: 0 18px 40px -28px rgba(44, 36, 25, 0.55);
+    transition: transform 0.35s ease;
+  }
+
+  .feature-row:hover .feature-media img {
+    transform: translateY(-4px);
+  }
+
+  .feature-copy {
+    min-width: 0;
+    max-width: 22rem;
+  }
+
+  .feature-index {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .feature-copy h3 {
+    margin: 0 0 0.45rem;
+    font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+    line-height: 1.15;
+  }
+
+  .feature-copy p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .trust-strip {
+    list-style: none;
+    margin: 2.4rem 0 0;
+    padding: 1.1rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  }
+
+  .trust-strip li {
+    display: grid;
+    gap: 0.2rem;
     min-width: 0;
   }
 
-  .features-grid h3,
-  .qa h3 {
-    margin: 0 0 0.35rem;
-    font-size: 0.98rem;
+  .trust-strip strong {
+    font-family: var(--font-heading);
+    font-size: 1.02rem;
+    color: var(--text);
+    font-weight: 700;
   }
 
-  .features-grid p,
-  .qa p {
+  .trust-strip span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .planned-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .planned-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+    gap: 1rem;
+    align-items: baseline;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .planned-list h3 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+
+  .planned-list p {
     margin: 0;
   }
 
@@ -646,6 +897,27 @@ const latestPostDate = latestPost
     margin-top: 0.6rem;
   }
 
+  .qa h3 {
+    margin: 0 0 0.35rem;
+    font-size: 0.98rem;
+  }
+
+  .qa p {
+    margin: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feature-row {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+
+    .feature-row:hover .feature-media img {
+      transform: none;
+    }
+  }
+
   @media (max-width: 767px) {
     .hero {
       grid-template-columns: 1fr;
@@ -653,8 +925,38 @@ const latestPostDate = latestPost
   }
 
   @media (max-width: 900px) {
-    .features-grid {
+    .feature-row,
+    .feature-row--reverse {
       grid-template-columns: 1fr;
+      gap: 1rem;
+      text-align: center;
+      justify-items: center;
+    }
+
+    .feature-row--reverse .feature-media,
+    .feature-row--reverse .feature-copy {
+      order: initial;
+      text-align: center;
+      justify-self: center;
+    }
+
+    .feature-row--reverse .feature-index {
+      margin-inline: auto;
+    }
+
+    .feature-media img {
+      width: min(100%, 240px);
+    }
+
+    .trust-strip {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+      text-align: center;
+    }
+
+    .planned-list li {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
     }
   }
 
@@ -747,9 +1049,17 @@ const latestPostDate = latestPost
       -webkit-hyphens: auto;
     }
 
-    .features-grid h3,
+    .feature-copy h3 {
+      font-size: clamp(1.2rem, 5vw, 1.45rem);
+    }
+
     .qa h3 {
       font-size: clamp(0.95rem, 3.5vw, 1.02rem);
+    }
+
+    .features-intro {
+      text-align: center;
+      margin-inline: auto;
     }
   }
 </style>
