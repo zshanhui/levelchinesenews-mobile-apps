@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '../config/site';
+import faq from '../config/faq.json';
 
 const expoUrl = siteConfig.cta.expoUrl.trim();
 // const githubUrl = siteConfig.cta.githubUrl.trim();
@@ -258,13 +259,21 @@ const latestPostDate = latestPost
 
   <section class="section landing-section faq">
     <h2>Frequent Ask Questions</h2>
-    <div class="card qa">
-      <h3>What platforms are supported?</h3>
-      <p>LevelChinese News is built for Android, iOS, and Web.</p>
-    </div>
-    <div class="card qa">
-      <h3>What news sources are supported?</h3>
-      <p>We source from major news publishers such as Zaobao and Huaqiu, and keep adding more.</p>
+    {
+      faq.map((item) => (
+        <div class="card qa">
+          <h3>{item.question}</h3>
+          <p>{item.answer}</p>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="section landing-section contact-cta" aria-labelledby="contact-cta-heading">
+    <div class="contact-cta-inner">
+      <h2 id="contact-cta-heading">Have feedback or a question?</h2>
+      <p>We read every message — tell us what would help your Chinese reading most.</p>
+      <a class="button button-primary" href="/contact">Contact us</a>
     </div>
   </section>
 </BaseLayout>
@@ -723,10 +732,19 @@ const latestPostDate = latestPost
     margin-bottom: 1.75rem;
   }
 
-  .features-showcase > *,
-  .planned-section > * {
+  .features-showcase > * {
     width: min(900px, 100%);
     margin-inline: auto;
+  }
+
+  .planned-section > * {
+    max-width: 800px;
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .planned-section .features-intro {
+    max-width: 800px;
   }
 
   .features-intro h2 {
@@ -893,17 +911,51 @@ const latestPostDate = latestPost
     margin-bottom: 0.4rem;
   }
 
+  .faq > * {
+    max-width: 800px;
+    margin-inline: auto;
+  }
+
+  .faq .card.qa {
+    padding: 0.7rem 0.85rem;
+  }
+
   .faq .qa + .qa {
-    margin-top: 0.6rem;
+    margin-top: 0.5rem;
   }
 
   .qa h3 {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.25rem;
     font-size: 0.98rem;
   }
 
   .qa p {
     margin: 0;
+  }
+
+  .contact-cta-inner {
+    max-width: 800px;
+    margin-inline: auto;
+    padding: 1.35rem 0 0.4rem;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+    text-align: center;
+  }
+
+  .contact-cta-inner h2 {
+    margin: 0 0 0.4rem;
+    font-size: clamp(1.28rem, 2.2vw, 1.72rem);
+  }
+
+  .contact-cta-inner p {
+    margin: 0 auto 0.95rem;
+    max-width: 36rem;
+    color: var(--text-secondary);
+  }
+
+  .contact-cta-inner .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   @media (prefers-reduced-motion: reduce) {

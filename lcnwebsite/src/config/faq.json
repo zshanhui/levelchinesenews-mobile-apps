@@ -1,0 +1,26 @@
+[
+  {
+    "question": "What platforms are supported?",
+    "answer": "LevelChinese News is available now for Android. iOS, and Web version is being developed."
+  },
+  {
+    "question": "What news sources are supported?",
+    "answer": "We source from major news publishers such as Zaobao, thepaper.cn and other news media sites and blogs, and keep adding more."
+  },
+  {
+    "question": "Is the app free?",
+    "answer": "Yes. There are no ads, and most features stay free. The project is also open source."
+  },
+  {
+    "question": "Does it work offline?",
+    "answer": "Yes. Saved articles, the local dictionary, and most reading tools work offline. Your data stays on your device."
+  },
+  {
+    "question": "Who is this app for?",
+    "answer": "It is built for intermediate learners (around HSK4–HSK6) who want to read real native news with pinyin, dictionary, translations, and audio support."
+  },
+  {
+    "question": "What is the best way to learn to read Chinese?",
+    "answer": "The best way to learn to read Chinese is by reading what you enjoy that is a little above our reading level. We are working on aggregating and and creating content of all levels from intermediate to advance."
+  }
+]
