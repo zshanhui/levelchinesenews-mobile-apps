@@ -29,21 +29,25 @@ export const siteConfig = {
       alt: 'Saved articles to read later',
     },
     {
-      src: '/screenshots/showcase/settings-screen-01.jpg',
-      alt: 'Adjust text size, spacing, and native language on settings screen'
+      src: "/screenshots/showcase/lcn-example-sentences-search.jpg",
+      alt: "Search example sentences for Chinese words you want to learn",
     },
+    // {
+    //   src: '/screenshots/showcase/settings-screen-01.jpg',
+    //   alt: 'Adjust text size, spacing, and native language on settings screen'
+    // },
     {
       src: '/screenshots/showcase/local-dict-settings.jpg',
       alt: 'Offline local dictionary with 115,000 words from CE-DICT',
     },
-    {
-      src: '/screenshots/showcase/settings-native-languages-v061.jpg',
-      alt: 'Supports 8+ native languages with translation support, more to be added',
-    },
-    {
-      src: '/screenshots/showcase/article-parse-created-01.jpg',
-      alt: 'Parse news articles you are interested in reading',
-    },
+    // {
+    //   src: '/screenshots/showcase/settings-native-languages-v061.jpg',
+    //   alt: 'Supports 8+ native languages with translation support, more to be added',
+    // },
+    // {
+    //   src: '/screenshots/showcase/article-parse-created-01.jpg',
+    //   alt: 'Parse news articles you are interested in reading',
+    // },
     {
       src: '/screenshots/showcase/articles-list-01.jpg',
       alt: 'Always fresh news article content, added daily',
