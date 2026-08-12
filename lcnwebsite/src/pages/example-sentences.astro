@@ -1,0 +1,855 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export const prerender = true;
+---
+
+<BaseLayout
+  title="Chinese Example Sentences | LevelChinese News"
+  description="Search real Chinese example sentences from native news articles."
+>
+  <section class="container sentence-search-page">
+    <header class="page-heading">
+      <p class="eyebrow">Learn from real news</p>
+      <h1>Sentence examples</h1>
+      <p>Search a Chinese word to see how it is used in native-level articles.</p>
+    </header>
+
+    <form class="search-form" id="sentence-search-form" role="search">
+      <label class="input-shell" for="sentence-search">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m16.2 16.2 4 4"></path>
+        </svg>
+        <input
+          id="sentence-search"
+          name="search"
+          type="search"
+          placeholder="Search a Chinese word"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+        />
+        <button class="clear-button" id="clear-search" type="button" aria-label="Clear search" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="m9 9 6 6M15 9l-6 6"></path>
+          </svg>
+        </button>
+      </label>
+      <button class="search-button" id="search-button" type="submit" aria-label="Search" disabled>
+        <svg class="search-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.5"></circle>
+          <path d="m15.5 15.5 4.5 4.5"></path>
+        </svg>
+        <span class="button-spinner" aria-hidden="true" hidden></span>
+      </button>
+    </form>
+
+    <div class="error-banner" id="search-error" role="alert" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7v6M12 17h.01"></path>
+      </svg>
+      <span id="search-error-text"></span>
+    </div>
+
+    <section class="recent-section" id="recent-section" aria-labelledby="recent-heading" hidden>
+      <h2 id="recent-heading">Recent searches</h2>
+      <div class="recent-chips" id="recent-searches"></div>
+    </section>
+
+    <p class="loading-message" id="search-loading" role="status" hidden>
+      <span class="loading-spinner" aria-hidden="true"></span>
+      Searching sentences…
+    </p>
+
+    <section class="results-section" id="results-section" aria-live="polite" hidden>
+      <header class="result-meta">
+        <div class="result-word-group">
+          <h2 id="result-word"></h2>
+          <p id="result-details" hidden></p>
+        </div>
+        <p id="result-count"></p>
+      </header>
+
+      <div class="sentence-list" id="sentence-list"></div>
+      <p class="empty-message" id="empty-message" hidden>No sentences found for this word.</p>
+      <button class="load-more-button" id="load-more" type="button" hidden>
+        Load more examples
+      </button>
+    </section>
+
+    <noscript>
+      <p class="error-banner noscript-message">
+        JavaScript is required to search example sentences on this static page.
+      </p>
+    </noscript>
+  </section>
+</BaseLayout>
+
+<script>
+  interface SentenceItem {
+    sentence_id: string;
+    article_id: string;
+    paragraph_index: number;
+    sentence_index: number;
+    sentence_text: string;
+  }
+
+  interface SearchResponse {
+    word: string;
+    pinyin?: string;
+    hsk_level?: number | null;
+    total: number;
+    page: number;
+    page_size: number;
+    items: SentenceItem[];
+  }
+
+  const API_URL = 'https://api-mig4242.levelchinese.app/api/v1/sentences';
+  const READER_URL = 'https://reader.levelchinese.app/article';
+  const PAGE_SIZE = 25;
+  const MIN_SENTENCE_LENGTH = 12;
+  const RECENT_SEARCHES_KEY = 'lcn:recent-sentence-searches';
+  const MAX_RECENT_SEARCHES = 20;
+
+  const form = document.querySelector<HTMLFormElement>('#sentence-search-form')!;
+  const input = document.querySelector<HTMLInputElement>('#sentence-search')!;
+  const searchButton = document.querySelector<HTMLButtonElement>('#search-button')!;
+  const searchButtonIcon = document.querySelector<SVGElement>('.search-button-icon')!;
+  const buttonSpinner = document.querySelector<HTMLElement>('.button-spinner')!;
+  const clearButton = document.querySelector<HTMLButtonElement>('#clear-search')!;
+  const errorBanner = document.querySelector<HTMLElement>('#search-error')!;
+  const errorText = document.querySelector<HTMLElement>('#search-error-text')!;
+  const recentSection = document.querySelector<HTMLElement>('#recent-section')!;
+  const recentSearches = document.querySelector<HTMLElement>('#recent-searches')!;
+  const loadingMessage = document.querySelector<HTMLElement>('#search-loading')!;
+  const resultsSection = document.querySelector<HTMLElement>('#results-section')!;
+  const resultWord = document.querySelector<HTMLElement>('#result-word')!;
+  const resultDetails = document.querySelector<HTMLElement>('#result-details')!;
+  const resultCount = document.querySelector<HTMLElement>('#result-count')!;
+  const sentenceList = document.querySelector<HTMLElement>('#sentence-list')!;
+  const emptyMessage = document.querySelector<HTMLElement>('#empty-message')!;
+  const loadMoreButton = document.querySelector<HTMLButtonElement>('#load-more')!;
+
+  let activeWord = '';
+  let loadedItemCount = 0;
+  let visibleItemCount = 0;
+  let totalItemCount = 0;
+  let currentPage = 0;
+  let searching = false;
+  let loadingMore = false;
+  let requestController: AbortController | null = null;
+
+  function isChineseWord(value: string): boolean {
+    return /^[\u3400-\u9fff]+$/.test(value);
+  }
+
+  function updateInputControls() {
+    const hasQuery = input.value.length > 0;
+    clearButton.hidden = !hasQuery;
+    searchButton.disabled = searching || !input.value.trim();
+    input.disabled = searching;
+    searchButtonIcon.toggleAttribute('hidden', searching);
+    buttonSpinner.hidden = !searching;
+  }
+
+  function setError(message = '') {
+    errorText.textContent = message;
+    errorBanner.hidden = !message;
+  }
+
+  function resetResults() {
+    activeWord = '';
+    loadedItemCount = 0;
+    visibleItemCount = 0;
+    totalItemCount = 0;
+    currentPage = 0;
+    loadingMore = false;
+    sentenceList.replaceChildren();
+    resultsSection.hidden = true;
+    emptyMessage.hidden = true;
+    loadMoreButton.hidden = true;
+    loadingMessage.hidden = true;
+  }
+
+  function updateSearchUrl(word: string, replace = false) {
+    const url = new URL(window.location.href);
+    if (word) {
+      url.searchParams.set('search', word);
+    } else {
+      url.searchParams.delete('search');
+    }
+    window.history[replace ? 'replaceState' : 'pushState']({}, '', url);
+  }
+
+  function loadRecentSearches(): string[] {
+    try {
+      const stored = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) ?? '[]');
+      if (!Array.isArray(stored)) return [];
+      return stored
+        .filter((word): word is string => typeof word === 'string' && isChineseWord(word))
+        .slice(0, MAX_RECENT_SEARCHES);
+    } catch {
+      return [];
+    }
+  }
+
+  function saveRecentSearch(word: string) {
+    const recent = [word, ...loadRecentSearches().filter((item) => item !== word)]
+      .slice(0, MAX_RECENT_SEARCHES);
+    try {
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent));
+    } catch {
+      // Searching still works when storage is unavailable.
+    }
+  }
+
+  function renderRecentSearches() {
+    recentSearches.replaceChildren();
+    const recent = loadRecentSearches();
+    recentSection.hidden = Boolean(activeWord) || searching || recent.length === 0;
+
+    for (const word of recent) {
+      const button = document.createElement('button');
+      button.className = 'recent-chip';
+      button.type = 'button';
+      button.textContent = word;
+      button.setAttribute('aria-label', `Search ${word}`);
+      button.addEventListener('click', () => {
+        input.value = word;
+        updateInputControls();
+        void runSearch(word, true);
+      });
+      recentSearches.append(button);
+    }
+  }
+
+  async function fetchPage(word: string, page: number, signal: AbortSignal): Promise<SearchResponse> {
+    const url = new URL(API_URL);
+    url.searchParams.set('word', word);
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('page_size', String(PAGE_SIZE));
+
+    const response = await fetch(url, { signal });
+    if (!response.ok) {
+      throw new Error(`The sentence search service returned ${response.status}.`);
+    }
+
+    const data = await response.json() as SearchResponse;
+    if (!data || !Array.isArray(data.items)) {
+      throw new Error('The sentence search service returned an unexpected response.');
+    }
+    return data;
+  }
+
+  function appendHighlightedText(container: HTMLElement, text: string, word: string) {
+    let start = 0;
+    let matchIndex = text.indexOf(word);
+
+    while (matchIndex !== -1) {
+      if (matchIndex > start) {
+        container.append(document.createTextNode(text.slice(start, matchIndex)));
+      }
+
+      const highlight = document.createElement('mark');
+      highlight.textContent = word;
+      container.append(highlight);
+      start = matchIndex + word.length;
+      matchIndex = text.indexOf(word, start);
+    }
+
+    if (start < text.length) {
+      container.append(document.createTextNode(text.slice(start)));
+    }
+  }
+
+  function createSentenceCard(item: SentenceItem, word: string): HTMLAnchorElement {
+    const card = document.createElement('a');
+    card.className = 'sentence-card';
+    const articleUrl = new URL(`${READER_URL}/${encodeURIComponent(item.article_id)}`);
+    articleUrl.searchParams.set('sentenceKey', `${item.paragraph_index}:${item.sentence_index}`);
+    card.href = articleUrl.toString();
+    card.setAttribute('aria-label', `Read article containing ${item.sentence_text}`);
+
+    const sentence = document.createElement('p');
+    sentence.className = 'sentence-text';
+    appendHighlightedText(sentence, item.sentence_text, word);
+
+    const hint = document.createElement('span');
+    hint.className = 'read-article';
+    hint.innerHTML = 'read article <span aria-hidden="true">→</span>';
+
+    card.append(sentence, hint);
+    return card;
+  }
+
+  function appendResults(items: SentenceItem[], word: string) {
+    const visibleItems = items.filter((item) => item.sentence_text.length >= MIN_SENTENCE_LENGTH);
+    const fragment = document.createDocumentFragment();
+
+    for (const item of visibleItems) {
+      fragment.append(createSentenceCard(item, word));
+    }
+
+    visibleItemCount += visibleItems.length;
+    sentenceList.append(fragment);
+  }
+
+  function renderResultMeta(data: SearchResponse) {
+    const details: string[] = [];
+    if (data.pinyin) details.push(data.pinyin);
+    if (data.hsk_level != null) details.push(`HSK ${data.hsk_level}`);
+
+    resultWord.textContent = data.word;
+    resultDetails.textContent = details.join(' · ');
+    resultDetails.hidden = details.length === 0;
+    resultCount.textContent = `${data.total} example${data.total === 1 ? '' : 's'}`;
+  }
+
+  function updateResultFooter() {
+    const hasMore = loadedItemCount < totalItemCount;
+    emptyMessage.hidden = visibleItemCount > 0 || hasMore;
+    loadMoreButton.hidden = !hasMore;
+    loadMoreButton.disabled = loadingMore;
+    loadMoreButton.textContent = loadingMore ? 'Loading…' : 'Load more examples';
+  }
+
+  async function runSearch(rawWord: string, shouldUpdateUrl: boolean) {
+    const word = rawWord.trim();
+    requestController?.abort();
+    setError();
+
+    if (!word) {
+      resetResults();
+      renderRecentSearches();
+      return;
+    }
+
+    if (shouldUpdateUrl) updateSearchUrl(word);
+
+    if (!isChineseWord(word)) {
+      resetResults();
+      setError('Enter a Chinese word using Chinese characters only—no Latin letters, numbers, or punctuation.');
+      renderRecentSearches();
+      return;
+    }
+
+    input.value = word;
+    const controller = new AbortController();
+    requestController = controller;
+    resetResults();
+    searching = true;
+    recentSection.hidden = true;
+    loadingMessage.hidden = false;
+    updateInputControls();
+
+    try {
+      const data = await fetchPage(word, 1, controller.signal);
+      activeWord = data.word || word;
+      currentPage = data.page;
+      loadedItemCount = data.items.length;
+      totalItemCount = data.total;
+      renderResultMeta(data);
+      appendResults(data.items, activeWord);
+      resultsSection.hidden = false;
+      saveRecentSearch(activeWord);
+      updateResultFooter();
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') return;
+      setError(error instanceof Error ? error.message : 'Unable to search sentences right now.');
+    } finally {
+      if (requestController === controller) {
+        requestController = null;
+        searching = false;
+        loadingMessage.hidden = true;
+        updateInputControls();
+        renderRecentSearches();
+      }
+    }
+  }
+
+  async function loadMore() {
+    if (!activeWord || searching || loadingMore || loadedItemCount >= totalItemCount) return;
+
+    requestController?.abort();
+    const controller = new AbortController();
+    requestController = controller;
+    loadingMore = true;
+    setError();
+    updateResultFooter();
+
+    try {
+      const data = await fetchPage(activeWord, currentPage + 1, controller.signal);
+      currentPage = data.page;
+      loadedItemCount += data.items.length;
+      totalItemCount = data.total;
+      appendResults(data.items, activeWord);
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') return;
+      setError(error instanceof Error ? error.message : 'Unable to load more sentences right now.');
+    } finally {
+      if (requestController === controller) {
+        requestController = null;
+        loadingMore = false;
+        updateResultFooter();
+      }
+    }
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void runSearch(input.value, true);
+  });
+
+  input.addEventListener('input', updateInputControls);
+
+  clearButton.addEventListener('click', () => {
+    requestController?.abort();
+    input.value = '';
+    setError();
+    resetResults();
+    updateSearchUrl('');
+    updateInputControls();
+    renderRecentSearches();
+    input.focus();
+  });
+
+  loadMoreButton.addEventListener('click', () => void loadMore());
+
+  window.addEventListener('popstate', () => {
+    const word = new URLSearchParams(window.location.search).get('search')?.trim() ?? '';
+    input.value = word;
+    updateInputControls();
+    if (word) {
+      void runSearch(word, false);
+    } else {
+      requestController?.abort();
+      setError();
+      resetResults();
+      renderRecentSearches();
+    }
+  });
+
+  const initialWord = new URLSearchParams(window.location.search).get('search')?.trim() ?? '';
+  input.value = initialWord;
+  updateInputControls();
+  renderRecentSearches();
+  if (initialWord) void runSearch(initialWord, false);
+</script>
+
+<style>
+  .sentence-search-page {
+    max-width: 860px;
+  }
+
+  .page-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.3rem;
+    color: var(--accent);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .page-heading h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.08;
+  }
+
+  .page-heading > p:last-child {
+    margin: 0.55rem 0 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+
+  .search-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 52px;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .input-shell {
+    display: flex;
+    min-width: 0;
+    min-height: 52px;
+    align-items: center;
+    padding: 0 0.9rem;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .input-shell:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .search-icon {
+    width: 19px;
+    height: 19px;
+    margin-right: 0.65rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-linecap: round;
+    stroke-width: 1.7;
+  }
+
+  .input-shell input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.75rem 0;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    font-size: 1.05rem;
+  }
+
+  .input-shell input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .input-shell input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .clear-button {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .clear-button:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+  }
+
+  .clear-button svg {
+    width: 100%;
+    height: 100%;
+    fill: var(--text-muted);
+    stroke: var(--surface-elevated);
+    stroke-linecap: round;
+    stroke-width: 1.8;
+  }
+
+  .search-button {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    color: white;
+    background: var(--accent);
+    border: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 150ms ease, opacity 150ms ease, transform 150ms ease;
+  }
+
+  .search-button:not(:disabled):hover {
+    background: var(--accent-pressed);
+    transform: translateY(-1px);
+  }
+
+  .search-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .search-button svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2;
+  }
+
+  .button-spinner,
+  .loading-spinner {
+    display: inline-block;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+  }
+
+  .button-spinner {
+    width: 20px;
+    height: 20px;
+  }
+
+  .loading-spinner {
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+  }
+
+  .error-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 1rem;
+    padding: 0.72rem 0.85rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+    border-radius: 10px;
+    font-size: 0.9rem;
+  }
+
+  .error-banner svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.8;
+  }
+
+  .recent-section {
+    margin-top: 1.25rem;
+  }
+
+  .recent-section h2 {
+    margin: 0 0 0.65rem;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.86rem;
+    font-weight: 650;
+  }
+
+  .recent-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .recent-chips :global(.recent-chip) {
+    min-height: 38px;
+    padding: 0.45rem 0.8rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .recent-chips :global(.recent-chip:hover) {
+    color: var(--accent);
+    background: var(--surface-elevated);
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  }
+
+  .loading-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    min-height: 130px;
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  .results-section {
+    margin-top: 1rem;
+  }
+
+  .result-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .result-word-group {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: 0.7rem;
+  }
+
+  .result-word-group h2 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .result-word-group p,
+  .result-meta > p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+  }
+
+  .sentence-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .sentence-list :global(.sentence-card) {
+    display: block;
+    padding: 1.05rem 1.1rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 3%, transparent);
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
+
+  .sentence-list :global(.sentence-card:hover) {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--text) 7%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .sentence-list :global(.sentence-text) {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(1.08rem, 2.4vw, 1.22rem);
+    line-height: 1.7;
+  }
+
+  .sentence-list :global(mark) {
+    padding: 0;
+    color: var(--accent);
+    background: transparent;
+    font-weight: 750;
+  }
+
+  .sentence-list :global(.read-article) {
+    display: block;
+    margin-top: 0.45rem;
+    color: var(--accent);
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .sentence-list :global(.read-article span) {
+    display: inline-block;
+    margin-left: 0.15rem;
+    transition: transform 150ms ease;
+  }
+
+  .sentence-list :global(.sentence-card:hover .read-article span) {
+    transform: translateX(3px);
+  }
+
+  .empty-message {
+    margin: 2rem 0;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .load-more-button {
+    display: block;
+    min-height: 44px;
+    margin: 1.25rem auto 0;
+    padding: 0.6rem 1.1rem;
+    color: var(--accent);
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .load-more-button:not(:disabled):hover {
+    background: var(--surface-elevated);
+    border-color: var(--accent);
+  }
+
+  .load-more-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+
+  .noscript-message {
+    margin-top: 1rem;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .page-heading {
+      margin-bottom: 1.15rem;
+    }
+
+    .page-heading > p:last-child {
+      font-size: 0.94rem;
+    }
+
+    .search-form {
+      grid-template-columns: minmax(0, 1fr) 48px;
+      gap: 0.55rem;
+    }
+
+    .input-shell,
+    .search-button {
+      min-height: 48px;
+      height: 48px;
+    }
+
+    .input-shell {
+      padding: 0 0.7rem;
+    }
+
+    .result-meta {
+      align-items: flex-end;
+    }
+
+    .result-word-group {
+      flex-wrap: wrap;
+      gap: 0.15rem 0.55rem;
+    }
+
+    .sentence-list :global(.sentence-card) {
+      padding: 0.9rem 0.95rem 0.8rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .button-spinner,
+    .loading-spinner {
+      animation-duration: 1.4s;
+    }
+
+    .search-button,
+    .sentence-list :global(.sentence-card),
+    .sentence-list :global(.read-article span) {
+      transition: none;
+    }
+  }
+</style>
