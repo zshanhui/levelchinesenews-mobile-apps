@@ -144,3 +144,23 @@ export interface TtsVoicesResponse {
   default_voice_id: string;
   voices: TtsVoiceEntry[];
 }
+
+/** One indexed sentence from GET /api/v1/sentences?word=… */
+export interface WordSentenceItem {
+  sentence_id: string;
+  article_id: string;
+  paragraph_index: number;
+  sentence_index: number;
+  sentence_text: string;
+}
+
+/** GET /api/v1/sentences?word=… */
+export interface WordSentencesResponse {
+  word: string;
+  pinyin?: string;
+  hsk_level?: number | null;
+  total: number;
+  page: number;
+  page_size: number;
+  items: WordSentenceItem[];
+}

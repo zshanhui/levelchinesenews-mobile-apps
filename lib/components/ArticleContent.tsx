@@ -21,24 +21,23 @@ import { useTheme } from '../ThemeContext';
 import type {
   ArticleAudioResponse,
   ArticleTranslationsResponse,
+  AudioPostResponse,
   ParsedParagraph,
   Sentence,
   TranslationResponse,
 } from '../types';
 /** Sentence `FlashList` scroll (study highlight, DB bookmark) — see `useArticleSmartScroll` in `lib/scrolling-utils.ts`. */
 import { useArticleSmartScroll } from '../scrolling-utils';
-import { resolveAudioUrl } from '../api';
-import {
-  getCachedSentenceAudioEntry,
-  hasCachedSentenceAudio,
-} from '../useArticleAudio';
+import { hasCachedSentenceAudio } from '../useArticleAudio';
 import { getCachedSentenceTranslationText } from '../useArticleTranslations';
+import { useSentenceAudioOnPress } from '../useSentenceAudioOnPress';
 import { useSentenceAudioPlayer } from '../useSentenceAudioPlayer';
 import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
+import { formatSentenceKey } from '../sentenceKeys';
+import { sentenceFullText } from '../text-utils';
 import {
   ArticleSentenceRow,
   createArticleSentenceRowStyles,
-  sentenceFullText,
 } from './ArticleSentenceRow';
 
 /** One list row — flattened from `parsedContent` (paragraphs → sentences). */
@@ -57,7 +56,7 @@ function flattenSentences(
   const sentenceKeyToIndex = new Map<string, number>();
   parsedContent.forEach((paragraph, paragraphIndex) => {
     paragraph.s.forEach((sentence, sentenceIndex) => {
-      const sentenceKey = `${paragraphIndex}:${sentenceIndex}`;
+      const sentenceKey = formatSentenceKey(paragraphIndex, sentenceIndex);
       sentenceKeyToIndex.set(sentenceKey, flatData.length);
       flatData.push({
         sentenceKey,
@@ -108,6 +107,8 @@ export interface ArticleContentProps {
   articleAudio?: ArticleAudioResponse | null;
   /** True while GET /audio is in flight */
   articleAudioLoading?: boolean;
+  /** Merge POST /audio result into `articleAudio` without refetching GET */
+  mergeAudioFromPost?: (res: AudioPostResponse) => void;
 }
 
 const LINE_SPACING = {
@@ -138,6 +139,7 @@ export function ArticleContent({
   articleTranslationsLoading = false,
   articleAudio = null,
   articleAudioLoading = false,
+  mergeAudioFromPost,
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -255,6 +257,18 @@ export function ArticleContent({
   } = useSentenceAudioPlayer();
 
   const {
+    onAudioPress: handleAudioPress,
+    generatingAudioSentenceKey,
+    sentenceAudioError,
+  } = useSentenceAudioOnPress({
+    articleId,
+    articleAudio,
+    highlightedSentenceKey,
+    mergeAudioFromPost,
+    playSentenceAudio,
+  });
+
+  const {
     sentenceTranslateExpanded,
     translatingSentenceKey,
     sentenceTranslateError,
@@ -280,16 +294,6 @@ export function ArticleContent({
       onSentenceBookmarkPress?.(sk);
     },
     [onSentenceBookmarkPress],
-  );
-
-  const handleAudioPress = useCallback(
-    (sentenceKey: string) => {
-      const entry = getCachedSentenceAudioEntry(articleAudio, sentenceKey);
-      const url = resolveAudioUrl(entry?.audio_url);
-      if (!url) return;
-      playSentenceAudio(sentenceKey, url);
-    },
-    [articleAudio, playSentenceAudio],
   );
 
   const stopSentenceAudioRef = useRef(stopSentenceAudio);
@@ -346,9 +350,12 @@ export function ArticleContent({
         : theme.readIndicatorMuted;
       const audioAvailable = hasCachedSentenceAudio(articleAudio, sentenceKey);
       const audioIconColor = audioAvailable ? theme.error : theme.readIndicatorMuted;
+      const sentenceAudioGenerating = generatingAudioSentenceKey === sentenceKey;
       const sentenceAudioLoading =
         isSelected &&
-        (loadingSentenceKey === sentenceKey || articleAudioLoading);
+        (loadingSentenceKey === sentenceKey ||
+          articleAudioLoading ||
+          sentenceAudioGenerating);
       const lineGap = spacing.sentenceMarginBottom;
       const blockMarginBottom = isLastInParagraph
         ? spacing.sentenceMarginBottom + spacing.paragraphMarginBottom
@@ -375,11 +382,13 @@ export function ArticleContent({
           audioAccessibilityLabel={
             sentenceAudioLoading
               ? t('loading')
-              : playingSentenceKey === sentenceKey
-                ? 'Stop sentence audio'
-                : audioAvailable
-                  ? 'Play sentence audio'
-                  : 'Audio not available'
+              : isSelected && sentenceAudioError
+                ? sentenceAudioError
+                : playingSentenceKey === sentenceKey
+                  ? 'Stop sentence audio'
+                  : audioAvailable
+                    ? 'Play sentence audio'
+                    : 'Generate sentence audio'
           }
           audioLoading={sentenceAudioLoading}
           translateIconColor={translateIconColor}
@@ -413,6 +422,7 @@ export function ArticleContent({
       articleTranslationsLoading,
       bookmarkedSentenceKey,
       deferredFontSize,
+      generatingAudioSentenceKey,
       handleAudioPress,
       handleSentenceTranslatePress,
       loadingSentenceKey,
@@ -421,6 +431,7 @@ export function ArticleContent({
       highlightedSentenceKey,
       highlightedWordLocation,
       handleSentenceBookmarkPress,
+      sentenceAudioError,
       sentenceBookmarkEnabled,
       rowStyles,
       sentenceTranslateError,
@@ -471,9 +482,9 @@ export function ArticleContent({
     () =>
       `${highlightedSentenceKey}\0${bookmarkedSentenceKey}\0${highlightedWordKey}\0${String(
         sentenceTranslateExpanded,
-      )}\0${playingSentenceKey}\0${loadingSentenceKey}\0${String(
-        articleAudioLoading,
-      )}\0${articleAudioCacheKey}`,
+      )}\0${playingSentenceKey}\0${loadingSentenceKey}\0${generatingAudioSentenceKey}\0${
+        sentenceAudioError ?? ''
+      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}`,
     [
       highlightedSentenceKey,
       bookmarkedSentenceKey,
@@ -481,6 +492,8 @@ export function ArticleContent({
       sentenceTranslateExpanded,
       playingSentenceKey,
       loadingSentenceKey,
+      generatingAudioSentenceKey,
+      sentenceAudioError,
       articleAudioLoading,
       articleAudioCacheKey,
     ],

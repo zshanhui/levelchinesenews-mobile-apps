@@ -1,22 +1,15 @@
 import { useCallback, useState } from 'react';
-import { apiWriteUrl, envConfig, getUserFriendlyErrorMessage, postWithTimeout } from './api';
+import {
+  apiWriteUrl,
+  classifyPostFailureKind,
+  envConfig,
+  getUserFriendlyErrorMessage,
+  postWithTimeout,
+} from './api';
 import { AUDIO_POST_TIMEOUT_MS } from './constants';
 import { useTranslation } from './i18n';
 import { captureTrackedException } from './monitoring';
 import { AudioKind, type AudioPostResponse } from './types';
-
-/** Classify POST /audio failures (timeout, network, HTTP, etc.) for GlitchTip tags. */
-function classifySentenceAudioPostFailure(err: unknown): string {
-  if (err instanceof Error && err.name === 'AbortError') return 'timeout';
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-  if (msg.includes('abort')) return 'timeout';
-  if (err instanceof TypeError && msg.includes('fetch')) return 'network';
-  if (msg.includes('failed to fetch') || msg.includes('network request failed')) {
-    return 'network';
-  }
-  if (msg.includes('api error:')) return 'http';
-  return 'other';
-}
 
 /** Serialize POST `/audio` so only one request runs at a time (queued). */
 let audioPostLockTail = Promise.resolve();
@@ -82,7 +75,7 @@ export function useCreateSentenceAudio() {
           level: 'warning',
           tags: {
             feature: 'sentence_audio_post',
-            failure_kind: classifySentenceAudioPostFailure(err),
+            failure_kind: classifyPostFailureKind(err),
           },
           contexts: {
             audio_request: {

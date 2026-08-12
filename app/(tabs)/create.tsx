@@ -440,136 +440,113 @@ export default function CreateScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.parseContent}>
-            <View style={styles.parsePanel}>
-              <Text style={styles.parseEyebrow}>{t('parse')}</Text>
-              <Text style={styles.parseTitle}>{t('enterUrl')}</Text>
-              <Text style={styles.parseSubtitle}>
-                {t('parseArticleUrl')}
-              </Text>
+            {!lastParsed ? (
+              <View style={styles.parsePanel}>
+                <Text style={styles.parseTitle}>{t('enterUrl')}</Text>
 
-              {lastParsed ? (
-                <View style={styles.resultSection}>
-                  <View style={styles.successBanner}>
-                    <Ionicons
-                      name={lastParsed.existing ? 'bookmark-outline' : 'checkmark-circle-outline'}
-                      size={18}
-                      color={theme.accent}
-                    />
-                    <Text style={styles.successTitle}>
-                      {lastParsed.existing ? t('articleSaved') : t('newArticleCreated')}
-                    </Text>
-                  </View>
-
-                  {lastParsed.existing && (
-                    <Text style={styles.existingNote}>
-                      {t('articleAlreadyCreated')}
-                    </Text>
-                  )}
-
-                  <ArticleCard
-                    item={lastParsed}
-                    read={false}
-                    onPress={() => router.push(`/article/${lastParsed.id}`)}
-                    onRequestTranslation={onRequestTranslation}
+                <Pressable
+                  style={[
+                    styles.inputShell,
+                    inputFocused && styles.inputShellFocused,
+                    (limitReached || loading) && styles.inputShellDisabled,
+                  ]}
+                  onPress={() => urlInputRef.current?.focus()}
+                  disabled={limitReached || loading}
+                >
+                  <TextInput
+                    ref={urlInputRef}
+                    style={styles.input}
+                    placeholder={t('urlPlaceholder')}
+                    placeholderTextColor={theme.textMuted}
+                    value={url}
+                    onChangeText={handleUrlChangeText}
+                    onKeyPress={handleUrlKeyPress}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="url"
+                    editable={!limitReached && !loading}
+                    multiline
+                    numberOfLines={3}
+                    scrollEnabled={false}
+                    blurOnSubmit
+                    returnKeyType="done"
                   />
+                </Pressable>
 
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.resetButton,
-                      pressed && styles.resetButtonPressed,
-                    ]}
-                    onPress={handleReset}
-                  >
-                    <Text style={styles.resetButtonText}>
-                      {t('fetchAnotherArticle')}
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : (
-                <>
-                  <Pressable
-                    style={[
-                      styles.inputShell,
-                      inputFocused && styles.inputShellFocused,
-                      (limitReached || loading) && styles.inputShellDisabled,
-                    ]}
-                    onPress={() => urlInputRef.current?.focus()}
-                    disabled={limitReached || loading}
-                  >
-                    <TextInput
-                      ref={urlInputRef}
-                      style={styles.input}
-                      placeholder={t('urlPlaceholder')}
-                      placeholderTextColor={theme.textMuted}
-                      value={url}
-                      onChangeText={handleUrlChangeText}
-                      onKeyPress={handleUrlKeyPress}
-                      onFocus={() => setInputFocused(true)}
-                      onBlur={() => setInputFocused(false)}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="url"
-                      editable={!limitReached && !loading}
-                      multiline
-                      numberOfLines={3}
-                      scrollEnabled={false}
-                      blurOnSubmit
-                      returnKeyType="done"
+                <Text
+                  style={[
+                    styles.dailyLimit,
+                    limitReached && styles.dailyLimitWarning,
+                  ]}
+                >
+                  {limitReached
+                    ? t('dailyLimitReached')
+                    : t('parsesRemaining', { remaining, max: MAX_DAILY_PARSES })}
+                </Text>
+
+                {error && (
+                  <View style={styles.errorBanner}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={18}
+                      color={theme.error}
                     />
-                  </Pressable>
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                )}
 
-                  <Text
-                    style={[
-                      styles.dailyLimit,
-                      limitReached && styles.dailyLimitWarning,
-                    ]}
-                  >
-                    {limitReached
-                      ? t('dailyLimitReached')
-                      : t('parsesRemaining', { remaining, max: MAX_DAILY_PARSES })}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.button,
+                    parseDisabled && styles.buttonDisabled,
+                    pressed && !parseDisabled && styles.buttonPressed,
+                  ]}
+                  onPress={handleFetch}
+                  disabled={parseDisabled}
+                  accessibilityLabel={t('parseArticleUrl')}
+                >
+                  <Ionicons name="cloud-download-outline" size={16} color="#fff" />
+                  <Text style={styles.buttonText}>
+                    {loading ? t('fetching') : t('parse')}
                   </Text>
+                </Pressable>
 
-                  {error && (
-                    <View style={styles.errorBanner}>
-                      <Ionicons
-                        name="alert-circle-outline"
-                        size={18}
-                        color={theme.error}
-                      />
-                      <Text style={styles.errorText}>{error}</Text>
+                {loading && (
+                  <View style={styles.loadingPanel}>
+                    <ActivityIndicator size="small" color={theme.accent} />
+                    <View style={styles.loadingCopy}>
+                      <Text style={styles.loadingTitle}>{t('fetching')}</Text>
+                      {showIndexing && (
+                        <Text style={styles.loadingText}>{t('indexing')}</Text>
+                      )}
                     </View>
-                  )}
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={styles.resultSection}>
+                <ArticleCard
+                  item={lastParsed}
+                  read={false}
+                  onPress={() => router.push(`/article/${lastParsed.id}`)}
+                  onRequestTranslation={onRequestTranslation}
+                />
 
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.button,
-                      parseDisabled && styles.buttonDisabled,
-                      pressed && !parseDisabled && styles.buttonPressed,
-                    ]}
-                    onPress={handleFetch}
-                    disabled={parseDisabled}
-                    accessibilityLabel={t('parseArticleUrl')}
-                  >
-                    <Ionicons name="cloud-download-outline" size={20} color="#fff" />
-                    <Text style={styles.buttonText}>
-                      {loading ? t('fetching') : t('parse')}
-                    </Text>
-                  </Pressable>
-
-                  {loading && (
-                    <View style={styles.loadingPanel}>
-                      <ActivityIndicator size="small" color={theme.accent} />
-                      <View style={styles.loadingCopy}>
-                        <Text style={styles.loadingTitle}>{t('fetching')}</Text>
-                        {showIndexing && (
-                          <Text style={styles.loadingText}>{t('indexing')}</Text>
-                        )}
-                      </View>
-                    </View>
-                  )}
-                </>
-              )}
-            </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.resetButton,
+                    pressed && styles.resetButtonPressed,
+                  ]}
+                  onPress={handleReset}
+                >
+                  <Text style={styles.resetButtonText}>
+                    {t('fetchAnotherArticle')}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
 
             <View style={styles.supportedCard}>
               <Text style={styles.supportedLabel}>{t('supportedSites')}</Text>
@@ -607,11 +584,13 @@ function createStyles(theme: Theme) {
       flex: 1,
     },
     parseScrollContent: {
+      flexGrow: 1,
       paddingHorizontal: 20,
       paddingTop: 24,
       paddingBottom: 32,
     },
     parseContent: {
+      flexGrow: 1,
       width: '100%',
       maxWidth: 680,
       alignSelf: 'center',
@@ -629,24 +608,10 @@ function createStyles(theme: Theme) {
       shadowRadius: 18,
       elevation: 3,
     },
-    parseEyebrow: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: theme.accent,
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-      marginBottom: 8,
-    },
     parseTitle: {
       fontSize: 24,
       fontWeight: '700',
       color: theme.text,
-      marginBottom: 8,
-    },
-    parseSubtitle: {
-      fontSize: 15,
-      lineHeight: 22,
-      color: theme.textSecondary,
       marginBottom: 18,
     },
     tabBar: {
@@ -771,14 +736,14 @@ function createStyles(theme: Theme) {
       color: theme.error,
     },
     button: {
-      minHeight: 54,
-      borderRadius: 16,
+      minHeight: 43,
+      borderRadius: 13,
       backgroundColor: theme.accent,
-      paddingHorizontal: 18,
+      paddingHorizontal: 14,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 10,
+      gap: 8,
     },
     buttonPressed: {
       backgroundColor: theme.accentPressed,
@@ -787,7 +752,7 @@ function createStyles(theme: Theme) {
       backgroundColor: theme.textMuted,
     },
     buttonText: {
-      fontSize: 15,
+      fontSize: 12,
       fontWeight: '700',
       color: '#fff',
       textTransform: 'uppercase',
@@ -819,44 +784,19 @@ function createStyles(theme: Theme) {
       color: theme.textMuted,
     },
     resultSection: {
+      flex: 1,
+      width: '100%',
+      justifyContent: 'center',
       gap: 14,
-    },
-    successBanner: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      gap: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: theme.accent,
-      backgroundColor: theme.surface,
-    },
-    successTitle: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: theme.text,
-    },
-    existingNote: {
-      fontSize: 14,
-      lineHeight: 20,
-      color: theme.textSecondary,
     },
     resetButton: {
       marginTop: 4,
-      minHeight: 48,
-      paddingVertical: 12,
-      paddingHorizontal: 18,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: theme.accent,
+      paddingVertical: 8,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.surface,
     },
     resetButtonPressed: {
-      backgroundColor: theme.background,
+      opacity: 0.7,
     },
     resetButtonText: {
       fontSize: 15,
@@ -864,6 +804,7 @@ function createStyles(theme: Theme) {
       fontWeight: '700',
     },
     supportedCard: {
+      marginTop: 'auto',
       borderRadius: 18,
       borderWidth: 1,
       borderColor: theme.border,

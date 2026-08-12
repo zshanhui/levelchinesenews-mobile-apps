@@ -2,23 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getUserFriendlyErrorMessage, isOfflineOrNetworkFailure } from './api';
 import { useTranslation } from './i18n';
 import type { NativeLanguage } from './nativeLanguage';
-import type { ArticleTranslationsResponse, ParsedParagraph, Sentence, TranslationResponse } from './types';
+import { parseSentenceKey } from './sentenceKeys';
+import { sentenceFullText } from './text-utils';
+import type { ArticleTranslationsResponse, ParsedParagraph, TranslationResponse } from './types';
 import { getCachedSentenceTranslationText } from './useArticleTranslations';
 import { useTranslateSentence } from './useTranslateSentence';
-
-function sentenceSourceText(sentence: Sentence): string {
-  return sentence.f;
-}
-
-/** Parse `paragraphIndex:sentenceIndex` from the sentence key used in the article UI. */
-function parseParagraphAndSentenceIndices(sentenceKey: string): { paragraphIndex: number; sentenceIndex: number } | null {
-  const parts = sentenceKey.split(':');
-  if (parts.length !== 2) return null;
-  const paragraphIndex = Number.parseInt(parts[0]!, 10);
-  const sentenceIndex = Number.parseInt(parts[1]!, 10);
-  if (!Number.isFinite(paragraphIndex) || !Number.isFinite(sentenceIndex)) return null;
-  return { paragraphIndex, sentenceIndex };
-}
 
 export type UseSentenceTranslationOnExpandParams = {
   parsedContent: ParsedParagraph[];
@@ -85,7 +73,7 @@ export function useSentenceTranslationOnExpand({
     const cached = getCachedSentenceTranslationText(articleTranslations, lang, sentenceKey);
     if (cached) return;
 
-    const indices = parseParagraphAndSentenceIndices(sentenceKey);
+    const indices = parseSentenceKey(sentenceKey);
     if (!indices) return;
 
     const { paragraphIndex, sentenceIndex } = indices;
@@ -104,7 +92,7 @@ export function useSentenceTranslationOnExpand({
           articleId: resolvedArticleId,
           paragraphIndex,
           sentenceIndex,
-          sourceText: sentenceSourceText(sentence),
+          sourceText: sentenceFullText(sentence),
         });
         merge(res);
       } catch (err) {

@@ -19,7 +19,12 @@ export const AUDIO_PLAY_LOAD_TIMEOUT_MS = 15_000;
 export const PAGE_SIZE = 15;
 
 // Create tab / Parse
-export const SUPPORTED_URLS = ['https://www.zaobao.com', 'https://m.huanqiu.com'];
+export const SUPPORTED_URLS = [
+  'https://www.zaobao.com',
+  'https://m.huanqiu.com',
+  'https://www.worldjournal.com',
+  'https://www.thepaper.cn',
+];
 export const MAX_DAILY_PARSES = 20;
 export const STORAGE_KEY_DAILY = 'daily_parse_count';
 export const STORAGE_KEY_ARTICLES = 'my_articles';
@@ -53,3 +58,6 @@ export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';
 export const STORAGE_KEY_THEME = '@lcn/darkMode';
 export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
+/** Last Chinese words searched on Learn → Sentence examples */
+export const STORAGE_KEY_RECENT_SENTENCE_SEARCHES = '@lcn/recentSentenceSearches';
+export const MAX_RECENT_SENTENCE_SEARCHES = 20;

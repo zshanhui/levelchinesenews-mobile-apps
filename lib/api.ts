@@ -5,7 +5,8 @@ import {
   REQUEST_TIMEOUT_MS,
 } from './constants';
 import { i18n } from './i18n';
-import type { ArticleListItem } from './types';
+import { isChineseWord } from './text-utils';
+import type { ArticleListItem, WordSentencesResponse } from './types';
 
 export const envConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
@@ -60,6 +61,24 @@ export function isOfflineOrNetworkFailure(err: unknown): boolean {
   if (err instanceof TypeError && lower.includes('fetch')) return true;
   if (lower.includes('failed to fetch') || lower.includes('network request failed')) return true;
   return false;
+}
+
+/**
+ * Classify POST failures for GlitchTip `failure_kind` tags
+ * (`timeout` | `network` | `http` | `other`).
+ */
+export function classifyPostFailureKind(
+  err: unknown,
+): 'timeout' | 'network' | 'http' | 'other' {
+  if (err instanceof Error && err.name === 'AbortError') return 'timeout';
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  if (msg.includes('abort')) return 'timeout';
+  if (err instanceof TypeError && msg.includes('fetch')) return 'network';
+  if (msg.includes('failed to fetch') || msg.includes('network request failed')) {
+    return 'network';
+  }
+  if (msg.includes('api error:')) return 'http';
+  return 'other';
 }
 
 export function apiReadUrl(path: string, params?: Record<string, string | number | boolean>): string {
@@ -165,6 +184,34 @@ export async function postWithTimeout<T>(
     clearTimeout(timeoutId);
     throw err;
   }
+}
+
+/** Search indexed sentences that contain an exact word token. */
+export async function searchSentencesByWord(
+  word: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    excludeArticleId?: string;
+  },
+): Promise<WordSentencesResponse> {
+  const trimmed = word.trim();
+  if (!isChineseWord(trimmed)) {
+    throw new Error('only Chinese words permitted to search');
+  }
+
+  const params: Record<string, string | number | boolean> = {
+    word: trimmed,
+    page: options?.page ?? 1,
+    page_size: options?.pageSize ?? 20,
+  };
+  if (options?.excludeArticleId) {
+    params.exclude_article_id = options.excludeArticleId;
+  }
+  const data = await fetchWithTimeout<WordSentencesResponse>(
+    apiReadUrl('/sentences', params),
+  );
+  return data;
 }
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */

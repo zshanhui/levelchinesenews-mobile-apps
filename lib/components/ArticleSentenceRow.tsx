@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { NativeLanguage } from '../nativeLanguage';
 import type { Theme } from '../theme';
-import type { Sentence, WordSegment } from '../types';
+import type { WordSegment } from '../types';
 import { SentenceHelperBar } from './SentenceHelperBar';
 import { SentenceTranslatePanel } from './SentenceTranslatePanel';
 
@@ -91,10 +91,6 @@ export type ArticleSentenceRowProps = {
   bookmarkAccessibilityLabel: string;
   translateAccessibilityLabel: string;
 };
-
-export function sentenceFullText(sentence: Sentence): string {
-  return sentence.f;
-}
 
 export function createArticleSentenceRowStyles(theme: Theme, isDark: boolean) {
   const bookmarkShadow =

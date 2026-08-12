@@ -8,6 +8,7 @@ import { formatPublishedDate } from '../formatPublishedDate';
 import { useTranslation } from '../i18n';
 import type { Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { CyberpunkImageOverlay } from './CyberpunkImageOverlay';
 import { ShareLinkButton } from './ShareLinkButton';
 
 /** Native headline size */
@@ -34,7 +35,7 @@ export function ArticleDetailHeader({
   usingCache = false,
   titleFontSize = ARTICLE_TITLE_BASE_FONT_SIZE,
 }: ArticleDetailHeaderProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const imageUri = resolveImageUrl(mainImage);
@@ -75,12 +76,15 @@ export function ArticleDetailHeader({
         <ShareLinkButton articleId={articleId} articleTitle={title} />
       </View>
       {imageUri ? (
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.image}
-          contentFit="cover"
-          accessibilityIgnoresInvertColors
-        />
+        <View style={styles.imageWrap}>
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.image}
+            contentFit="cover"
+            accessibilityIgnoresInvertColors
+          />
+          {isDark ? <CyberpunkImageOverlay /> : null}
+        </View>
       ) : null}
     </>
   );
@@ -121,12 +125,16 @@ function createStyles(theme: Theme) {
       fontSize: 13,
       color: theme.textSecondary,
     },
-    image: {
+    imageWrap: {
       width: '100%',
       aspectRatio: 16 / 10,
       borderRadius: 8,
+      overflow: 'hidden',
       backgroundColor: theme.border,
       marginBottom: 16,
+    },
+    image: {
+      ...StyleSheet.absoluteFillObject,
     },
   });
 }
