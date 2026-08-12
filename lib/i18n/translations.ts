@@ -8,6 +8,7 @@ export const translations = {
     brand: 'LevelChineseNews',
     'tabs.articles': 'Read',
     'tabs.create': 'Create',
+    'tabs.learn': 'Learn',
     'tabs.settings': 'Settings',
 
     // Articles list (index)

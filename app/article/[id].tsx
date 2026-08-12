@@ -184,10 +184,16 @@ export default function ArticleDetailScreen() {
   const restoreSelectionFromParams = useCallback(
     (params: { word?: string; wordKey?: string; sentenceKey?: string }) => {
       const { word, wordKey, sentenceKey } = params;
-      if (word && wordKey && sentenceKey) {
+      const key = Array.isArray(sentenceKey) ? sentenceKey[0] : sentenceKey;
+      if (word && wordKey && key) {
         setSelectedWord({ word, pinyin: null });
         setHighlightedWordKey(wordKey);
-        setHighlightedSentenceKey(sentenceKey);
+        setHighlightedSentenceKey(key);
+      } else if (key) {
+        // Deep link / Learn tab: scroll to sentence without opening the word study panel
+        setSelectedWord(null);
+        setHighlightedWordKey(null);
+        setHighlightedSentenceKey(key);
       }
     },
     []
@@ -196,6 +202,9 @@ export default function ArticleDetailScreen() {
   useEffect(() => {
     setReadState(false);
     setBookmarkedSentenceKey(null);
+    setSelectedWord(null);
+    setHighlightedWordKey(null);
+    setHighlightedSentenceKey(null);
     if (!id) return;
     let cancelled = false;
     Promise.all([getReadState(id), getSentenceBookmark(id)]).then(
@@ -274,14 +283,15 @@ export default function ArticleDetailScreen() {
     [id, article, t],
   );
 
-  // Restore selection when app opens with return-from-Pleco deep link (e.g. app was killed)
+  // Restore selection when app opens with return-from-Pleco deep link (e.g. app was killed),
+  // or when Learn tab navigates with sentenceKey for auto-scroll.
   useEffect(() => {
     restoreSelectionFromParams({
       word: urlWord,
       wordKey: urlWordKey,
       sentenceKey: urlSentenceKey,
     });
-  }, [urlWord, urlWordKey, urlSentenceKey, restoreSelectionFromParams]);
+  }, [id, urlWord, urlWordKey, urlSentenceKey, restoreSelectionFromParams]);
 
   // Restore selection when app returns from background via Pleco x-success URL
   useEffect(() => {

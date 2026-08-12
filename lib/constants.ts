@@ -53,3 +53,6 @@ export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';
 export const STORAGE_KEY_THEME = '@lcn/darkMode';
 export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
+/** Last Chinese words searched on Learn → Sentence examples */
+export const STORAGE_KEY_RECENT_SENTENCE_SEARCHES = '@lcn/recentSentenceSearches';
+export const MAX_RECENT_SENTENCE_SEARCHES = 20;

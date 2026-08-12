@@ -5,7 +5,8 @@ import {
   REQUEST_TIMEOUT_MS,
 } from './constants';
 import { i18n } from './i18n';
-import type { ArticleListItem } from './types';
+import { isChineseWord } from './text-utils';
+import type { ArticleListItem, WordSentencesResponse } from './types';
 
 export const envConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
@@ -165,6 +166,34 @@ export async function postWithTimeout<T>(
     clearTimeout(timeoutId);
     throw err;
   }
+}
+
+/** Search indexed sentences that contain an exact word token. */
+export async function searchSentencesByWord(
+  word: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    excludeArticleId?: string;
+  },
+): Promise<WordSentencesResponse> {
+  const trimmed = word.trim();
+  if (!isChineseWord(trimmed)) {
+    throw new Error('only Chinese words permitted to search');
+  }
+
+  const params: Record<string, string | number | boolean> = {
+    word: trimmed,
+    page: options?.page ?? 1,
+    page_size: options?.pageSize ?? 20,
+  };
+  if (options?.excludeArticleId) {
+    params.exclude_article_id = options.excludeArticleId;
+  }
+  const data = await fetchWithTimeout<WordSentencesResponse>(
+    apiReadUrl('/sentences', params),
+  );
+  return data;
 }
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */
