@@ -63,6 +63,24 @@ export function isOfflineOrNetworkFailure(err: unknown): boolean {
   return false;
 }
 
+/**
+ * Classify POST failures for GlitchTip `failure_kind` tags
+ * (`timeout` | `network` | `http` | `other`).
+ */
+export function classifyPostFailureKind(
+  err: unknown,
+): 'timeout' | 'network' | 'http' | 'other' {
+  if (err instanceof Error && err.name === 'AbortError') return 'timeout';
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  if (msg.includes('abort')) return 'timeout';
+  if (err instanceof TypeError && msg.includes('fetch')) return 'network';
+  if (msg.includes('failed to fetch') || msg.includes('network request failed')) {
+    return 'network';
+  }
+  if (msg.includes('api error:')) return 'http';
+  return 'other';
+}
+
 export function apiReadUrl(path: string, params?: Record<string, string | number | boolean>): string {
   const url = `${envConfig.apiBaseUrl}${API_PREFIX}${path}`;
   if (!params) return url;

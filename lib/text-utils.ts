@@ -3,6 +3,11 @@ export function capitalizeFirstWord(text: string): string {
   return text.charAt(0).toLocaleUpperCase() + text.slice(1);
 }
 
+/** Full Chinese sentence string from parsed content (`Sentence.f`). */
+export function sentenceFullText(sentence: { f: string }): string {
+  return sentence.f;
+}
+
 /** True when `text` is non-empty and only CJK Unified Ideographs (no Latin, digits, or punctuation). */
 export function isChineseWord(text: string): boolean {
   const trimmed = text.trim();

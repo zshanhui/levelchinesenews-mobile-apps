@@ -4,6 +4,7 @@ import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api
 import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
 import { NativeLanguage } from './nativeLanguage';
 import { useNativeLanguage } from './NativeLanguageContext';
+import { formatSentenceKey } from './sentenceKeys';
 import type {
   ArticleTranslationsResponse,
   StoredTranslationEntry,
@@ -18,7 +19,7 @@ export function mergeTranslationResponseIntoArticleTranslations(
   if (res.paragraph_index == null || res.sentence_index == null) {
     return prev ?? { article_id: res.article_id, article_sentence: {} };
   }
-  const sentenceKey = `${res.paragraph_index}:${res.sentence_index}`;
+  const sentenceKey = formatSentenceKey(res.paragraph_index, res.sentence_index);
   const entry: StoredTranslationEntry = {
     translated_text: res.translated_text,
     /** POST body omits hash; GET merges use this for display-only rows. */

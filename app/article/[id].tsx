@@ -26,6 +26,7 @@ import {
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
+import { parseSentenceKey } from '../../lib/sentenceKeys';
 import {
   articleDetailToListItem,
   clearSentenceBookmark,
@@ -124,6 +125,7 @@ export default function ArticleDetailScreen() {
     articleAudio,
     loading: articleAudioLoading,
     refetch: refetchArticleAudio,
+    mergeAudioFromPost,
   } = useArticleAudio(id, Boolean(article));
 
   const navigation = useNavigation();
@@ -245,11 +247,9 @@ export default function ArticleDetailScreen() {
   const onSentenceBookmarkPress = useCallback(
     async (sentenceKey: string) => {
       if (!id || !article) return;
-      const parts = sentenceKey.split(':');
-      if (parts.length !== 2) return;
-      const p = Number(parts[0]);
-      const s = Number(parts[1]);
-      if (!Number.isInteger(p) || !Number.isInteger(s)) return;
+      const indices = parseSentenceKey(sentenceKey);
+      if (!indices) return;
+      const { paragraphIndex: p, sentenceIndex: s } = indices;
       try {
         if (bookmarkedSentenceKeyRef.current === sentenceKey) {
           await clearSentenceBookmark(id);
@@ -515,6 +515,7 @@ export default function ArticleDetailScreen() {
                 articleAudioLoading={articleAudioLoading}
                 articleId={id}
                 mergeTranslationFromPost={mergeTranslationFromPost}
+                mergeAudioFromPost={mergeAudioFromPost}
               />
             ) : (
               <ScrollView

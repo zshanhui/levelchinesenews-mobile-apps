@@ -1,24 +1,17 @@
 import { useCallback, useState } from 'react';
-import { apiWriteUrl, envConfig, getUserFriendlyErrorMessage, postWithTimeout } from './api';
+import {
+  apiWriteUrl,
+  classifyPostFailureKind,
+  envConfig,
+  getUserFriendlyErrorMessage,
+  postWithTimeout,
+} from './api';
 import { TRANSLATION_POST_TIMEOUT_MS } from './constants';
 import { useNativeLanguage } from './NativeLanguageContext';
 import { useTranslation } from './i18n';
 import { captureTrackedException } from './monitoring';
 import { TranslationKind, type TranslationResponse } from './types';
 import { translationLangForNative } from './useArticleTranslations';
-
-/** Classify POST /translations failures (timeout, network, HTTP, etc.) for GlitchTip tags. */
-function classifySentenceTranslateFailure(err: unknown): string {
-  if (err instanceof Error && err.name === 'AbortError') return 'timeout';
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-  if (msg.includes('abort')) return 'timeout';
-  if (err instanceof TypeError && msg.includes('fetch')) return 'network';
-  if (msg.includes('failed to fetch') || msg.includes('network request failed')) {
-    return 'network';
-  }
-  if (msg.includes('api error:')) return 'http';
-  return 'other';
-}
 
 /** Serialize POST `/translations` so only one request runs at a time (queued). */
 let translationPostLockTail = Promise.resolve();
@@ -85,7 +78,7 @@ export function useTranslateSentence() {
           level: 'warning',
           tags: {
             feature: 'sentence_translation_post',
-            failure_kind: classifySentenceTranslateFailure(err),
+            failure_kind: classifyPostFailureKind(err),
           },
           contexts: {
             translation_request: {

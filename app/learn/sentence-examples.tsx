@@ -23,6 +23,7 @@ import {
   isChineseWord,
   splitHighlightSegments,
 } from '../../lib/text-utils';
+import { formatSentenceKey } from '../../lib/sentenceKeys';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import type { WordSentenceItem, WordSentencesResponse } from '../../lib/types';
@@ -70,7 +71,7 @@ const SentenceExampleRow = memo(function SentenceExampleRow({
           pathname: '/article/[id]',
           params: {
             id: item.article_id,
-            sentenceKey: `${item.paragraph_index}:${item.sentence_index}`,
+            sentenceKey: formatSentenceKey(item.paragraph_index, item.sentence_index),
           },
         })
       }

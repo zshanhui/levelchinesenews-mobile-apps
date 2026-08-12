@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from './i18n';
 import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
 import { ARTICLE_REQUEST_TIMEOUT_MS } from './constants';
+import { formatSentenceKey } from './sentenceKeys';
 import type { ArticleAudioResponse, AudioPostResponse, StoredAudioEntry } from './types';
 
 /** Merge a POST /audio response into the GET-shaped cache (no full refetch). */
@@ -9,7 +10,7 @@ export function mergeAudioResponseIntoArticleAudio(
   prev: ArticleAudioResponse | null,
   res: AudioPostResponse,
 ): ArticleAudioResponse {
-  const sentenceKey = `${res.paragraph_index}:${res.sentence_index}`;
+  const sentenceKey = formatSentenceKey(res.paragraph_index, res.sentence_index);
   const entry: StoredAudioEntry = {
     audio_url: res.audio_url,
     /** POST body omits hash; GET merges use this for display-only rows. */
@@ -94,6 +95,10 @@ export function useArticleAudio(articleId: string | undefined, enabled: boolean)
     }
   }, [articleId, enabled, t]);
 
+  const mergeAudioFromPost = useCallback((res: AudioPostResponse) => {
+    setArticleAudio((prev) => mergeAudioResponseIntoArticleAudio(prev, res));
+  }, []);
+
   useEffect(() => {
     void fetchArticleAudio();
   }, [fetchArticleAudio]);
@@ -103,5 +108,6 @@ export function useArticleAudio(articleId: string | undefined, enabled: boolean)
     loading,
     error,
     refetch: fetchArticleAudio,
+    mergeAudioFromPost,
   };
 }
