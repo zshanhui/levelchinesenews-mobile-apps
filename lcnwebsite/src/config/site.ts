@@ -3,7 +3,7 @@ export const siteConfig = {
   contactEmail: 'contact@levelchinese.app',
   cta: {
     expoLabel: 'Download Android v0.7.6 apk',
-    expoUrl: 'https://expo.dev/artifacts/eas/DdpNswTXyOOo2bYRtR4DMiG5U-YSGqJkES6ykV_Kr-w.apk',
+    expoUrl: 'https://apk-download.levelchinese.app/v0.7.6-31818b9dab64.apk',
     githubLabel: 'View on GitHub',
     githubUrl: 'https://github.com/zshanhui/levelchinesenews-mobile-apps',
   },
