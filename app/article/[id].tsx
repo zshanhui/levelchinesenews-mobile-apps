@@ -6,7 +6,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'reac
 import { useTranslation } from '../../lib/i18n';
 import {
   Pressable,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +21,7 @@ import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { resolveImageUrl } from '../../lib/api';
 import { formatPublishedDate } from '../../lib/formatPublishedDate';
 import { SettingsDrawer } from '../../lib/components/SettingsDrawer';
+import { WebPullToRefresh } from '../../lib/components/WebPullToRefresh';
 import {
   ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
   STUDY_PANEL_HEIGHT,
@@ -270,6 +270,12 @@ export default function ArticleDetailScreen() {
         </View>
       ) : article ? (
         <View style={styles.articleContainer}>
+          <WebPullToRefresh
+            enabled={!isWideLayout}
+            refreshing={refreshOverlayVisible}
+            onRefresh={onRefreshArticle}
+            tintColor={theme.accent}
+          >
           <Pressable
             style={styles.articleScrollContainer}
             collapsable={false}
@@ -343,13 +349,6 @@ export default function ArticleDetailScreen() {
                     : {},
                 ]}
                 style={styles.scroll}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshOverlayVisible}
-                    onRefresh={onRefreshArticle}
-                    tintColor={theme.accent}
-                  />
-                }
                 selectedWord={selectedWord}
                 highlightedWordKey={highlightedWordKey}
                 highlightedSentenceKey={highlightedSentenceKey}
@@ -379,13 +378,6 @@ export default function ArticleDetailScreen() {
                     : {},
                 ]}
                 showsVerticalScrollIndicator={false}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshOverlayVisible}
-                    onRefresh={onRefreshArticle}
-                    tintColor={theme.accent}
-                  />
-                }
               >
                 <Pressable
                   style={[styles.content, { paddingHorizontal: contentPadH }]}
@@ -442,6 +434,7 @@ export default function ArticleDetailScreen() {
               </ScrollView>
             )}
           </Pressable>
+          </WebPullToRefresh>
           {selectedWord && !refreshOverlayVisible ? (
             <View
               style={[

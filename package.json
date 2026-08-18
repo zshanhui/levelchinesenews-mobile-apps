@@ -6,7 +6,7 @@
     "start": "expo start --web",
     "web": "expo start --web",
     "test": "jest",
-    "build:web": "expo export --platform web"
+    "build:web": "expo export --platform web && node scripts/flatten-web-assets.js"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans-sc": "^0.4.2",
