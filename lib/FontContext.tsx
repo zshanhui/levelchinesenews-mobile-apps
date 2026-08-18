@@ -16,7 +16,6 @@ import {
   useState,
 } from 'react';
 import {
-  STORAGE_KEY_FONT,
   STORAGE_KEY_FONT_SIZE,
   STORAGE_KEY_LINE_SPACING,
   STORAGE_KEY_PINYIN,
@@ -49,9 +48,6 @@ export function webArticleFontScale(screenWidth: number): number {
 }
 
 type FontContextValue = {
-  /** Whether to use Noto Sans SC for Chinese text */
-  useNotoSansSC: boolean;
-  setUseNotoSansSC: (value: boolean) => void;
   /** Whether to show Pinyin above Chinese words in article view */
   showPinyin: boolean;
   setShowPinyin: (value: boolean) => void;
@@ -71,7 +67,7 @@ type FontContextValue = {
   fancyDisplayFontStyle: { fontFamily?: string };
   /** Resolved numeric font size for article content */
   articleFontSize: number;
-  /** Whether fonts are ready (when useNotoSansSC is true) */
+  /** Whether bundled fonts are ready */
   fontsReady: boolean;
 };
 
@@ -80,7 +76,6 @@ const FontContext = createContext<FontContextValue | null>(null);
 export function FontProvider({ children }: { children: React.ReactNode }) {
   const { width: windowWidth } = useWindowDimensions();
 
-  const [useNotoSansSC, setUseNotoSansSCState] = useState(true);
   const [showPinyin, setShowPinyinState] = useState(true);
   const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('relaxed');
   const [fontSize, setFontSizeState] = useState<FontSizeLevel>('xl');
@@ -90,14 +85,6 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     NotoSansSC_400Regular,
     PlayfairDisplay_600SemiBold,
   });
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY_FONT).then((stored) => {
-      if (stored !== null) {
-        setUseNotoSansSCState(stored === 'true');
-      }
-    });
-  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY_PINYIN).then((stored) => {
@@ -123,11 +110,6 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const setUseNotoSansSC = useCallback((value: boolean) => {
-    setUseNotoSansSCState(value);
-    AsyncStorage.setItem(STORAGE_KEY_FONT, String(value));
-  }, []);
-
   const setShowPinyin = useCallback((value: boolean) => {
     setShowPinyinState(value);
     AsyncStorage.setItem(STORAGE_KEY_PINYIN, String(value));
@@ -143,20 +125,17 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY_FONT_SIZE, value);
   }, []);
 
-  const chineseFontStyle =
-    useNotoSansSC && fontsLoaded
-      ? { fontFamily: 'NotoSansSC_400Regular' as const }
-      : {};
+  const chineseFontStyle = fontsLoaded
+    ? { fontFamily: 'NotoSansSC_400Regular' as const }
+    : {};
 
-  const chinesePinyinFontStyle =
-    useNotoSansSC && fontsLoaded
-      ? { fontFamily: 'NotoSansSC_200ExtraLight' as const }
-      : {};
+  const chinesePinyinFontStyle = fontsLoaded
+    ? { fontFamily: 'NotoSansSC_200ExtraLight' as const }
+    : {};
 
-  const chineseFontBoldStyle =
-    useNotoSansSC && fontsLoaded
-      ? { fontFamily: 'NotoSansSC_400Regular' as const, fontWeight: '600' as const }
-      : {};
+  const chineseFontBoldStyle = fontsLoaded
+    ? { fontFamily: 'NotoSansSC_400Regular' as const, fontWeight: '600' as const }
+    : {};
 
   const fancyDisplayFontStyle = fontsLoaded
     ? { fontFamily: 'PlayfairDisplay_600SemiBold' as const }
@@ -168,8 +147,6 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
   }, [fontSize, windowWidth]);
 
   const value: FontContextValue = {
-    useNotoSansSC,
-    setUseNotoSansSC,
     showPinyin,
     setShowPinyin,
     lineSpacing,
@@ -181,7 +158,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     chineseFontBoldStyle,
     fancyDisplayFontStyle,
     articleFontSize,
-    fontsReady: !useNotoSansSC || fontsLoaded,
+    fontsReady: fontsLoaded,
   };
 
   return (

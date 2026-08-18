@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
-import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
+import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
@@ -21,9 +21,11 @@ import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { resolveImageUrl } from '../../lib/api';
 import { formatPublishedDate } from '../../lib/formatPublishedDate';
+import { SettingsDrawer } from '../../lib/components/SettingsDrawer';
 import {
   ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
   STUDY_PANEL_HEIGHT,
+  WEB_WIDE_LAYOUT_MIN_WIDTH,
   webContentHorizontalPadding,
 } from '../../lib/constants';
 import { webArticleFontScale } from '../../lib/FontContext';
@@ -34,14 +36,13 @@ import { useArticleTranslations } from '../../lib/useArticleTranslations';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 
-/** Space below the transparent header before the article title and metadata. */
-const ARTICLE_SCROLL_TOP_EXTRA = 75;
+/** Space below the transparent header before the article title on wide layouts. */
+const ARTICLE_SCROLL_TOP_EXTRA_WIDE = 75;
+/** Tight gap below the header on mobile so the title sits closer to the top. */
+const ARTICLE_SCROLL_TOP_EXTRA_MOBILE = 8;
 
 /** Native headline size kept for scale reference. */
 const ARTICLE_TITLE_BASE_FONT_SIZE_WEB = 28;
-
-/** Extra inset below the header for skeleton (list load + pull-to-refresh). */
-const SKELETON_TOP_EXTRA = 20;
 
 type ArticleSkeletonLayerStyles = {
   refreshOverlay: ViewStyle;
@@ -51,11 +52,11 @@ type ArticleSkeletonLayerStyles = {
 /** Same layout for initial navigation load and pull-to-refresh overlay (absolute fill + inset). */
 function ArticleSkeletonLoadingLayer({
   styles,
-  headerHeight,
+  paddingTop,
   accessibilityLabel,
 }: {
   styles: ArticleSkeletonLayerStyles;
-  headerHeight: number;
+  paddingTop: number;
   accessibilityLabel: string;
 }) {
   return (
@@ -67,7 +68,7 @@ function ArticleSkeletonLoadingLayer({
       <View
         style={[
           styles.skeletonFrame,
-          { paddingTop: headerHeight + SKELETON_TOP_EXTRA },
+          { paddingTop },
         ]}
       >
         <ArticleSkeleton centerContent />
@@ -110,6 +111,13 @@ export default function ArticleDetailScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const { theme } = useTheme();
   const contentPadH = webContentHorizontalPadding(windowWidth);
+  const articleTopPad =
+    headerHeight +
+    (windowWidth >= WEB_WIDE_LAYOUT_MIN_WIDTH
+      ? ARTICLE_SCROLL_TOP_EXTRA_WIDE + 16
+      : ARTICLE_SCROLL_TOP_EXTRA_MOBILE);
+  const isWideLayout = windowWidth >= WEB_WIDE_LAYOUT_MIN_WIDTH;
+  const settingsIconSize = isWideLayout ? 33 : 22;
 
   const articleTitleFontSize = useMemo(
     () =>
@@ -130,6 +138,7 @@ export default function ArticleDetailScreen() {
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
   const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
   const [refreshOverlayVisible, setRefreshOverlayVisible] = useState(false);
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
@@ -181,6 +190,10 @@ export default function ArticleDetailScreen() {
     });
   }, [urlWord, urlWordKey, urlSentenceKey, restoreSelectionFromParams]);
 
+  const onPressSettings = useCallback(() => {
+    setSettingsDrawerOpen((open) => !open);
+  }, []);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: '',
@@ -190,27 +203,40 @@ export default function ArticleDetailScreen() {
       headerTintColor: theme.text,
       headerBackVisible: false,
       headerLeft: () => null,
+      headerRightContainerStyle: { paddingRight: 20, marginRight: 0 },
       headerRight: () => (
         <Pressable
-          onPress={() => router.push('/settings')}
+          onPress={onPressSettings}
           hitSlop={10}
           style={({ pressed }) => [
-            styles.headerIconBackdrop,
+            styles.headerSettingsButton,
             pressed && styles.headerIconBackdropPressed,
           ]}
           accessibilityRole="button"
           accessibilityLabel={t('openSettings')}
         >
-          <Ionicons name="settings-outline" size={22} color={theme.text} />
+          <Text
+            style={[
+              styles.headerSettingsLabel,
+              { fontSize: Math.round(settingsIconSize * 0.7) },
+            ]}
+          >
+            {t('settings')}
+          </Text>
+          <Ionicons name="settings-outline" size={settingsIconSize} color={theme.accent} />
         </Pressable>
       ),
     });
   }, [
     navigation,
+    onPressSettings,
     t,
+    theme.accent,
     theme.text,
-    styles.headerIconBackdrop,
+    styles.headerSettingsButton,
+    styles.headerSettingsLabel,
     styles.headerIconBackdropPressed,
+    settingsIconSize,
   ]);
 
   return (
@@ -228,13 +254,13 @@ export default function ArticleDetailScreen() {
         <View style={styles.articleContainer}>
           <ArticleSkeletonLoadingLayer
             styles={styles}
-            headerHeight={headerHeight}
+            paddingTop={articleTopPad}
             accessibilityLabel={t('loading')}
           />
         </View>
       ) : error && !article ? (
         <View
-          style={[styles.center, { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA }]}
+          style={[styles.center, { paddingTop: articleTopPad }]}
         >
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
@@ -304,7 +330,7 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
+                    paddingTop: articleTopPad,
                     paddingHorizontal: contentPadH,
                   },
                   selectedWord
@@ -342,7 +368,7 @@ export default function ArticleDetailScreen() {
                 style={styles.scroll}
                 contentContainerStyle={[
                   styles.scrollContent,
-                  { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA },
+                  { paddingTop: articleTopPad },
                   selectedWord
                     ? {
                         paddingBottom:
@@ -437,12 +463,16 @@ export default function ArticleDetailScreen() {
           {refreshOverlayVisible ? (
             <ArticleSkeletonLoadingLayer
               styles={styles}
-              headerHeight={headerHeight}
+              paddingTop={articleTopPad}
               accessibilityLabel={t('loading')}
             />
           ) : null}
         </View>
       ) : null}
+      <SettingsDrawer
+        visible={settingsDrawerOpen}
+        onRequestClose={() => setSettingsDrawerOpen(false)}
+      />
     </>
   );
 }
@@ -591,20 +621,16 @@ function createStyles(theme: Theme) {
     fontSize: 14,
     fontWeight: '500',
   },
-  headerIconBackdrop: {
-    width: 30,
-    height: 30,
-    borderRadius: 20,
+  headerSettingsButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 2,
-    backgroundColor: `${theme.surfaceElevated}E8`,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.18,
-    shadowRadius: 3,
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  headerSettingsLabel: {
+    color: theme.accent,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
   headerIconBackdropPressed: {
     opacity: 0.88,

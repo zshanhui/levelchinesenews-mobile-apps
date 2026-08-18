@@ -35,7 +35,6 @@ export const MAX_CACHED_ARTICLE_DETAILS = 500;
 export const ARTICLE_DETAIL_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Font / Settings storage
-export const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';
 export const STORAGE_KEY_PINYIN = '@lcn/showPinyin';
 export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';
@@ -44,6 +43,11 @@ export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
 
 /** Web: cap content width (~iPad / tablet) with gutters on large desktops. */
 export const WEB_MAX_VIEWPORT_WIDTH = 800;
+/** Desktop: open settings as a right drawer instead of a full-screen route. */
+export const WEB_WIDE_LAYOUT_MIN_WIDTH = 960;
+export const WEB_SETTINGS_DRAWER_WIDTH = 400;
+/** Mobile: settings sheet height as a fraction of the viewport. */
+export const WEB_SETTINGS_SHEET_HEIGHT_RATIO = 0.88;
 /** Inner inset used inside the 800px article column (and as the minimum web gutter). */
 const WEB_CONTENT_INSET = 20;
 
