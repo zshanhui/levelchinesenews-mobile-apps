@@ -108,7 +108,6 @@ export const prerender = true;
   }
 
   const API_URL = 'https://api-mig4242.levelchinese.app/api/v1/sentences';
-  const READER_URL = 'https://reader.levelchinese.app/article';
   const PAGE_SIZE = 25;
   const MIN_SENTENCE_LENGTH = 12;
   const RECENT_SEARCHES_KEY = 'lcn:recent-sentence-searches';
@@ -265,23 +264,15 @@ export const prerender = true;
     }
   }
 
-  function createSentenceCard(item: SentenceItem, word: string): HTMLAnchorElement {
-    const card = document.createElement('a');
+  function createSentenceCard(item: SentenceItem, word: string): HTMLElement {
+    const card = document.createElement('article');
     card.className = 'sentence-card';
-    const articleUrl = new URL(`${READER_URL}/${encodeURIComponent(item.article_id)}`);
-    articleUrl.searchParams.set('sentenceKey', `${item.paragraph_index}:${item.sentence_index}`);
-    card.href = articleUrl.toString();
-    card.setAttribute('aria-label', `Read article containing ${item.sentence_text}`);
 
     const sentence = document.createElement('p');
     sentence.className = 'sentence-text';
     appendHighlightedText(sentence, item.sentence_text, word);
 
-    const hint = document.createElement('span');
-    hint.className = 'read-article';
-    hint.innerHTML = 'read article <span aria-hidden="true">→</span>';
-
-    card.append(sentence, hint);
+    card.append(sentence);
     return card;
   }
 
@@ -716,13 +707,6 @@ export const prerender = true;
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 3%, transparent);
-    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
-  }
-
-  .sentence-list :global(.sentence-card:hover) {
-    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--text) 7%, transparent);
-    transform: translateY(-1px);
   }
 
   .sentence-list :global(.sentence-text) {
@@ -737,25 +721,6 @@ export const prerender = true;
     color: var(--accent);
     background: transparent;
     font-weight: 750;
-  }
-
-  .sentence-list :global(.read-article) {
-    display: block;
-    margin-top: 0.45rem;
-    color: var(--accent);
-    font-size: 0.86rem;
-    font-weight: 600;
-    text-align: right;
-  }
-
-  .sentence-list :global(.read-article span) {
-    display: inline-block;
-    margin-left: 0.15rem;
-    transition: transform 150ms ease;
-  }
-
-  .sentence-list :global(.sentence-card:hover .read-article span) {
-    transform: translateX(3px);
   }
 
   .empty-message {
@@ -846,9 +811,7 @@ export const prerender = true;
       animation-duration: 1.4s;
     }
 
-    .search-button,
-    .sentence-list :global(.sentence-card),
-    .sentence-list :global(.read-article span) {
+    .search-button {
       transition: none;
     }
   }
