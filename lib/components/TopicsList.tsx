@@ -1,8 +1,6 @@
-import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,11 +16,7 @@ import { darkTheme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { useArticleTopics } from '../useArticleTopics';
 
-const serifTextStyle = Platform.select({
-  ios: { fontFamily: 'Georgia' },
-  android: { fontFamily: 'serif' },
-  default: { fontFamily: 'Georgia' },
-});
+const serifTextStyle = { fontFamily: 'Georgia' };
 
 const TOPICS_PER_ROW_ZH = 5;
 const TOPICS_PER_ROW_NON_ZH = 3;
@@ -42,10 +36,7 @@ export function TopicsList({ activeTopicKey, onTopicSelect }: TopicsListProps) {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { topics, loading, error } = useArticleTopics();
 
-  const topicButtonHaptic = useCallback(() => {
-    if (Platform.OS === 'web') return;
-    void Haptics.selectionAsync().catch(() => {});
-  }, []);
+  const topicButtonHaptic = useCallback(() => {}, []);
 
   /** Same order as `GET /articles/topics` JSON object keys (e.g. `AI时代` first). */
   const entries = useMemo(() => {

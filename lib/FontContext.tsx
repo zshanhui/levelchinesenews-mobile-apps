@@ -4,7 +4,7 @@ import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display
 const NotoSansSC_200ExtraLight = require('@expo-google-fonts/noto-sans-sc/200ExtraLight/NotoSansSC_200ExtraLight.ttf');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const NotoSansSC_400Regular = require('@expo-google-fonts/noto-sans-sc/400Regular/NotoSansSC_400Regular.ttf');
-import { Platform, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -80,17 +80,10 @@ const FontContext = createContext<FontContextValue | null>(null);
 export function FontProvider({ children }: { children: React.ReactNode }) {
   const { width: windowWidth } = useWindowDimensions();
 
-  const [useNotoSansSC, setUseNotoSansSCState] = useState(
-    Platform.OS === 'android' ? false : true,
-  );
+  const [useNotoSansSC, setUseNotoSansSCState] = useState(true);
   const [showPinyin, setShowPinyinState] = useState(true);
-  /** Web: Noto (non-Android default), 22px (xl), relaxed — until AsyncStorage overrides. */
-  const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>(
-    Platform.OS === 'web' ? 'relaxed' : 'normal',
-  );
-  const [fontSize, setFontSizeState] = useState<FontSizeLevel>(
-    Platform.OS === 'web' ? 'xl' : 'md',
-  );
+  const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('relaxed');
+  const [fontSize, setFontSizeState] = useState<FontSizeLevel>('xl');
 
   const [fontsLoaded] = useFonts({
     NotoSansSC_200ExtraLight,
@@ -171,7 +164,6 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
 
   const articleFontSize = useMemo(() => {
     const base = FONT_SIZE_MAP[fontSize];
-    if (Platform.OS !== 'web') return base;
     return Math.round(base * webArticleFontScale(windowWidth));
   }, [fontSize, windowWidth]);
 

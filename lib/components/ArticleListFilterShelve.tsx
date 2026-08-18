@@ -1,9 +1,7 @@
-import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -18,11 +16,7 @@ import { useTheme } from '../ThemeContext';
 import { TopicsList } from './TopicsList';
 
 /** Georgia / system serif — matches sort controls in this sheet. */
-const serifTextStyle = Platform.select({
-  ios: { fontFamily: 'Georgia' },
-  android: { fontFamily: 'serif' },
-  default: { fontFamily: 'Georgia' },
-});
+const serifTextStyle = { fontFamily: 'Georgia' };
 
 type ArticleListFilterShelveProps = {
   visible: boolean;
@@ -70,10 +64,7 @@ export function ArticleListFilterShelve({
     }).start();
   }, [visible, sheetHeight, translateY]);
 
-  const sortButtonHaptic = useCallback(() => {
-    if (Platform.OS === 'web') return;
-    void Haptics.selectionAsync().catch(() => {});
-  }, []);
+  const sortButtonHaptic = useCallback(() => {}, []);
 
   const onPressSort = useCallback(
     (field: ArticleListOrderBy) => {

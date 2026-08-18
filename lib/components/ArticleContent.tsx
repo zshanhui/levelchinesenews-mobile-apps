@@ -12,7 +12,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { FlashList, type ViewToken } from '@shopify/flash-list';
 import {
   Animated,
-  Platform,
   Pressable,
   type RefreshControlProps,
   StyleSheet,
@@ -850,16 +849,19 @@ export function ArticleContent({
     return null;
   }
 
+  const listStyle = StyleSheet.flatten([styles.listRoot, styleProp]);
+  const listContentContainerStyle = StyleSheet.flatten(contentContainerStyleProp);
+
   return (
     <FlashList
       ref={listRef}
-      style={[styles.listRoot, styleProp]}
+      style={listStyle}
       data={flatData}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       ListHeaderComponent={listHeaderComposed}
       ListFooterComponent={listFooterComposed}
-      contentContainerStyle={contentContainerStyleProp}
+      contentContainerStyle={listContentContainerStyle}
       extraData={listExtraData}
       refreshControl={refreshControl}
       {...(onLastSentenceBecameVisible
@@ -874,20 +876,14 @@ export function ArticleContent({
 }
 
 function createStyles(theme: Theme, isDark: boolean) {
-  const bookmarkShadow =
-    Platform.OS === 'android'
-      ? { elevation: 6 }
-      : {
+  const bookmarkShadow = {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0.5 : 0.32,
           shadowRadius: 3.5,
         };
 
-  const translateFabShadow =
-    Platform.OS === 'android'
-      ? { elevation: 2 }
-      : {
+  const translateFabShadow = {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0.24 : 0.1,

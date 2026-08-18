@@ -2,10 +2,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
 import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -18,28 +17,14 @@ import {
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArticleContent } from '../../lib/components/ArticleContent';
-import {
-  BookmarkToast,
-  type BookmarkToastState,
-} from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { resolveImageUrl } from '../../lib/api';
 import { formatPublishedDate } from '../../lib/formatPublishedDate';
-import { showErrorFeedback } from '../../lib/showErrorFeedback';
-import {
-  articleDetailToListItem,
-  clearSentenceBookmark,
-  computeSentenceBookmarkDisplay,
-  getReadState,
-  getSentenceBookmark,
-  setRead,
-  upsertArticleMarkedRead,
-  upsertSavedArticleWithSentenceBookmark,
-} from '../../lib/savedArticlesDb';
 import {
   ARTICLE_STUDY_EXTRA_BOTTOM_PADDING,
   STUDY_PANEL_HEIGHT,
+  webContentHorizontalPadding,
 } from '../../lib/constants';
 import { webArticleFontScale } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
@@ -52,9 +37,7 @@ const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 /** Space below the transparent header before the article title and metadata. */
 const ARTICLE_SCROLL_TOP_EXTRA = 75;
 
-/** Native headline size */
-const ARTICLE_TITLE_BASE_FONT_SIZE = 22;
-/** Web headline before viewport scaling (`webArticleFontScale`). */
+/** Native headline size kept for scale reference. */
 const ARTICLE_TITLE_BASE_FONT_SIZE_WEB = 28;
 
 /** Extra inset below the header for skeleton (list load + pull-to-refresh). */
@@ -126,12 +109,11 @@ export default function ArticleDetailScreen() {
   const headerHeight = useHeaderHeight();
   const { width: windowWidth } = useWindowDimensions();
   const { theme } = useTheme();
+  const contentPadH = webContentHorizontalPadding(windowWidth);
 
   const articleTitleFontSize = useMemo(
     () =>
-      Platform.OS === 'web'
-        ? Math.round(ARTICLE_TITLE_BASE_FONT_SIZE_WEB * webArticleFontScale(windowWidth))
-        : ARTICLE_TITLE_BASE_FONT_SIZE,
+      Math.round(ARTICLE_TITLE_BASE_FONT_SIZE_WEB * webArticleFontScale(windowWidth)),
     [windowWidth],
   );
   const { t } = useTranslation();
@@ -144,22 +126,10 @@ export default function ArticleDetailScreen() {
     return null;
   };
   const insets = useSafeAreaInsets();
-  const [bookmarkToast, setBookmarkToast] = useState<BookmarkToastState | null>(
-    null,
-  );
-  const dismissBookmarkToast = useCallback(() => setBookmarkToast(null), []);
-  const [bookmarkedSentenceKey, setBookmarkedSentenceKey] = useState<
-    string | null
-  >(null);
-  const [readState, setReadState] = useState(false);
   const [selectedWord, setSelectedWord] = useState<{ word: string; pinyin: string | null } | null>(null);
   const [highlightedWordKey, setHighlightedWordKey] = useState<string | null>(null);
   const [highlightedSentenceKey, setHighlightedSentenceKey] = useState<string | null>(null);
   const [refreshOverlayVisible, setRefreshOverlayVisible] = useState(false);
-  /** Show mark read/unread only after the list reports the last sentence is on screen. */
-  const [markReadFooterVisible, setMarkReadFooterVisible] = useState(false);
-  const bookmarkedSentenceKeyRef = useRef<string | null>(null);
-  bookmarkedSentenceKeyRef.current = bookmarkedSentenceKey;
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
@@ -202,92 +172,7 @@ export default function ArticleDetailScreen() {
     []
   );
 
-  useEffect(() => {
-    if (Platform.OS === 'web' || !id) {
-      setReadState(false);
-      setBookmarkedSentenceKey(null);
-      return;
-    }
-    setReadState(false);
-    setBookmarkedSentenceKey(null);
-    let cancelled = false;
-    Promise.all([getReadState(id), getSentenceBookmark(id)]).then(
-      ([read, bookmarkIdx]) => {
-        if (!cancelled) {
-          setReadState(read);
-          setBookmarkedSentenceKey(
-            bookmarkIdx ? `${bookmarkIdx[0]}:${bookmarkIdx[1]}` : null,
-          );
-        }
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  const onMarkRead = useCallback(() => {
-    if (!id || Platform.OS === 'web' || !article) return;
-    void upsertArticleMarkedRead(articleDetailToListItem(article));
-    setReadState(true);
-    setBookmarkedSentenceKey(null);
-  }, [id, article]);
-
-  const onMarkUnread = useCallback(() => {
-    if (!id || Platform.OS === 'web') return;
-    void setRead(id, false).then(() => setReadState(false));
-  }, [id]);
-
-  const onLastSentenceBecameVisible = useCallback(() => {
-    setMarkReadFooterVisible(true);
-  }, []);
-
-  useEffect(() => {
-    setMarkReadFooterVisible(false);
-  }, [id]);
-
-  const onSentenceBookmarkPress = useCallback(
-    async (sentenceKey: string) => {
-      if (!id || Platform.OS === 'web' || !article) return;
-      const parts = sentenceKey.split(':');
-      if (parts.length !== 2) return;
-      const p = Number(parts[0]);
-      const s = Number(parts[1]);
-      if (!Number.isInteger(p) || !Number.isInteger(s)) return;
-      try {
-        if (bookmarkedSentenceKeyRef.current === sentenceKey) {
-          await clearSentenceBookmark(id);
-          setBookmarkedSentenceKey(null);
-          setBookmarkToast((prev) => ({
-            message: 'bookmark removed',
-            key: (prev?.key ?? 0) + 1,
-          }));
-        } else {
-          const display = computeSentenceBookmarkDisplay(
-            article.parsed_content,
-            p,
-            s,
-          );
-          await upsertSavedArticleWithSentenceBookmark(
-            articleDetailToListItem(article),
-            [p, s],
-            display,
-          );
-          setBookmarkedSentenceKey(sentenceKey);
-          setBookmarkToast((prev) => ({
-            message: 'bookmark saved',
-            key: (prev?.key ?? 0) + 1,
-          }));
-        }
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        showErrorFeedback(t('sentenceBookmarkFailed'), message);
-      }
-    },
-    [id, article, t],
-  );
-
-  // Restore selection when app opens with return-from-Pleco deep link (e.g. app was killed)
+  // Restore selection from share-link query params (word / sentenceKey).
   useEffect(() => {
     restoreSelectionFromParams({
       word: urlWord,
@@ -296,27 +181,6 @@ export default function ArticleDetailScreen() {
     });
   }, [urlWord, urlWordKey, urlSentenceKey, restoreSelectionFromParams]);
 
-  // Restore selection when app returns from background via Pleco x-success URL
-  useEffect(() => {
-    const subscription = Linking.addEventListener('url', (event) => {
-      try {
-        const url = event.url;
-        const parsed = Linking.parse(url);
-        const path = parsed.path;
-        const articleMatch = path?.match(/^\/?article\/([^/]+)/);
-        if (articleMatch && articleMatch[1] === id) {
-          const query = parsed.queryParams as Record<string, string> | undefined;
-          if (query?.word && query?.wordKey && query?.sentenceKey) {
-            restoreSelectionFromParams(query);
-          }
-        }
-      } catch {
-        // ignore parse errors
-      }
-    });
-    return () => subscription.remove();
-  }, [id, restoreSelectionFromParams]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
       title: '',
@@ -324,28 +188,8 @@ export default function ArticleDetailScreen() {
       headerShadowVisible: false,
       headerStyle: { backgroundColor: 'transparent' },
       headerTintColor: theme.text,
-      ...(Platform.OS === 'web' ? { headerBackVisible: false } : {}),
-      headerLeft:
-        Platform.OS === 'web'
-          ? () => null
-          : () => (
-              <Pressable
-                onPress={() => router.back()}
-                hitSlop={10}
-                style={({ pressed }) => [
-                  styles.headerIconBackdrop,
-                  pressed && styles.headerIconBackdropPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t('back')}
-              >
-                <Ionicons
-                  name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-                  size={24}
-                  color={theme.text}
-                />
-              </Pressable>
-            ),
+      headerBackVisible: false,
+      headerLeft: () => null,
       headerRight: () => (
         <Pressable
           onPress={() => router.push('/settings')}
@@ -400,7 +244,6 @@ export default function ArticleDetailScreen() {
         </View>
       ) : article ? (
         <View style={styles.articleContainer}>
-          <BookmarkToast toast={bookmarkToast} onDismiss={dismissBookmarkToast} />
           <Pressable
             style={styles.articleScrollContainer}
             collapsable={false}
@@ -456,63 +299,13 @@ export default function ArticleDetailScreen() {
                     })()}
                   </>
                 )}
-                listFooter={
-                  Platform.OS !== 'web' && markReadFooterVisible ? (
-                    <View style={styles.markReadFooter}>
-                      {readState ? (
-                        <View style={styles.markUnreadRow}>
-                          <Pressable
-                            style={({ pressed }) => [
-                              styles.markUnreadButton,
-                              pressed && styles.markUnreadButtonPressed,
-                            ]}
-                            onPress={onMarkUnread}
-                            accessibilityRole="button"
-                            accessibilityLabel={t('markUnread')}
-                          >
-                            <Text style={styles.markUnreadButtonLabel}>
-                              {t('markUnread')}
-                            </Text>
-                          </Pressable>
-                          <View
-                            style={styles.markReadStateIcon}
-                            pointerEvents="none"
-                            accessibilityElementsHidden
-                            importantForAccessibility="no-hide-descendants"
-                          >
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={22}
-                              color={theme.accent}
-                            />
-                          </View>
-                        </View>
-                      ) : (
-                        <Pressable
-                          style={({ pressed }) => [
-                            styles.markReadButton,
-                            pressed && styles.markReadButtonPressed,
-                          ]}
-                          onPress={onMarkRead}
-                          accessibilityRole="button"
-                          accessibilityLabel={t('markRead')}
-                        >
-                          <Text style={styles.markReadButtonLabel}>
-                            {t('markRead')}
-                          </Text>
-                        </Pressable>
-                      )}
-                    </View>
-                  ) : null
-                }
-                onLastSentenceBecameVisible={
-                  Platform.OS !== 'web' ? onLastSentenceBecameVisible : undefined
-                }
+                listFooter={null}
+                onLastSentenceBecameVisible={undefined}
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
                     paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
-                    paddingHorizontal: 20,
+                    paddingHorizontal: contentPadH,
                   },
                   selectedWord
                     ? {
@@ -535,9 +328,9 @@ export default function ArticleDetailScreen() {
                 highlightedWordKey={highlightedWordKey}
                 highlightedSentenceKey={highlightedSentenceKey}
                 onWordPress={onWordPress}
-                sentenceBookmarkEnabled={Platform.OS !== 'web'}
-                bookmarkedSentenceKey={bookmarkedSentenceKey}
-                onSentenceBookmarkPress={onSentenceBookmarkPress}
+                sentenceBookmarkEnabled={false}
+                bookmarkedSentenceKey={null}
+                onSentenceBookmarkPress={undefined}
                 articleTranslations={articleTranslations}
                 translationLang={translationLang}
                 articleTranslationsLoading={articleTranslationsLoading}
@@ -569,7 +362,7 @@ export default function ArticleDetailScreen() {
                 }
               >
                 <Pressable
-                  style={styles.content}
+                  style={[styles.content, { paddingHorizontal: contentPadH }]}
                   collapsable={false}
                   onPress={selectedWord ? onClosePanel : undefined}
                 >
@@ -624,7 +417,13 @@ export default function ArticleDetailScreen() {
             )}
           </Pressable>
           {selectedWord && !refreshOverlayVisible ? (
-            <View style={styles.studyPanelOverlay} pointerEvents="box-none">
+            <View
+              style={[
+                styles.studyPanelOverlay,
+                { paddingHorizontal: contentPadH },
+              ]}
+              pointerEvents="box-none"
+            >
               <SentenceStudyPanel
                 word={selectedWord.word}
                 pinyin={selectedWord.pinyin}
@@ -802,18 +601,10 @@ function createStyles(theme: Theme) {
     backgroundColor: `${theme.surfaceElevated}E8`,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.18,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
   },
   headerIconBackdropPressed: {
     opacity: 0.88,

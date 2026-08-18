@@ -1,12 +1,8 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Platform, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, View } from 'react-native';
 import { useTranslation } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeContext';
-
-/** Extra space below tab icons/labels (safe area is added on top of this). */
-const TAB_BAR_EXTRA_BOTTOM_PADDING = 10;
 
 function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
   const logoColors = [theme.accent, '#8a8278', theme.text];
@@ -44,10 +40,9 @@ function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
 export default function TabLayout() {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   return (
     <Tabs
-      initialRouteName={Platform.OS === 'web' ? 'settings' : undefined}
+      initialRouteName="settings"
       screenOptions={{
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textMuted,
@@ -59,15 +54,7 @@ export default function TabLayout() {
         headerTintColor: theme.text,
         headerShadowVisible: false,
         headerTitle: () => <AppHeader theme={theme} />,
-        tabBarStyle:
-          Platform.OS === 'web'
-            ? { display: 'none', height: 0 }
-            : {
-                backgroundColor: theme.surface,
-                borderTopColor: theme.border,
-                borderTopWidth: 1,
-                paddingBottom: insets.bottom + TAB_BAR_EXTRA_BOTTOM_PADDING,
-              },
+        tabBarStyle: { display: 'none', height: 0 },
         sceneStyle: { backgroundColor: theme.background },
       }}
     >
@@ -75,8 +62,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('tabs.articles'),
-          /** Web: article list disabled — hide Read tab. */
-          href: Platform.OS === 'web' ? null : undefined,
+          href: null,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'newspaper' : 'newspaper-outline'} color={color} size={24} />
           ),
@@ -86,8 +72,7 @@ export default function TabLayout() {
         name="create"
         options={{
           title: t('tabs.create'),
-          /** Web: Create / parse is disabled — omit from bottom tab bar. */
-          href: Platform.OS === 'web' ? null : undefined,
+          href: null,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} color={color} size={24} />
           ),

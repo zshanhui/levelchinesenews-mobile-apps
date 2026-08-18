@@ -1,18 +1,3 @@
-jest.mock('react-native', () => ({
-  Platform: { OS: 'ios' },
-}));
-
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-}));
-
-jest.mock('./localDatabase', () => ({
-  getLocalDatabase: jest.fn(),
-  userSavedArticlesTableName: 'user_saved_articles',
-}));
-
 import { computeSentenceBookmarkDisplay } from './savedArticlesDb';
 import type { ParsedParagraph } from './types';
 

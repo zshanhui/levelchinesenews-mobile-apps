@@ -44,3 +44,14 @@ export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
 
 /** Web: cap content width (~iPad / tablet) with gutters on large desktops. */
 export const WEB_MAX_VIEWPORT_WIDTH = 800;
+/** Inner inset used inside the 800px article column (and as the minimum web gutter). */
+const WEB_CONTENT_INSET = 20;
+
+/**
+ * Horizontal padding so web scroll views can be full-bleed (wheel works in the
+ * gutters) while readable content stays ~`WEB_MAX_VIEWPORT_WIDTH`.
+ */
+export function webContentHorizontalPadding(windowWidth: number): number {
+  if (windowWidth <= WEB_MAX_VIEWPORT_WIDTH) return WEB_CONTENT_INSET;
+  return (windowWidth - WEB_MAX_VIEWPORT_WIDTH) / 2 + WEB_CONTENT_INSET;
+}

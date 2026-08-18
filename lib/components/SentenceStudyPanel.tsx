@@ -1,20 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { i18n, useTranslation } from '../i18n';
+import { useCallback, useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from '../i18n';
 import { useFont } from '../FontContext';
-import { getTotalLcnDictEntriesCount } from '../localDatabase';
 import { useTheme } from '../ThemeContext';
-import {
-  resolveDictLookup,
-  type DictLookupMatch,
-} from '../useLocalDictService';
 import type { Theme } from '../theme';
 
-const showPlecoButton = Platform.OS !== 'web';
-const useOptimisticPlecoOpen = true;
+const URL_HOME_PAGE = 'https://levelchinese.app';
 
 export type SentenceStudyPanelProps = {
   word: string;
@@ -25,164 +18,36 @@ export type SentenceStudyPanelProps = {
   bottomInset: number;
 };
 
-function buildPlecoUrl(
-  word: string,
-  pinyin: string | null,
-  articleId: string,
-  wordKey: string,
-  sentenceKey: string
-): string {
-  const returnParams = new URLSearchParams({ word, wordKey, sentenceKey });
-  const xSuccess = `lcn://article/${articleId}?${returnParams.toString()}`;
-
-  const useSearch = word.length >= 2;
-  const baseParams: Record<string, string> = {
-    'x-source': i18n.t('plecoSource'),
-    'x-success': xSuccess,
-  };
-
-  if (useSearch) {
-    baseParams.q = word;
-    return `plecoapi://x-callback-url/s?${new URLSearchParams(baseParams).toString()}`;
-  }
-
-  const dfParams = new URLSearchParams({ hw: word, ...baseParams });
-  if (pinyin) dfParams.set('py', pinyin);
-  return `plecoapi://x-callback-url/df?${dfParams.toString()}`;
-}
-
 export function SentenceStudyPanel({
   word,
   pinyin,
-  articleId,
-  highlightedWordKey,
-  highlightedSentenceKey,
   bottomInset,
 }: SentenceStudyPanelProps) {
-  const router = useRouter();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const { chineseFontStyle, chinesePinyinFontStyle } = useFont();
-  const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
-  const [lookupComplete, setLookupComplete] = useState(
-    () => Platform.OS === 'web',
-  );
-  const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
-  const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
   const stackPinyinUnderWord = word.length >= 4;
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      setDictMatches([]);
-      setHasLocalDictData(false);
-      setLookupComplete(true);
-      return;
-    }
-    let cancelled = false;
-    setDictMatches([]);
-    setLookupComplete(false);
-    setHasLocalDictData(null);
-    const runLookup = async () => {
-      try {
-        const [lookupResult, totalCount] = await Promise.all([
-          resolveDictLookup(word),
-          getTotalLcnDictEntriesCount(),
-        ]);
-        if (cancelled) return;
-        setDictMatches(lookupResult.matches);
-        setHasLocalDictData(totalCount > 0);
-      } catch (err) {
-        if (cancelled) return;
-        console.warn(`Study panel lookup warning for "${word}":`, err);
-        setDictMatches([]);
-        setHasLocalDictData(false);
-      } finally {
-        if (!cancelled) {
-          setLookupComplete(true);
-        }
-      }
-    };
-    void runLookup();
-    return () => {
-      cancelled = true;
-    };
-  }, [word]);
-
-  useEffect(() => {
-    if (!showPlecoButton) {
-      setIsPlecoInstalled(false);
-      return;
-    }
-    if (useOptimisticPlecoOpen) {
-      setIsPlecoInstalled(true);
-    };
+  const openHomePageToDownloadApp = useCallback(() => {
+    void Linking.openURL(URL_HOME_PAGE);
   }, []);
 
-  const openInPleco = useCallback(async () => {
-    const url = buildPlecoUrl(
-      word,
-      pinyin,
-      articleId,
-      highlightedWordKey,
-      highlightedSentenceKey
-    );
-    try {
-      await Linking.openURL(url);
-    } catch {
-      await Linking.openURL('https://www.pleco.com?from=levelchinesenews.app');
-    }
-  }, [word, pinyin, articleId, highlightedWordKey, highlightedSentenceKey]);
-
-  const openLocalDictSettings = useCallback(() => {
-    router.push('/settings/localdict');
-  }, [router]);
-
-  const isWeb = Platform.OS === 'web';
-  const showWebLocalDatabaseMessage = isWeb && lookupComplete;
-  const showMissingDictSetup =
-    !isWeb && lookupComplete && !hasLocalDictData;
-  const showDefinitionText =
-    !isWeb &&
-    (!lookupComplete || dictMatches.some((match) => Boolean(match.entry.definitions)));
-  const showSplitMatches = dictMatches.length > 1;
-  const singleMatch = dictMatches[0] ?? null;
-  /** Tighten list + header spacing when many sub-word lines would make the panel very tall. */
-  const compactMultiSplit = dictMatches.length >= 3;
-
   return (
-    <View
-      style={[
-        styles.panel,
-        compactMultiSplit && styles.panelCompact,
-        { paddingBottom: Math.max(bottomInset, 16) },
-      ]}
-    >
-      <View style={[styles.panelHeader, compactMultiSplit && styles.panelHeaderCompact]}>
+    <View style={[styles.panel, { paddingBottom: Math.max(bottomInset, 16) }]}>
+      <View style={styles.panelHeader}>
         <View
           style={[
             styles.panelHeaderContent,
             stackPinyinUnderWord ? styles.panelHeaderContentStacked : null,
-            stackPinyinUnderWord && compactMultiSplit
-              ? styles.panelHeaderContentStackedCompact
-              : null,
           ]}
         >
-          <Text
-            style={[
-              styles.panelWord,
-              compactMultiSplit && styles.panelWordCompact,
-              chineseFontStyle,
-            ]}
-          >
-            {word}
-          </Text>
+          <Text style={[styles.panelWord, chineseFontStyle]}>{word}</Text>
           {pinyin ? (
             <Text
               style={[
                 styles.panelPinyin,
                 stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
-                compactMultiSplit && styles.panelPinyinCompact,
                 chinesePinyinFontStyle,
               ]}
             >
@@ -190,159 +55,37 @@ export function SentenceStudyPanel({
             </Text>
           ) : null}
         </View>
-        <View style={styles.panelHeaderRight}>
-          {showPlecoButton ? (
-            <Pressable
-              onPress={() => {
-                void openInPleco();
-              }}
-              style={({ pressed }) => [
-                styles.plecoButton,
-                !isPlecoInstalled ? styles.plecoWebsiteButton : null,
-                compactMultiSplit && styles.plecoButtonCompact,
-                pressed && styles.plecoButtonPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={
-                isPlecoInstalled ? t('openInPleco') : t('openPlecoWebsite')
-              }
-            >
-              <Text
+      </View>
+      <View style={styles.panelDefinition}>
+        <View style={styles.panelDefinitionMissingDict}>
+          <Text
+            style={[
+              styles.panelDefinitionText,
+              styles.panelDefinitionTextMissing,
+              chineseFontStyle,
+            ]}
+          >
+            {t('localDatabaseNotSupportedOnWeb')}
+          </Text>
+          <Pressable
+            onPress={openHomePageToDownloadApp}
+            accessibilityRole="link"
+            accessibilityLabel={t('goBackHome')}
+          >
+            {({ pressed }) => (
+              <View
                 style={[
-                  styles.plecoButtonText,
-                  !isPlecoInstalled ? styles.plecoWebsiteButtonText : null,
+                  styles.panelDefinitionLinkRow,
+                  pressed && styles.panelDefinitionLinkRowPressed,
                 ]}
               >
-                {isPlecoInstalled ? t('pleco') : t('getPleco')}
-              </Text>
-              <Ionicons
-                name={isPlecoInstalled ? 'search-outline' : 'open-outline'}
-                size={isPlecoInstalled ? 14 : 12}
-                color={isPlecoInstalled ? '#fff' : theme.textMuted}
-              />
-            </Pressable>
-          ) : null}
+                <Text style={styles.panelDefinitionLink}>{t('goBackHome')}</Text>
+                <Ionicons name="open-outline" size={14} color={theme.accent} />
+              </View>
+            )}
+          </Pressable>
         </View>
       </View>
-      {showWebLocalDatabaseMessage ||
-      showMissingDictSetup ||
-      showDefinitionText ? (
-        <View
-          style={[styles.panelDefinition, compactMultiSplit && styles.panelDefinitionCompact]}
-        >
-          {showWebLocalDatabaseMessage ? (
-            <Text
-              style={[
-                styles.panelDefinitionText,
-                styles.panelDefinitionTextMissing,
-                chineseFontStyle,
-              ]}
-            >
-              {t('localDatabaseNotSupportedOnWeb')}
-            </Text>
-          ) : showMissingDictSetup ? (
-            <View style={styles.panelDefinitionMissingDict}>
-              <Text
-                style={[
-                  styles.panelDefinitionText,
-                  styles.panelDefinitionTextMissing,
-                  chineseFontStyle,
-                ]}
-              >
-                {t('loadLocalDictFirstHint')}
-              </Text>
-              <Pressable onPress={openLocalDictSettings} accessibilityRole="button">
-                {({ pressed }) => (
-                  <View
-                    style={[
-                      styles.panelDefinitionLinkRow,
-                      pressed && styles.panelDefinitionLinkRowPressed,
-                    ]}
-                  >
-                    <Text style={styles.panelDefinitionLink}>{t('setupLocalDict')}</Text>
-                    <Ionicons
-                      name="arrow-forward-outline"
-                      size={14}
-                      color={theme.accent}
-                    />
-                  </View>
-                )}
-              </Pressable>
-            </View>
-          ) : showSplitMatches ? (
-            <View
-              style={[
-                styles.panelDefinitionList,
-                compactMultiSplit && styles.panelDefinitionListCompact,
-              ]}
-            >
-              {dictMatches.map((match, idx) => (
-                <View
-                  key={`${match.lookupText}:${match.entry.id}`}
-                  style={[
-                    styles.panelDefinitionItem,
-                    compactMultiSplit && styles.panelDefinitionItemCompact,
-                    idx > 0
-                      ? [
-                          styles.panelDefinitionItemDivider,
-                          compactMultiSplit && styles.panelDefinitionItemDividerCompact,
-                        ]
-                      : null,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.panelDefinitionItemHeader,
-                      compactMultiSplit && styles.panelDefinitionItemHeaderCompact,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.panelDefinitionItemWord,
-                        compactMultiSplit && styles.panelDefinitionItemWordCompact,
-                        chineseFontStyle,
-                      ]}
-                    >
-                      {match.lookupText}
-                    </Text>
-                    {match.entry.pinyin ? (
-                      <Text
-                        style={[
-                          styles.panelDefinitionItemPinyin,
-                          compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
-                          chineseFontStyle,
-                        ]}
-                      >
-                        {match.entry.pinyin}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <Text
-                    style={[
-                      styles.panelDefinitionText,
-                      compactMultiSplit && styles.panelDefinitionTextSplitCompact,
-                      styles.panelDefinitionTextLoaded,
-                      chineseFontStyle,
-                    ]}
-                  >
-                    {match.entry.definitions}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text
-              style={[
-                styles.panelDefinitionText,
-                singleMatch?.entry.definitions ? styles.panelDefinitionTextLoaded : null,
-                chineseFontStyle,
-              ]}
-            >
-              {singleMatch?.entry.definitions ?? t('nativeLanguageDefinitionPlaceholder')}
-            </Text>
-          )}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -360,18 +103,11 @@ function createStyles(theme: Theme, isDark: boolean) {
       shadowRadius: 8,
       elevation: 8,
     },
-    panelCompact: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-    },
     panelHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 12,
-    },
-    panelHeaderCompact: {
-      marginBottom: 6,
     },
     panelHeaderContent: {
       flex: 1,
@@ -385,14 +121,6 @@ function createStyles(theme: Theme, isDark: boolean) {
       alignItems: 'flex-start',
       gap: 2,
     },
-    panelHeaderContentStackedCompact: {
-      gap: 0,
-    },
-    panelHeaderRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
     panelPinyin: {
       fontSize: 14,
       color: theme.textMuted,
@@ -400,80 +128,20 @@ function createStyles(theme: Theme, isDark: boolean) {
     panelPinyinUnderWord: {
       fontSize: 13,
     },
-    panelPinyinCompact: {
-      fontSize: 12,
-    },
     panelWord: {
       fontSize: 22,
       fontWeight: '700',
       color: isDark ? theme.text : theme.accent,
     },
-    panelWordCompact: {
-      fontSize: 20,
-    },
     panelDefinition: {
       paddingTop: 8,
-    },
-    panelDefinitionCompact: {
-      paddingTop: 4,
     },
     panelDefinitionMissingDict: {
       gap: 8,
     },
-    panelDefinitionList: {
-      gap: 12,
-    },
-    panelDefinitionListCompact: {
-      gap: 5,
-    },
-    panelDefinitionItem: {
-      gap: 6,
-    },
-    panelDefinitionItemCompact: {
-      gap: 2,
-    },
-    panelDefinitionItemDivider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.border,
-      paddingTop: 12,
-    },
-    panelDefinitionItemDividerCompact: {
-      paddingTop: 5,
-    },
-    panelDefinitionItemHeader: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: 8,
-      flexWrap: 'wrap',
-    },
-    panelDefinitionItemHeaderCompact: {
-      gap: 5,
-    },
-    panelDefinitionItemWord: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: isDark ? theme.text : theme.accent,
-    },
-    panelDefinitionItemWordCompact: {
-      fontSize: 16,
-    },
-    panelDefinitionItemPinyin: {
-      fontSize: 13,
-      color: theme.textMuted,
-    },
-    panelDefinitionItemPinyinCompact: {
-      fontSize: 12,
-    },
     panelDefinitionText: {
       fontSize: 14,
       color: theme.textMuted,
-    },
-    panelDefinitionTextSplitCompact: {
-      fontSize: 12,
-      lineHeight: 16,
-    },
-    panelDefinitionTextLoaded: {
-      color: theme.textSecondary,
     },
     panelDefinitionTextMissing: {
       color: theme.textMuted,
@@ -493,40 +161,6 @@ function createStyles(theme: Theme, isDark: boolean) {
     },
     panelDefinitionLinkRowPressed: {
       opacity: 0.75,
-    },
-    plecoButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      backgroundColor: '#0078c3',
-      borderRadius: 8,
-    },
-    plecoButtonCompact: {
-      paddingVertical: 5,
-      paddingHorizontal: 9,
-      gap: 4,
-    },
-    plecoWebsiteButton: {
-      backgroundColor: '#fff',
-      borderWidth: 1,
-      borderColor: theme.border,
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-      borderRadius: 7,
-    },
-    plecoButtonPressed: {
-      opacity: 0.9,
-    },
-    plecoButtonText: {
-      fontSize: 14,
-      color: '#fff',
-      fontWeight: '400',
-    },
-    plecoWebsiteButtonText: {
-      color: theme.textMuted,
-      fontSize: 12,
     },
   });
 }

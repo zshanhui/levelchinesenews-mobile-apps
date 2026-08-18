@@ -1,0 +1,87 @@
+some ideas for website content
+
+content should be useful for Chinese learners either as a resource (in native language) on how to learn more effectively or Chinese content that can be read by intermediate learners to learn from as a resource/lesson.
+
+
+standalone how to learn articles in English/Arabic/Russian/Spanish
+  [done]`htl-free-chinese-news-sites.md` write draft free chinese news sites to read more Chinese
+    - needs 2nd review/edit, then good for publishing
+
+  some sources and examples
+    - https://readbean.app/blog/best-apps-for-intermediate-chinese-learning
+
+  - the best apps for learning Chinese for intermediate learners, not the ones you think!
+  - the best free article content sites to read more Chinese for intermediate learners , Zhihu...
+  - free resources to watch more Chinese content
+    - Youtube, Bilibili
+
+
+- simplified Chinese news article lessons eg path: `/simplified-chinese-news-lessons/:page-slug`
+  - we need an agentic workflow/skill to create a rough draft to be polished to be further human editors (see: .dev-notes)
+
+
+
+## Content Marketing, mostly Reddit (moved from .devnotes)
+
+  - write a good response to this post about our favorite Chinese learning apps: https://www.reddit.com/r/ChineseLanguage/comments/1qv0avx/whats_your_favorite_chinese_learning_app
+  - list of r/ChineseLanguage posts on "Chinese learning apps": https://www.reddit.com/r/ChineseLanguage/search/?q=Chinese+learning+apps&cId=94872b11-56a1-4281-8d6a-fdbb4741b097&iId=a236abf7-bb19-466f-8f5a-da30f48ca0b5
+  - Free Chinese language learning apps, https://www.reddit.com/r/ChineseLanguage/comments/1oi45wv/a_free_language_learning_app/
+  - What is your favorite langauge learning app? 2mo ago, https://www.reddit.com/r/ChineseLanguage/comments/1rffoad/what_is_your_favorite_language_learning_app/
+
+  Lots of love for Hanly on r/ChineseLanguage, https://www.reddit.com/r/ChineseLanguage/comments/1j1tzry/i_hated_how_other_apps_teach_the_characters_so_i/
+
+  - https://www.reddit.com/r/ChineseLanguage/comments/1ob758b/are_there_any_apps_that_are_actually_free_to_read/
+    - DuChinese is much loved and recommended, learning the geography and culture of China, great content! DC has integrated dict and audio. the problem is that non of the apps are free, after 1 or 2 articles.
+
+## List of articles for reading lessons
+
+  - https://www.huxiu.com/article/4865078.html 黄仁勋劝年轻人去看电工、水管工、技工等职业，AI时代最不缺程序员
+  - https://www.huxiu.com/article/4865118.html 500亿，梁文锋“不学”任正非了
+
+  **from youth.cn**
+    - https://news.youth.cn/jsxw/202606/t20260609_16703744.htm
+
+**Tips on reading chinese news articles**
+  - https://migaku.com/blog/chinese/reading-chinese-news
+
+
+### [EXPLORE] [^v0.8.0] LCN Audio for Articles MVP/V0
+  - superceded by v0.7.0 introduction of native audio api and generation
+
+  - we can build an MVP for audio using existing audio files without having to generated the audio ourselves, and we can improve the reading experience by marking the beginning time of each sentence so we can highlight the sentence and autoscroll to the sentence as the audio plays, this MVP will only be available for a subset of articles and not available for users to generate audio for any article
+    - thepaper.cn articles (https://www.thepaper.cn/newsDetail_forward_33044189) have audio files that accompany this written text on most articles
+      - https://audios.thepaper.cn/input/33044189_202604242238ef4bc6fd-3e6d-486f-993b-ace88e4e8ff4.mp3, seems like its AI generated, we just need to mark the sentence boundaries if we use these audio files
+        - the dl of these files needs to be async since they are 10x to 50x the size of images so we cant wait for the audio to be downloaded at the time of article parse
+
+  - [p0] reach out to folks that have already expressed interest in using the LCN app now that a more stable v0.6.1 is released
+
+## Future ideas list, nice to have
+
+### [product-idea] creator generated content marketplace
+
+- prereq on the creation of stories and collections as an type of Article beyond just news
+
+if we have a good amount of serious Chinese learners using the app every week, say 10k average weekly learners that consistently use the LCN, then it may become interesting for content creators who are Chinese tutors or teachers to create paid content that learners can purchase for $1 to $5 usd, it would be a good place for Chinese tutor to market their services through created free and paid content. it can be a supplyment to 1on1 tutoring marketplaces like Preply, where content can be a form of passive income vs active income when teaching and can benefit their students as well.
+
+this would also provide LCN an early channel to monetise as we dont have ads or charge for most features.
+  - we can collect 10% to 20% of each content sold which still provides creators/tutors with the majority of the sales revenue. to compare most book marketplaces like Amazon takes 50% of media sales.
+
+### what is the "Job" of RealMandarin exactly and how to solve the actual problem?
+
+RealMandarin is an interesting Substack cater towards Mandarin learners that publishes a weekly post that is 95% English with some Chinese phrases. RM claims it focuses on "real" Chinese content, save learners from the boredom of graded readers, and teaches real phrases that people use often ones that follow current trends.
+
+the way i see the job of RM is that it provides English native learners with English context that makes it easier to understand native Chinese articles, so you read a RM post first, then search for the native trends on Chinese media sites like Weibo or news sites. so you go from RM -> Google search -> native Chinese content, with 3 steps/jobs existing in 3 separate places. the first job is understand context in English (do i care to read it?), then search for native Chinese content (where is the content?), then read and consume the native content (read the content). ofcourse, i surmise 80% of RM readers stop at the first step and never actually search for or read the native content.
+
+if the intent is to actually learn Chinese and eventually read native content, a more efficient method to do the same 3 jobs would be to do it all on the same interface, 1. provide context in app, 2. have a great search and discovery so learners can find many articles on the the topic/trend that intrigued them, and then actually provide the original native content with the study tools they would need to achieve full understanding all in 1 place. that is what LCN is going to build.
+
+  - preprocessing and parsing of the article with AI to understand context and translate that to the learners' native language whether it is English, Arabic, or Russian.
+    - we want to surface what the article about, the main interesting words and phrases to learn, the relative difficulty of the article for this learner, would it be interesting to the reader
+    - we need to either recommend or build really great contextual search so readers can find what they want to read
+    - the main reading interface has to be like a exoskeleton that gives the learner superpowers, make them feel much smarter than their actual Chinese reading level
+  - combining all these 3 steps into 1 tool would make it a 10x experience and we need to do it for 2000 - 3000 of articles per week, not just 2 or 3 per week of curated newsletters.
+
+## Mission Statement
+
+  - the Mission of LCN is to organise and simplify all publicly available native Chinese content and make it accessible to Learners
+  - vision: we want to help 1 million people learn Chinese for free
+  - promise: forever free, never ads, privacy first

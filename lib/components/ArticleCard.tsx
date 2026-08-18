@@ -6,7 +6,6 @@ import { useTranslation } from '../i18n';
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -385,10 +384,7 @@ export function ArticleCard({
 }
 
 function createStyles(theme: Theme, isDark: boolean) {
-  const translateFabShadow =
-    Platform.OS === 'android'
-      ? { elevation: 2 }
-      : {
+  const translateFabShadow = {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0.24 : 0.1,

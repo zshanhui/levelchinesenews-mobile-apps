@@ -1,16 +1,11 @@
 {
   "name": "mobile-apps-levelchinesenews",
-  "version": "0.5.3",
+  "version": "0.1.2",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "start": "expo start --web",
     "web": "expo start --web",
     "test": "jest",
-    "eas:preview": "eas build --platform android --profile preview",
-    "eas:production": "eas build --platform android --profile production",
-    "eas:local": "eas build --platform android --profile preview --local",
     "build:web": "expo export --platform web"
   },
   "dependencies": {

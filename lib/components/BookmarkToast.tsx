@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Easing,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -51,7 +50,7 @@ export function BookmarkToast({ toast, onDismiss }: BookmarkToastProps) {
     return () => clearTimeout(timer);
   }, [toast, onDismiss]);
 
-  if (!toast || Platform.OS === 'web') {
+  if (!toast) {
     return null;
   }
 
@@ -93,16 +92,10 @@ function createStyles(theme: Theme, isDark: boolean) {
       paddingHorizontal: 14,
       borderRadius: 10,
       backgroundColor: isDark ? 'rgba(19, 29, 19, 0.88)' : 'rgba(255, 255, 255, 0.9)',
-      ...Platform.select({
-        ios: {
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: isDark ? 0.45 : 0.2,
-          shadowRadius: isDark ? 10 : 8,
-        },
-        android: { elevation: isDark ? 8 : 6 },
-        default: {},
-      }),
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: isDark ? 0.45 : 0.2,
+      shadowRadius: isDark ? 10 : 8,
     },
     text: {
       fontSize: 14,

@@ -1,34 +1,27 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   Linking,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FontSizeLevel, LineSpacingLevel } from '../../lib/FontContext';
 import { useFont } from '../../lib/FontContext';
 import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelector';
+import { webContentHorizontalPadding } from '../../lib/constants';
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
-import { envConfig } from '../../lib/api';
-import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
 
 const URL_ABOUT_PAGE = 'https://levelchinese.app/about';
 const URL_CONTACT_PAGE = 'https://levelchinese.app/contact';
-import {
-  getOrCreateInstallationId,
-  userSavedArticlesTableName,
-} from '../../lib/localDatabase';
 
 const LINE_SPACING_OPTIONS: {
   value: LineSpacingLevel;
@@ -52,10 +45,10 @@ const FONT_SIZE_OPTIONS: {
 ];
 
 export default function SettingsScreen() {
-  const { theme, isDark, setDark } = useTheme();
+  const { theme } = useTheme();
   const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'dev';
-  const shouldEnableDebugPanel = process.env.EXPO_PUBLIC_DEBUG === '1';
   const {
     useNotoSansSC,
     setUseNotoSansSC,
@@ -68,114 +61,40 @@ export default function SettingsScreen() {
     fancyDisplayFontStyle,
   } = useFont();
 
-  const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
-    boolean | null
-  >(null);
-  const [installationId, setInstallationId] = useState<string | null>(null);
-  const [showDebugPanel, setShowDebugPanel] = useState(!__DEV__);
-  const lastVersionTapAtRef = useRef(0);
-
-  useEffect(() => {
-    if (!shouldEnableDebugPanel || Platform.OS === 'web') return;
-    AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
-      setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
-    });
-  }, [shouldEnableDebugPanel]);
-
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    getOrCreateInstallationId()
-      .then(setInstallationId)
-      .catch((err) => {
-        console.warn('Failed to load installation id for settings:', err);
-      });
-  }, []);
-
-  const handleVersionPress = () => {
-    if (!shouldEnableDebugPanel || !__DEV__) return;
-
-    const now = Date.now();
-    if (now - lastVersionTapAtRef.current < 400) {
-      setShowDebugPanel((current) => !current);
-    }
-    lastVersionTapAtRef.current = now;
-  };
-
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: webContentHorizontalPadding(windowWidth) },
+        ]}
         showsVerticalScrollIndicator={true}
       >
         <View style={[styles.sectionHeader, styles.sectionHeaderFirst]}>
           <Text style={styles.sectionHeaderText}>{t('configurePreferences')}</Text>
         </View>
 
-        {Platform.OS !== 'web' && (
-          <View style={[styles.settingRow, styles.settingRowSpaced]}>
-            <Text style={styles.settingLabel}>
-              {t('darkMode')}
-            </Text>
-            <Switch
-              value={isDark}
-              onValueChange={setDark}
-              trackColor={{ false: theme.border, true: theme.accent + '66' }}
-              thumbColor={isDark ? theme.accent : theme.textMuted}
-            />
-          </View>
-        )}
-
         {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
 
-        {Platform.OS === 'web' ? (
-          <View
-            style={[styles.navRow, styles.settingRowSpaced, styles.navRowWebDisabled]}
-            accessibilityRole="text"
-          >
-            <View style={styles.navRowContent}>
-              <View style={[styles.navRowIcon, styles.navRowIconWeb]}>
-                <Ionicons name="book-outline" size={20} color={theme.textMuted} />
-              </View>
-              <View style={styles.navRowTextGroup}>
-                <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
-                <Text style={styles.navRowDescriptionWebOnly}>
-                  {t('localDatabaseNotSupportedOnWeb')}
-                </Text>
-              </View>
+        <View
+          style={[styles.navRow, styles.settingRowSpaced, styles.navRowWebDisabled]}
+          accessibilityRole="text"
+        >
+          <View style={styles.navRowContent}>
+            <View style={[styles.navRowIcon, styles.navRowIconWeb]}>
+              <Ionicons name="book-outline" size={20} color={theme.textMuted} />
+            </View>
+            <View style={styles.navRowTextGroup}>
+              <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
+              <Text style={styles.navRowDescriptionWebOnly}>
+                {t('localDatabaseNotSupportedOnWeb')}
+              </Text>
             </View>
           </View>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [
-              styles.navRow,
-              styles.settingRowSpaced,
-              pressed && styles.navRowPressed,
-            ]}
-            onPress={() => router.push('/settings/localdict')}
-          >
-            <View style={styles.navRowContent}>
-              <View style={styles.navRowIcon}>
-                <Ionicons name="book-outline" size={20} color={theme.accent} />
-              </View>
-              <View style={styles.navRowTextGroup}>
-                <Text style={styles.navRowLabel}>{t('configureLocalDict')}</Text>
-                <Text style={styles.navRowDescription}>
-                  {t('downloadAndReset')}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.navRowChevron}>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={theme.textMuted}
-              />
-            </View>
-          </Pressable>
-        )}
+        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionHeaderText}>{t('readerPreferences')}</Text>
@@ -269,41 +188,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {shouldEnableDebugPanel && showDebugPanel && (
-          <View style={styles.debugSection}>
-            <Text style={styles.debugSectionTitle}>
-              {t('debugEnvVars')}
-            </Text>
-            <Text
-              style={styles.debugBlock}
-              selectable
-            >
-              {[
-                `EXPO_PUBLIC_GLITCHTIP_DSN=${
-                  process.env.EXPO_PUBLIC_GLITCHTIP_DSN ? '(configured)' : '(not set)'
-                }`,
-                `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
-                `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
-                `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
-                `__DEV__=${__DEV__}`,
-                '',
-                Platform.OS === 'web'
-                  ? 'MY_ARTICLES_LIST=not persisted (web; SQLite not used)'
-                  : `MY_ARTICLES_LIST=SQLite table ${userSavedArticlesTableName}`,
-                ...(Platform.OS === 'web'
-                  ? []
-                  : [
-                      legacyMyArticlesKeyPresent === null
-                        ? 'MY_ARTICLES_LEGACY_ASYNCSTORAGE=checking…'
-                        : legacyMyArticlesKeyPresent
-                          ? `MY_ARTICLES_LEGACY_ASYNCSTORAGE=present (key ${STORAGE_KEY_ARTICLES}; open Create tab to migrate)`
-                          : 'MY_ARTICLES_LEGACY_ASYNCSTORAGE=absent (migrated or never used)',
-                    ]),
-              ].join('\n')}
-            </Text>
-          </View>
-        )}
-
         <View style={styles.footerLinksRow}>
           <Pressable
             accessibilityRole="link"
@@ -327,15 +211,9 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={handleVersionPress}
-          style={({ pressed }) => [styles.versionButton, pressed && styles.versionButtonPressed]}
-        >
+        <View style={styles.versionButton}>
           <Text style={styles.versionText}>Version {appVersion}</Text>
-          {installationId ? (
-            <Text style={styles.versionSubtext}>{installationId}</Text>
-          ) : null}
-        </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -519,25 +397,6 @@ function createStyles(theme: Theme) {
   segmentNumbersSelected: {
     color: theme.accent,
   },
-  debugSection: {
-    marginTop: 24,
-  },
-  debugSectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.textMuted,
-    marginBottom: 6,
-  },
-  debugBlock: {
-    fontSize: 11,
-    fontFamily: 'monospace',
-    color: theme.textMuted,
-    backgroundColor: theme.etchedBg,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
   footerLinksRow: {
     flexDirection: 'row',
     marginTop: 24,
@@ -576,9 +435,6 @@ function createStyles(theme: Theme) {
   versionButton: {
     marginTop: 24,
     marginBottom: 8,
-  },
-  versionButtonPressed: {
-    opacity: 0.7,
   },
   });
 }

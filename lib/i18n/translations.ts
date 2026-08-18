@@ -13,7 +13,7 @@ export const translations = {
     // Articles list (index)
     loadingArticles: 'Loading articles…',
     articleFeedNotSupportedOnWeb:
-      'The article feed is not available in the web app. Use the iOS or Android app to browse news articles.',
+      'The article feed is not available in the web app yet. Use the Android app to browse news articles.',
     retry: 'Retry',
     noArticlesYet: 'no articles yet',
     addArticlesHint: 'add articles from the create tab by pasting a news url',
