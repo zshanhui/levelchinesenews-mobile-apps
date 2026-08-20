@@ -82,11 +82,14 @@ a {
 /* Matches app header: LogoIcon + wordmark (app/(tabs)/_layout.tsx) */
 .brand {
   display: inline-flex;
-  align-items: flex-end;
-  gap: 10px;
+  align-items: baseline;
+  gap: 0;
   color: var(--text);
   letter-spacing: normal;
   text-decoration: none;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .brand:hover {
@@ -95,18 +98,27 @@ a {
 }
 
 .brand-text {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
 }
 
 .brand-logo {
   display: inline-flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: baseline;
   gap: 3px;
-  height: 24px;
   flex-shrink: 0;
+}
+
+/* Strut so the bars sit on the same baseline as LevelChineseNews */
+.brand-logo::after {
+  content: 'A';
+  font: inherit;
+  line-height: 1;
+  width: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 
 .brand-logo-bar {
@@ -116,17 +128,17 @@ a {
 }
 
 .brand-logo-bar--1 {
-  height: 10px;
+  height: 1em;
   background: var(--accent);
 }
 
 .brand-logo-bar--2 {
-  height: 16px;
+  height: calc(16em / 22);
   background: var(--text-muted);
 }
 
 .brand-logo-bar--3 {
-  height: 22px;
+  height: calc(10em / 22);
   background: var(--text);
 }
 

@@ -9,18 +9,26 @@
   },
   {
     "question": "Is the app free?",
-    "answer": "Yes. There are no ads, and most features stay free. The project is also open source."
+    "answer": "Yes. There are no ads, and all base reading and learning features will stay free, forever. The project is also open source. Some optional cosmetic and AI features can be paid for to keep the development sustainable."
   },
   {
     "question": "Does it work offline?",
-    "answer": "Yes. Saved articles, the local dictionary, and most reading tools work offline. Your data stays on your device."
+    "answer": "Yes. Saved articles, the local dictionary, and most reading tools work without internet. Your data stays on your device."
   },
   {
     "question": "Who is this app for?",
     "answer": "It is built for intermediate learners (around HSK4–HSK6) who want to read real native news with pinyin, dictionary, translations, and audio support."
   },
   {
+    "question": "Can beginners use this app to learn to read Chinese?",
+    "answer": "Ideally, you should know at least the most used 1000 words, around HSK4 or HSK5 to get the most value out of LCN. The app is designed to get intermediate Chinese learners to advance and native level literacy without structured lessons. For those starting Chinese, I would recommend you learn the most frequent 500 to 1000 Chinese characters and words first."
+  },
+  {
+    "question": "Can I use LCN to learn spoken and listening?",
+    "answer": "LCN is focused on reading more Chinese and remembering useful words in context. The best way to learn spoken Mandarin or another Chinese dialect is to watch TV shows and news that interest you. You can also use the LCN sentence audio feature to listen to how the sentence sounds, but this does not substitute real world dialog practice with a 1 on 1 tutor or language exchange partner."
+  },
+  {
     "question": "What is the best way to learn to read Chinese?",
-    "answer": "The best way to learn to read Chinese is by reading what you enjoy that is a little above our reading level. We are working on aggregating and and creating content of all levels from intermediate to advance."
+    "answer": "The best way to learn to read Chinese is by reading what you enjoy that is a little above our reading level. We are working on aggregating and and creating content of all levels from intermediate to advance to bridge the gap between intermediate and native."
   }
 ]

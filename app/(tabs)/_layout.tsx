@@ -16,9 +16,9 @@ const TAB_BAR_EXTRA_BOTTOM_PADDING = 10;
 function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
   const logoColors = [theme.accent, '#8a8278', theme.text];
   const barWidth = 4;
-  const heights = [10, 16, 22];
+  const heights = [22, 16, 10];
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 24 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 22 }}>
       {heights.map((h, i) => (
         <View
           key={i}
@@ -37,10 +37,18 @@ function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
 function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
   const { t } = useTranslation();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
       <LogoIcon theme={theme} />
-      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.text }}>
-        {t('brand')}
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: '600',
+          color: theme.text,
+          lineHeight: 18,
+          includeFontPadding: false,
+        }}
+      >
+        {t('brand').slice(1)}
       </Text>
     </View>
   );

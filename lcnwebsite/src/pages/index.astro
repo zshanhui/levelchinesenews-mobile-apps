@@ -9,8 +9,9 @@ const expoUrl = siteConfig.cta.expoUrl.trim();
 const posts = (await getCollection('blog'))
   .filter((entry) => !entry.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
-const latestPost = posts[0];
-const latestPostSlug = latestPost ? latestPost.id.replace(/\.(md|mdx)$/i, '') : '';
+const postSlug = (id: string) => id.replace(/\.(md|mdx)$/i, '');
+const latestPost = posts.find((entry) => entry.data.postType === 'news');
+const latestPostSlug = latestPost ? postSlug(latestPost.id) : '';
 const latestPostDate = latestPost
   ? latestPost.data.pubDate.toLocaleDateString('en-US', {
       month: 'long',
@@ -18,7 +19,10 @@ const latestPostDate = latestPost
       year: 'numeric',
     })
   : '';
+const lessons = posts.filter((entry) => entry.data.postType === 'newslesson');
 const exampleSentenceWords = [
+  '持之以恒',
+  '温故知新',
   '与此同时',
   '不可思议',
   '理所当然',
@@ -36,15 +40,15 @@ const exampleSentenceWords = [
   '精益求精',
   '与日俱增',
   '创新',
-  '挑战',
   '趋势',
+  '提升',
+  '积累',
+  '坚持',
   '改革',
   '矛盾',
-  '现象',
   '改善',
   '促进',
   '导致',
-  '面临',
   '采取',
   '调整',
   '分析',
@@ -53,8 +57,6 @@ const exampleSentenceWords = [
   '监督',
   '维护',
   '保障',
-  '过渡',
-  '危机',
   '领域',
   '核心',
   '体系',
@@ -62,15 +64,16 @@ const exampleSentenceWords = [
   '潜力',
   '前景',
   '突破',
-  '涉及',
   '协调',
   '治理',
 ];
+const idiomWords = exampleSentenceWords.filter((word) => word.length === 4);
+const twoCharWords = exampleSentenceWords.filter((word) => word.length === 2);
 ---
 
 <BaseLayout
-  title={`${siteConfig.brandName} - Learn Chinese by Reading Native Content`}
-  description="Learn Chinese by reading real native-level content with dictionary, pinyin, segmentation, and AI-assisted tools."
+  title={`${siteConfig.brandName} - Become Chinese Literate by Reading Native, Real Content`}
+  description="LevelChineseNews helps Chinese learners read real, native-level content with popup dictionary, pinyin, audio, and AI-assisted tools that stay out of your way until you need them."
 >
   <section class="hero landing-section">
     <div class="hero-media">
@@ -177,8 +180,8 @@ const exampleSentenceWords = [
         </div>
         <div class="feature-copy">
           <span class="feature-index" aria-hidden="true">01</span>
-          <h3>Real news, every day</h3>
-          <p>Genuine articles from publishers like Zaobao and Huaqiu — current events, not textbook drills.</p>
+          <h3>Real news articles, all the time</h3>
+          <p>Genuine articles from publishers like Singapore, China, and the World  — current events, not textbook drills.</p>
         </div>
       </article>
 
@@ -194,8 +197,8 @@ const exampleSentenceWords = [
         </div>
         <div class="feature-copy">
           <span class="feature-index" aria-hidden="true">02</span>
-          <h3>Reader built for learners</h3>
-          <p>Pinyin and word segmentation toggle on or off. Light and dark mode, with font size and spacing you control.</p>
+          <h3>Reader built for serious Chinese learners</h3>
+          <p>Pinyin, translations, offline dictionary, and word segmentation toggle on or off. Light and dark mode, with font size and spacing you control.</p>
         </div>
       </article>
 
@@ -212,7 +215,7 @@ const exampleSentenceWords = [
         <div class="feature-copy">
           <span class="feature-index" aria-hidden="true">03</span>
           <h3>Translate any sentence</h3>
-          <p>One tap for high-quality translations in English, Spanish, Indonesian, Malay, Russian, Arabic, and more.</p>
+          <p>One tap for high-quality translations in English, Arabic, Spanish, Indonesian, Malay, Russian, and more.</p>
         </div>
       </article>
 
@@ -229,7 +232,7 @@ const exampleSentenceWords = [
         <div class="feature-copy">
           <span class="feature-index" aria-hidden="true">04</span>
           <h3>Hear every sentence</h3>
-          <p>Sentence audio is available across articles — tap the speaker to hear Mandarin read aloud as you study.</p>
+          <p>Sentence audio is available across all articles — tap the speaker to hear natural spoken Mandarin read aloud as you study.</p>
         </div>
       </article>
 
@@ -246,7 +249,7 @@ const exampleSentenceWords = [
         <div class="feature-copy">
           <span class="feature-index" aria-hidden="true">05</span>
           <h3>Find example sentences</h3>
-          <p>Search any Chinese word and open real news sentences from our corpus, then jump into the full article.</p>
+          <p>Search any Chinese word and open real sentences from our 1000s of real source articles, then jump into the full article to read.</p>
         </div>
       </article>
 
@@ -262,8 +265,8 @@ const exampleSentenceWords = [
         </div>
         <div class="feature-copy">
           <span class="feature-index" aria-hidden="true">06</span>
-          <h3>Dictionary that works offline</h3>
-          <p>Built-in CE-DICT lookups on device, plus Pleco integration when you want a deeper dive.</p>
+          <h3>Popup dictionary that works offline</h3>
+          <p>Built-in base CE-DICT lookups on device that gets better over time, plus Pleco integration when you want a deeper dive.</p>
         </div>
       </article>
     </div>
@@ -291,16 +294,20 @@ const exampleSentenceWords = [
     </header>
     <ol class="planned-list">
       <li>
+        <h3>Anki integration and saved word list</h3>
+        <p>Export words with sentence context and definitions to Anki in one tap. Or save them on your device to review later. The article reader gives less hints, the more words you learn. Eventually you will be able to read native articles with ease without any help.</p>
+      </li>
+      <li>
+        <h3>Article vocab preview and classification</h3>
+        <p>Scan names, places, and new words before you start reading. See proper nouns of companies, people, and places. Review hard, next level words before you read the article</p>
+      </li>
+      <li>
         <h3>Simplify articles</h3>
-        <p>AI-assisted 1x and 2x versions of native news for HSK4–HSK6 readers.</p>
+        <p>Simplified versions of any native content for HSK4 to HSK6 readers. Rest assure that this is not your typical ChatGPT "please simplify this" prompt, but based on real Chinese teacher's feedback and research in computational linguistics methods</p>
       </li>
       <li>
-        <h3>Anki integration</h3>
-        <p>Export words with sentence context and definitions in one tap.</p>
-      </li>
-      <li>
-        <h3>Article vocab preview</h3>
-        <p>Scan names, places, and new words before you start reading.</p>
+        <h3>More foreign language to Chinese dictionaries</h3>
+        <p>English should not be the intermediary language to learn Chinese, we are always looking for more foreign language Chinese integrations so you can learn Chinese no matter what your mother tongue is, starting with Arabic and Spanish</p>
       </li>
     </ol>
   </section>
@@ -327,19 +334,49 @@ const exampleSentenceWords = [
 
   <section class="section landing-section example-sentences" aria-labelledby="example-sentences-heading">
     <h2 id="example-sentences-heading">Free tool to search example sentences for any Chinese word</h2>
-    <ul class="example-sentence-links">
-      {
-        exampleSentenceWords.map((word) => (
-          <li>
-            <a href={`/example-sentences?search=${encodeURIComponent(word)}`}>
-              <span>Example sentences for</span>
-              <span class="example-sentence-word">{word}</span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <div class="example-sentence-group">
+      <h3>Four-character idioms</h3>
+      <ul class="example-sentence-links">
+        {
+          idiomWords.map((word) => (
+            <li>
+              <a href={`/example-sentences?search=${encodeURIComponent(word)}`}>{word}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="example-sentence-group">
+      <h3>Two-character words</h3>
+      <ul class="example-sentence-links example-sentence-links--words">
+        {
+          twoCharWords.map((word) => (
+            <li>
+              <a href={`/example-sentences?search=${encodeURIComponent(word)}`}>{word}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </section>
+
+  {
+    lessons.length ? (
+      <section class="section landing-section lessons" aria-labelledby="lessons-heading">
+        <h2 id="lessons-heading">Free HSK reading lessons from native news</h2>
+        <ul class="lesson-links">
+          {lessons.map((lesson) => (
+            <li>
+              <a href={`/news/${postSlug(lesson.id)}`}>
+                <span class="lesson-title">{lesson.data.title}</span>
+                <span class="lesson-desc">{lesson.data.description}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
 </BaseLayout>
 
 
@@ -1033,6 +1070,20 @@ const exampleSentenceWords = [
     text-align: center;
   }
 
+  .example-sentence-group + .example-sentence-group {
+    margin-top: 1.15rem;
+  }
+
+  .example-sentence-group h3 {
+    margin: 0 0 0.55rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
   .example-sentence-links {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1042,29 +1093,72 @@ const exampleSentenceWords = [
     list-style: none;
   }
 
+  .example-sentence-links > li {
+    display: block;
+    min-width: 0;
+  }
+
   .example-sentence-links a {
     display: block;
     height: 100%;
-    padding: 0.65rem 0.75rem;
+    padding: 0.7rem 0.75rem;
     color: var(--accent);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 9px;
-    font-size: 0.9rem;
+    font-size: 1.08rem;
+    font-weight: 700;
     text-align: center;
   }
 
-  .example-sentence-links a span {
-    display: block;
-  }
-
-  .example-sentence-word {
-    margin-top: 0.2rem;
-    font-size: 1.08rem;
-    font-weight: 700;
-  }
-
   .example-sentence-links a:hover {
+    background: var(--surface-elevated);
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  }
+
+  .lessons {
+    max-width: 800px;
+    margin-inline: auto;
+  }
+
+  .lessons h2 {
+    margin-bottom: 0.85rem;
+    text-align: center;
+  }
+
+  .lesson-links {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lesson-links a {
+    display: block;
+    padding: 0.85rem 0.95rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+  }
+
+  .lesson-title {
+    display: block;
+    color: var(--accent);
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .lesson-desc {
+    display: block;
+    margin-top: 0.28rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .lesson-links a:hover {
     background: var(--surface-elevated);
     border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
   }
@@ -1225,14 +1319,8 @@ const exampleSentenceWords = [
       margin-inline: auto;
     }
 
-    .example-sentence-links {
+    .example-sentence-links:not(.example-sentence-links--words) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 460px) {
-    .example-sentence-links {
-      grid-template-columns: 1fr;
     }
   }
 </style>
