@@ -271,6 +271,8 @@ export const prerender = true;
     const articleUrl = new URL(`${READER_URL}/${encodeURIComponent(item.article_id)}`);
     articleUrl.searchParams.set('sentenceKey', `${item.paragraph_index}:${item.sentence_index}`);
     card.href = articleUrl.toString();
+    card.target = '_blank';
+    card.rel = 'noopener noreferrer';
     card.setAttribute('aria-label', `Read article containing ${item.sentence_text}`);
 
     const sentence = document.createElement('p');

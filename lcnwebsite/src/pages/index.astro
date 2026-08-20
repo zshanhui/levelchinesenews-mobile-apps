@@ -112,7 +112,7 @@ const exampleSentenceWords = [
       <div class="cta-row" aria-label="Download actions">
         {
           expoUrl ? (
-            <a class="button button-primary" href={expoUrl}>
+            <a class="button button-primary" href={expoUrl} target="_blank" rel="noopener noreferrer">
               {siteConfig.cta.expoLabel}
             </a>
           ) : (
@@ -124,7 +124,7 @@ const exampleSentenceWords = [
         {/* GitHub CTA temporarily disabled
         {
           githubUrl ? (
-            <a class="button button-secondary" href={githubUrl}>
+            <a class="button button-secondary" href={githubUrl} target="_blank" rel="noopener noreferrer">
               {siteConfig.cta.githubLabel}
             </a>
           ) : (
