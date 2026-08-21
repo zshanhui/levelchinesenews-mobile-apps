@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from './i18n';
-import { apiReadUrl, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
+import { apiReadUrl, envConfig, fetchWithTimeout, getUserFriendlyErrorMessage } from './api';
 import { ARTICLE_REQUEST_TIMEOUT_MS, PAGE_SIZE } from './constants';
 import {
   dedupeById,
@@ -32,8 +32,8 @@ function isActiveTopicFilter(tagsFilter: string[] | null | undefined): boolean {
 export function useArticles(tagsFilter: string[] | null = null) {
   const { t } = useTranslation();
   const [items, setItems] = useState<ArticleListItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [lastPageLen, setLastPageLen] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -56,7 +56,7 @@ export function useArticles(tagsFilter: string[] | null = null) {
     itemsRef.current = items;
   }, [items]);
 
-  const hasMore = items.length < total;
+  const hasMore = lastPageLen === PAGE_SIZE;
 
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     const topicActive = isActiveTopicFilter(tagsFilterRef.current);
@@ -71,10 +71,15 @@ export function useArticles(tagsFilter: string[] | null = null) {
       params.tags = tags;
     }
     const url = apiReadUrl('/articles', params);
+    const headers: Record<string, string> = {};
+    if (envConfig.tempAdminAccessWriteKey) {
+      headers['X-Admin-Key'] = envConfig.tempAdminAccessWriteKey;
+    }
     try {
       const data = await fetchWithTimeout<ArticleListResponse>(
         url,
         ARTICLE_REQUEST_TIMEOUT_MS,
+        Object.keys(headers).length ? headers : undefined,
       );
       setUsingCache(false);
       setCachedAt(null);
@@ -83,10 +88,10 @@ export function useArticles(tagsFilter: string[] | null = null) {
         : data.items;
       const deduped = dedupeById(newItems);
       setItems(append ? deduped : data.items);
-      setTotal(data.total);
+      setLastPageLen(data.items.length);
       setPage(data.page);
       if (!topicActive) {
-        saveCachedList(deduped, data.total, PAGE_SIZE).catch(() => {});
+        saveCachedList(deduped, PAGE_SIZE).catch(() => {});
       }
       return data;
     } catch (err) {
@@ -98,11 +103,11 @@ export function useArticles(tagsFilter: string[] | null = null) {
         setUsingCache(true);
         setCachedAt(cached.cachedAt);
         setItems(cached.items);
-        setTotal(cached.total);
+        const remainder = cached.items.length % PAGE_SIZE;
+        setLastPageLen(remainder === 0 ? PAGE_SIZE : remainder);
         setPage(Math.ceil(cached.items.length / PAGE_SIZE) || 1);
         return {
           items: cached.items,
-          total: cached.total,
           page: 1,
           page_size: PAGE_SIZE,
         } as ArticleListResponse;
@@ -119,7 +124,7 @@ export function useArticles(tagsFilter: string[] | null = null) {
     } catch (err) {
       setError(getUserFriendlyErrorMessage(err, t('failedToLoadArticles')));
       setItems([]);
-      setTotal(0);
+      setLastPageLen(0);
       setPage(1);
       setUsingCache(false);
       setCachedAt(null);
@@ -140,7 +145,7 @@ export function useArticles(tagsFilter: string[] | null = null) {
       tagsFilterKeyRef.current = key;
       if (key !== null) {
         setItems([]);
-        setTotal(0);
+        setLastPageLen(0);
         setUsingCache(false);
         setCachedAt(null);
         void loadInitial();
@@ -154,7 +159,7 @@ export function useArticles(tagsFilter: string[] | null = null) {
 
     tagsFilterKeyRef.current = key;
     setItems([]);
-    setTotal(0);
+    setLastPageLen(0);
     setUsingCache(false);
     setCachedAt(null);
     void loadInitial();
@@ -220,7 +225,6 @@ export function useArticles(tagsFilter: string[] | null = null) {
     orderBy,
     setOrderBy,
     sortReloading,
-    total,
     loading,
     refreshing,
     loadingMore,

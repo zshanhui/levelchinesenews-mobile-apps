@@ -48,6 +48,9 @@ export default defineConfig({
     format: 'file',
   },
   markdown: {
+    smartypants: {
+      quotes: false,
+    },
     rehypePlugins: [rehypeExternalLinks],
   },
 });

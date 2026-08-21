@@ -130,12 +130,13 @@ export async function fetchApi<T>(url: string): Promise<T> {
 export async function fetchWithTimeout<T>(
   url: string,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
+  extraHeaders?: Record<string, string>,
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...extraHeaders },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

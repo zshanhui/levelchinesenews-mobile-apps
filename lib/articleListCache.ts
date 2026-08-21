@@ -6,7 +6,6 @@ export const MAX_CACHED_ARTICLES = 100;
 
 export interface CachedArticleList {
   items: ArticleListItem[];
-  total: number;
   page_size: number;
   cachedAt: string;
 }
@@ -35,14 +34,12 @@ export async function loadCachedList(): Promise<CachedArticleList | null> {
 
 export async function saveCachedList(
   items: ArticleListItem[],
-  total: number,
   pageSize: number,
 ): Promise<void> {
   const deduped = dedupeById(items);
   const capped = deduped.slice(0, MAX_CACHED_ARTICLES);
   const payload: CachedArticleList = {
     items: capped,
-    total,
     page_size: pageSize,
     cachedAt: new Date().toISOString(),
   };
@@ -59,5 +56,5 @@ export async function updateCachedArticle(
   const idx = cached.items.findIndex((a) => a.id === id);
   if (idx < 0) return;
   cached.items[idx] = { ...cached.items[idx], ...patch };
-  await saveCachedList(cached.items, cached.total, cached.page_size);
+  await saveCachedList(cached.items, cached.page_size);
 }

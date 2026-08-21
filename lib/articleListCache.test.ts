@@ -90,7 +90,6 @@ describe('loadCachedList', () => {
     mockGetItem.mockResolvedValue(
       JSON.stringify({
         items: [],
-        total: 0,
         page_size: 15,
         cachedAt: '2024-01-01T12:00:00Z',
       }),
@@ -102,7 +101,6 @@ describe('loadCachedList', () => {
     mockGetItem.mockResolvedValue(
       JSON.stringify({
         items: [makeItem('1')],
-        total: 1,
         page_size: 15,
       }),
     );
@@ -112,7 +110,6 @@ describe('loadCachedList', () => {
   it('returns parsed cache when valid', async () => {
     const cached = {
       items: [makeItem('1'), makeItem('2')],
-      total: 50,
       page_size: 15,
       cachedAt: '2024-01-15T14:30:00Z',
     };
@@ -136,7 +133,7 @@ describe('saveCachedList', () => {
       makeItem('a'),
       makeItem('b'),
     ];
-    await saveCachedList(items, 100, 15);
+    await saveCachedList(items, 15);
     expect(mockSetItem).toHaveBeenCalledWith(
       ARTICLE_LIST_CACHE_KEY,
       expect.any(String),
@@ -144,7 +141,6 @@ describe('saveCachedList', () => {
     const saved = JSON.parse(mockSetItem.mock.calls[0][1]);
     expect(saved.items).toHaveLength(2);
     expect(saved.items.map((i: ArticleListItem) => i.id)).toEqual(['a', 'b']);
-    expect(saved.total).toBe(100);
     expect(saved.page_size).toBe(15);
     expect(saved.cachedAt).toBeDefined();
     expect(typeof saved.cachedAt).toBe('string');
@@ -152,17 +148,16 @@ describe('saveCachedList', () => {
 
   it('caps items at MAX_CACHED_ARTICLES', async () => {
     const items = Array.from({ length: 150 }, (_, i) => makeItem(`id-${i}`));
-    await saveCachedList(items, 500, 15);
+    await saveCachedList(items, 15);
     const saved = JSON.parse(mockSetItem.mock.calls[0][1]);
     expect(saved.items).toHaveLength(MAX_CACHED_ARTICLES);
     expect(saved.items[0].id).toBe('id-0');
     expect(saved.items[99].id).toBe('id-99');
-    expect(saved.total).toBe(500);
   });
 
   it('stores cachedAt as ISO string', async () => {
     const items = [makeItem('1')];
-    await saveCachedList(items, 1, 15);
+    await saveCachedList(items, 15);
     const saved = JSON.parse(mockSetItem.mock.calls[0][1]);
     expect(saved.cachedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
   });

@@ -29,7 +29,6 @@ export type ArticleListOrderBy = 'published_date' | 'created_at';
 /** Paginated list response */
 export interface ArticleListResponse {
   items: ArticleListItem[];
-  total: number;
   page: number;
   page_size: number;
 }
