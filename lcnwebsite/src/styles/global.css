@@ -55,11 +55,18 @@ a {
   margin: 0 auto;
 }
 
-/* Blog (listing + posts) and about: larger body copy for reading; headings keep their own sizes (rem). */
+/* About, news listing, and news/howto article bodies: 18px. HSK lessons keep 22px. */
 .news-wrap,
-.post-wrap,
 .about-wrap {
+  font-size: 18px;
+}
+
+.post-wrap {
   font-size: 22px;
+}
+
+.post-wrap:not(.post-wrap--lesson) .post-content {
+  font-size: 18px;
 }
 
 .site-header {

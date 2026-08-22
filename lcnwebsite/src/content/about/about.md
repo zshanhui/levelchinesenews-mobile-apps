@@ -13,4 +13,4 @@ Now we are testing with a few dozen internal beta users since early 2026 and the
 
 The Android APP is built on React Native 100% open-sourced. I have plans to open-source the backend also at a later stage when it is more mature.
 
-You can contribute at our [Github](https://github.com/zshanhui/levelchinesenews-mobile-apps). Or you can also buy me a coffee or beer <https://ko-fi.com/zshanhui> if you find the app helpful for your Chinese studies.
+You can contribute at our [Github](https://github.com/zshanhui/levelchinesenews-mobile-apps). Or you can also buy me a coffee or beer (<https://ko-fi.com/zshanhui>) if you find the app helpful for your Chinese studies.

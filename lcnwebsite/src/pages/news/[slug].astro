@@ -15,7 +15,13 @@ const { Content } = await render(post);
 ---
 
 <BaseLayout title={`${post.data.title} | LevelChinese News`} description={post.data.description}>
-  <article class="container post-wrap">
+  <article
+    class:list={[
+      'container',
+      'post-wrap',
+      post.data.postType === 'newslesson' && 'post-wrap--lesson',
+    ]}
+  >
     <a class="back-link" href="/news">Back to latest news</a>
     <h1>{post.data.title}</h1>
     <p class="post-date">
