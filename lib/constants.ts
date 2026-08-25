@@ -61,3 +61,8 @@ export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
 /** Last Chinese words searched on Learn → Sentence examples */
 export const STORAGE_KEY_RECENT_SENTENCE_SEARCHES = '@lcn/recentSentenceSearches';
 export const MAX_RECENT_SENTENCE_SEARCHES = 20;
+
+// Stopwords (GET /config/stopwords)
+export const STORAGE_KEY_STOP_WORDS = '@lcn/stopwords';
+/** 1 day in ms; cached stopwords younger than this skip the remote refetch. */
+export const STOP_WORDS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;

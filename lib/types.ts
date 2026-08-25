@@ -38,6 +38,11 @@ export interface ArticleTopicsResponse {
   topics: Record<string, string[]>;
 }
 
+/** GET /api/v1/config/stopwords — words the app may hide/filter from word-level UI */
+export interface StopwordsResponse {
+  stopwords: string[];
+}
+
 /** Word segment from parsed_content (API uses aliases t, p) */
 export interface WordSegment {
   t: string;  // text

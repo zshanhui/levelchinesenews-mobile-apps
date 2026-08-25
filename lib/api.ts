@@ -6,7 +6,7 @@ import {
 } from './constants';
 import { i18n } from './i18n';
 import { isChineseWord } from './text-utils';
-import type { ArticleListItem, WordSentencesResponse } from './types';
+import type { ArticleListItem, StopwordsResponse, WordSentencesResponse } from './types';
 
 export const envConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
@@ -213,6 +213,11 @@ export async function searchSentencesByWord(
     apiReadUrl('/sentences', params),
   );
   return data;
+}
+
+/** Fetch the app-level stopwords list (GET /config/stopwords). */
+export async function fetchStopwords(): Promise<StopwordsResponse> {
+  return fetchWithTimeout<StopwordsResponse>(apiReadUrl('/config/stopwords'));
 }
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */
