@@ -174,6 +174,22 @@ export function createArticleSentenceRowStyles(theme: Theme, isDark: boolean) {
   });
 }
 
+/** True when the segment is an opening mark (（《「『" etc. — Unicode Ps / Pi) — hugs the
+ * FOLLOWING word, so the mark itself gets no trailing margin.
+ */
+function isOpeningPunctuationSegment(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  return /^[\p{Ps}\p{Pi}]+$/u.test(text.trim());
+}
+
+/** True when the segment is only punctuation/symbols (，。、%（）etc.) — rendered flush against
+ * the preceding word, with no inter-segment spacing before it.
+ */
+function isPunctuationSegment(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  return /^[\p{P}\p{S}]+$/u.test(text.trim());
+}
+
 /**
  * True when the segment should not open the study panel: whitespace, numbers, punctuation,
  * and tokens that are only Latin script (English / loanwords), including apostrophes and hyphens.
@@ -491,7 +507,13 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
           const wordKey = `${paragraphIndex}:${sentenceIndex}:${wordIndex}`;
           const tappable = !isNonTappableSegment(word.t);
           const highlighted = highlightedWordIndex === wordIndex;
-          const wordPressableLayout = showPinyin
+          const nextWord = words[wordIndex + 1];
+          // Punctuation hugs its neighbor: drop THIS segment's trailing margin when the
+          // next segment is punctuation-only (comma, period, %, closing marks), or when this
+          // segment is an opening mark (（《「" — gap belongs after the following word).
+          const nextIsPunctuation = nextWord != null && isPunctuationSegment(nextWord.t);
+          const isOpeningPunctuation = isOpeningPunctuationSegment(word.t);
+          const wordPressableLayout = showPinyin && !nextIsPunctuation && !isOpeningPunctuation
             ? styles.wordPressable
             : styles.wordPressableTight;
           const showWordPinyin = showPinyin && !stopwordsSet?.has(word.t);
