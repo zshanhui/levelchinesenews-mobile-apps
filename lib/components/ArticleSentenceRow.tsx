@@ -39,7 +39,8 @@ export type ArticleSentenceRowStyles = {
   sentenceBookmarkButtonPressed: object;
   sentence: object;
   wordPressable: object;
-  /** No margin between segments — used when pinyin is hidden so text reads continuously. */
+  /** No margin between segments — used when pinyin is hidden, for stop words, and around
+   * punctuation so text reads continuously. */
   wordPressableTight: object;
   wordPressablePressed: object;
   wordBlock: object;
@@ -512,11 +513,20 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
           // next segment is punctuation-only (comma, period, %, closing marks), or when this
           // segment is an opening mark (（《「" — gap belongs after the following word).
           const nextIsPunctuation = nextWord != null && isPunctuationSegment(nextWord.t);
+          const nextIsStopWord = nextWord != null && (stopwordsSet?.has(nextWord.t) ?? false);
           const isOpeningPunctuation = isOpeningPunctuationSegment(word.t);
-          const wordPressableLayout = showPinyin && !nextIsPunctuation && !isOpeningPunctuation
-            ? styles.wordPressable
-            : styles.wordPressableTight;
-          const showWordPinyin = showPinyin && !stopwordsSet?.has(word.t);
+          const isStopWordSegment = stopwordsSet?.has(word.t) ?? false;
+          // Stop words are fully gapless: they hug the following word (0 own margin) and
+          // the preceding word drops its margin too. Closing/opening punctuation hug likewise.
+          const wordPressableLayout =
+            showPinyin &&
+            !isStopWordSegment &&
+            !nextIsStopWord &&
+            !nextIsPunctuation &&
+            !isOpeningPunctuation
+              ? styles.wordPressable
+              : styles.wordPressableTight;
+          const showWordPinyin = showPinyin && !isStopWordSegment;
           return tappable ? (
             <Pressable
               key={wordIndex}
