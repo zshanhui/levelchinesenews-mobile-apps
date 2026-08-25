@@ -54,6 +54,7 @@ export const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';
 export const STORAGE_KEY_ARTICLE_FONT = '@lcn/articleFont';
 export const STORAGE_KEY_REMOTE_FONTS = '@lcn/remoteFonts';
 export const STORAGE_KEY_PINYIN = '@lcn/showPinyin';
+export const STORAGE_KEY_WORD_HIGHLIGHT = '@lcn/wordHighlight';
 export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';
 export const STORAGE_KEY_THEME = '@lcn/darkMode';

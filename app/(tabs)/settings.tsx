@@ -54,6 +54,8 @@ export default function SettingsScreen() {
   const {
     showPinyin,
     setShowPinyin,
+    showWordHighlight,
+    setShowWordHighlight,
     lineSpacing,
     setLineSpacing,
     fontSize,
@@ -169,6 +171,18 @@ export default function SettingsScreen() {
             onValueChange={setShowPinyin}
             trackColor={{ false: theme.border, true: theme.accent + '66' }}
             thumbColor={showPinyin ? theme.accent : theme.textMuted}
+          />
+        </View>
+
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('wordBracketHighlight'))}
+          </Text>
+          <Switch
+            value={showWordHighlight}
+            onValueChange={setShowWordHighlight}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={showWordHighlight ? theme.accent : theme.textMuted}
           />
         </View>
 
@@ -333,7 +347,7 @@ function createStyles(theme: Theme) {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 0,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     backgroundColor: theme.surface,
     borderRadius: 10,

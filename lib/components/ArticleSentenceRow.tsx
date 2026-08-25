@@ -44,7 +44,9 @@ export type ArticleSentenceRowStyles = {
   wordPressableTight: object;
   wordPressablePressed: object;
   wordBlock: object;
-  wordBlockHighlightBg: object;
+  wordBracketBase: object;
+  wordBracketTL: object;
+  wordBracketBR: object;
   pinyin: object;
   word: object;
 };
@@ -58,6 +60,8 @@ export type ArticleSentenceRowProps = {
   isSentenceBookmarkedHere: boolean;
   sentenceBookmarkEnabled: boolean;
   highlightedWordIndex: number | null;
+  /** When false the tapped word is tracked (study panel opens) but no brackets are drawn */
+  wordHighlightEnabled?: boolean;
   /** Line gap inside wrapped sentence (flex rowGap) */
   lineGap: number;
   /** Space below this sentence block (includes paragraph gap when last in paragraph) */
@@ -155,14 +159,25 @@ export function createArticleSentenceRowStyles(theme: Theme, isDark: boolean) {
       alignItems: 'center',
       position: 'relative',
     },
-    wordBlockHighlightBg: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.highlightBg,
-      borderRadius: 4,
-      top: -1,
-      bottom: -1,
+    // Crop-mark selection brackets for the tapped word: thin L shapes at the top-left
+    // and bottom-right corners of the word block (pinyin + hanzi column).
+    wordBracketBase: {
+      position: 'absolute',
+      width: 7,
+      height: 7,
+      borderColor: theme.wordBracket,
+    },
+    wordBracketTL: {
+      top: -2,
       left: -2,
+      borderTopWidth: 1.5,
+      borderLeftWidth: 1.5,
+    },
+    wordBracketBR: {
+      bottom: -2,
       right: -2,
+      borderBottomWidth: 1.5,
+      borderRightWidth: 1.5,
     },
     pinyin: {
       fontSize: 11,
@@ -261,7 +276,16 @@ const WordBlock = memo(function WordBlock({
   return (
     <View style={styles.wordBlock}>
       {highlighted ? (
-        <View style={styles.wordBlockHighlightBg} pointerEvents="none" />
+        <>
+          <View
+            style={[styles.wordBracketBase, styles.wordBracketTL]}
+            pointerEvents="none"
+          />
+          <View
+            style={[styles.wordBracketBase, styles.wordBracketBR]}
+            pointerEvents="none"
+          />
+        </>
       ) : null}
       {showPinyin && pinyin ? (
         <Text
@@ -417,6 +441,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
   isSentenceBookmarkedHere,
   sentenceBookmarkEnabled,
   highlightedWordIndex,
+  wordHighlightEnabled = true,
   lineGap,
   blockMarginBottom,
   onWordPress,
@@ -507,7 +532,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
         {words.map((word, wordIndex) => {
           const wordKey = `${paragraphIndex}:${sentenceIndex}:${wordIndex}`;
           const tappable = !isNonTappableSegment(word.t);
-          const highlighted = highlightedWordIndex === wordIndex;
+          const highlighted = wordHighlightEnabled && highlightedWordIndex === wordIndex;
           const nextWord = words[wordIndex + 1];
           // Punctuation hugs its neighbor: drop THIS segment's trailing margin when the
           // next segment is punctuation-only (comma, period, %, closing marks), or when this

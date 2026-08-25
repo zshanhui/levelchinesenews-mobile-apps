@@ -145,7 +145,7 @@ export function ArticleContent({
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { stopwordsSet } = useStopwords();
-  const { showPinyin, lineSpacing, articleFontSize, articleContentFontStyle, articleContentPinyinFontStyle } =
+  const { showPinyin, showWordHighlight, lineSpacing, articleFontSize, articleContentFontStyle, articleContentPinyinFontStyle } =
     useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
   const listStyles = useMemo(() => createListStyles(), []);
@@ -372,6 +372,7 @@ export function ArticleContent({
           isSentenceBookmarkedHere={isSentenceBookmarkedHere}
           sentenceBookmarkEnabled={sentenceBookmarkEnabled}
           highlightedWordIndex={highlightedWordIndex}
+          wordHighlightEnabled={showWordHighlight}
           lineGap={lineGap}
           blockMarginBottom={blockMarginBottom}
           onWordPress={handleWordPress}
@@ -440,6 +441,7 @@ export function ArticleContent({
       sentenceTranslateError,
       sentenceTranslateExpanded,
       showPinyin,
+      showWordHighlight,
       stopwordsSet,
       t,
       theme,

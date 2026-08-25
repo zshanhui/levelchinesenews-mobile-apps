@@ -16,9 +16,12 @@ const TAB_BAR_EXTRA_BOTTOM_PADDING = 10;
 function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
   const logoColors = [theme.accent, '#8a8278', theme.text];
   const barWidth = 4;
-  const heights = [22, 16, 10];
+  const heights = [20, 16, 11];
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 22 }}>
+    // marginBottom ≈ the text's descender space: RN's flex-end alignment lines the bars up
+    // with the text box bottom, but capital glyphs sit one descender above that. Lift the
+    // bars so their bottom edge optically aligns with the baseline of "CN".
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 20, marginBottom: 3 }}>
       {heights.map((h, i) => (
         <View
           key={i}
@@ -26,7 +29,7 @@ function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
             width: barWidth,
             height: h,
             backgroundColor: logoColors[i],
-            borderRadius: 2,
+            borderRadius: 1.5,
           }}
         />
       ))}
@@ -35,9 +38,8 @@ function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
 }
 
 function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
-  const { t } = useTranslation();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3 }}>
       <LogoIcon theme={theme} />
       <Text
         style={{
@@ -48,7 +50,7 @@ function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
           includeFontPadding: false,
         }}
       >
-        {t('brand').slice(1)}
+        CN<Text style={{ fontSize: 15 }}>中文</Text>
       </Text>
     </View>
   );
