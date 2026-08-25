@@ -11,6 +11,9 @@ import {
   Text,
   View,
   useWindowDimensions,
+  type StyleProp,
+  type TextLayoutEvent,
+  type TextStyle,
 } from 'react-native';
 import { i18n, useTranslation } from '../i18n';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
@@ -32,6 +35,68 @@ const STUDY_PANEL_DISMISS_DRAG_PX = 72;
 const STUDY_PANEL_DISMISS_VY = 0.42;
 /** Minimum drag distance when using velocity-only dismiss. */
 const STUDY_PANEL_DISMISS_VY_MIN_DY = 22;
+
+/** Definitions longer than this many lines collapse with an ellipsis; tap to expand/collapse. */
+const DEFINITION_MAX_LINES = 3;
+
+/**
+ * Dictionary definition capped at DEFINITION_MAX_LINES. A hidden (absolute, opacity-0) clone
+ * measures the untruncated line count; when it exceeds the cap, the visible text truncates
+ * and tapping toggles between full length and collapsed.
+ */
+function ExpandableDefinitionText({
+  text,
+  textStyle,
+}: {
+  text: string;
+  textStyle: StyleProp<TextStyle>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [needsTruncation, setNeedsTruncation] = useState(false);
+
+  const onFullTextLayout = useCallback((e: TextLayoutEvent) => {
+    setNeedsTruncation(e.nativeEvent.lines.length > DEFINITION_MAX_LINES);
+  }, []);
+
+  const onPress = useCallback(() => {
+    setExpanded((v) => !v);
+  }, []);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!needsTruncation}
+      accessibilityRole={needsTruncation ? 'button' : 'text'}
+      accessibilityLabel={text}
+    >
+      <View>
+        <Text
+          style={textStyle}
+          numberOfLines={expanded || !needsTruncation ? undefined : DEFINITION_MAX_LINES}
+        >
+          {text}
+        </Text>
+        {/* Hidden measurement clone — same width/styles, never truncated. */}
+        <Text
+          style={[textStyle, hiddenMeasureStyle]}
+          onTextLayout={onFullTextLayout}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        >
+          {text}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const hiddenMeasureStyle: TextStyle = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  top: 0,
+  opacity: 0,
+};
 
 export type SentenceStudyPanelProps = {
   word: string;
@@ -399,27 +464,29 @@ export function SentenceStudyPanel({
                       </Text>
                     ) : null}
                   </View>
-                  <Text
-                    style={[
+                  <ExpandableDefinitionText
+                    text={match.entry.definitions}
+                    textStyle={[
                       styles.panelDefinitionText,
                       compactMultiSplit && styles.panelDefinitionTextSplitCompact,
                       styles.panelDefinitionTextLoaded,
                     ]}
-                  >
-                    {match.entry.definitions}
-                  </Text>
+                  />
                 </View>
               ))}
             </View>
           ) : (
-            <Text
-              style={[
+            <ExpandableDefinitionText
+              key={singleMatch?.entry.id ?? 'placeholder'}
+              text={
+                singleMatch?.entry.definitions ??
+                t('nativeLanguageDefinitionPlaceholder')
+              }
+              textStyle={[
                 styles.panelDefinitionText,
                 singleMatch?.entry.definitions ? styles.panelDefinitionTextLoaded : null,
               ]}
-            >
-              {singleMatch?.entry.definitions ?? t('nativeLanguageDefinitionPlaceholder')}
-            </Text>
+            />
           )}
         </View>
       ) : null}
