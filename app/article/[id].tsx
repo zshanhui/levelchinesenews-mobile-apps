@@ -44,6 +44,7 @@ import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
 import { useArticleAudio } from '../../lib/useArticleAudio';
 import { useArticleTranslations } from '../../lib/useArticleTranslations';
+import { useStopwords } from '../../lib/useStopwords';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 
@@ -154,13 +155,20 @@ export default function ArticleDetailScreen() {
   const bookmarkedSentenceKeyRef = useRef<string | null>(null);
   bookmarkedSentenceKeyRef.current = bookmarkedSentenceKey;
 
+  const { isStopWord } = useStopwords();
+
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
+      if (isStopWord(word)) {
+        // Stop words (e.g. 的/了/在) are ignored entirely: never open the popup,
+        // and leave any already-open popup / highlight untouched.
+        return;
+      }
       setSelectedWord({ word, pinyin });
       setHighlightedWordKey(wordKey);
       setHighlightedSentenceKey(sentenceKey);
     },
-    []
+    [isStopWord]
   );
 
   const onClosePanel = useCallback(() => {

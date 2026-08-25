@@ -83,6 +83,8 @@ export type ArticleSentenceRowProps = {
   /** Learner target language — Google Translate link `tl=` */
   translationLang: NativeLanguage;
   showPinyin: boolean;
+  /** Stop words never show pinyin even when `showPinyin` is on */
+  stopwordsSet?: ReadonlySet<string> | null;
   fontSize: number;
   articleContentFontStyle: { fontFamily?: string };
   articleContentPinyinFontStyle: { fontFamily?: string };
@@ -412,6 +414,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
   translateIconColor,
   sentenceCachedTranslation,
   showPinyin,
+  stopwordsSet = null,
   fontSize,
   articleContentFontStyle,
   articleContentPinyinFontStyle,
@@ -491,6 +494,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
           const wordPressableLayout = showPinyin
             ? styles.wordPressable
             : styles.wordPressableTight;
+          const showWordPinyin = showPinyin && !stopwordsSet?.has(word.t);
           return tappable ? (
             <Pressable
               key={wordIndex}
@@ -503,7 +507,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
             >
               <WordBlock
                 segment={word}
-                showPinyin={showPinyin}
+                showPinyin={showWordPinyin}
                 highlighted={highlighted}
                 fontSize={fontSize}
                 articleContentFontStyle={articleContentFontStyle}
@@ -515,7 +519,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
             <View key={wordIndex} style={wordPressableLayout}>
               <WordBlock
                 segment={word}
-                showPinyin={showPinyin}
+                showPinyin={showWordPinyin}
                 highlighted={false}
                 fontSize={fontSize}
                 articleContentFontStyle={articleContentFontStyle}

@@ -32,6 +32,7 @@ import { hasCachedSentenceAudio } from '../useArticleAudio';
 import { getCachedSentenceTranslationText } from '../useArticleTranslations';
 import { useSentenceAudioOnPress } from '../useSentenceAudioOnPress';
 import { useSentenceAudioPlayer } from '../useSentenceAudioPlayer';
+import { useStopwords } from '../useStopwords';
 import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
 import { formatSentenceKey } from '../sentenceKeys';
 import { sentenceFullText } from '../text-utils';
@@ -143,6 +144,7 @@ export function ArticleContent({
 }: ArticleContentProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { stopwordsSet } = useStopwords();
   const { showPinyin, lineSpacing, articleFontSize, articleContentFontStyle, articleContentPinyinFontStyle } =
     useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
@@ -394,6 +396,7 @@ export function ArticleContent({
           translateIconColor={translateIconColor}
           sentenceCachedTranslation={sentenceCachedTranslation}
           showPinyin={showPinyin}
+          stopwordsSet={stopwordsSet}
           fontSize={deferredFontSize}
           articleContentFontStyle={articleContentFontStyle}
           articleContentPinyinFontStyle={articleContentPinyinFontStyle}
@@ -437,6 +440,7 @@ export function ArticleContent({
       sentenceTranslateError,
       sentenceTranslateExpanded,
       showPinyin,
+      stopwordsSet,
       t,
       theme,
       translatingSentenceKey,
@@ -471,6 +475,12 @@ export function ArticleContent({
 
   const keyExtractor = useCallback((item: ArticleSentenceListItem) => item.sentenceKey, []);
 
+  /** Fingerprint so rows re-render once when stopwords resolve (pinyin hidden per word). */
+  const stopwordsKey = useMemo(
+    () => [...stopwordsSet].join('\0'),
+    [stopwordsSet],
+  );
+
   // FlashList only re-renders rows when `data` or `extraData` changes. Audio lives
   // outside row items, so fingerprint voice + sentence keys to bust row memoization.
   const articleAudioCacheKey = useMemo(() => {
@@ -484,7 +494,7 @@ export function ArticleContent({
         sentenceTranslateExpanded,
       )}\0${playingSentenceKey}\0${loadingSentenceKey}\0${generatingAudioSentenceKey}\0${
         sentenceAudioError ?? ''
-      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}`,
+      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}\0${stopwordsKey}`,
     [
       highlightedSentenceKey,
       bookmarkedSentenceKey,
@@ -496,6 +506,7 @@ export function ArticleContent({
       sentenceAudioError,
       articleAudioLoading,
       articleAudioCacheKey,
+      stopwordsKey,
     ],
   );
 
