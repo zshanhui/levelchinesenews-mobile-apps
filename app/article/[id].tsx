@@ -1,6 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
-import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -68,11 +67,9 @@ type ArticleSkeletonLayerStyles = {
 /** Same layout for initial navigation load and pull-to-refresh overlay (absolute fill + inset). */
 function ArticleSkeletonLoadingLayer({
   styles,
-  headerHeight,
   accessibilityLabel,
 }: {
   styles: ArticleSkeletonLayerStyles;
-  headerHeight: number;
   accessibilityLabel: string;
 }) {
   return (
@@ -84,7 +81,7 @@ function ArticleSkeletonLoadingLayer({
       <View
         style={[
           styles.skeletonFrame,
-          { paddingTop: headerHeight + SKELETON_TOP_EXTRA },
+          { paddingTop: SKELETON_TOP_EXTRA },
         ]}
       >
         <ArticleSkeleton centerContent />
@@ -130,7 +127,6 @@ export default function ArticleDetailScreen() {
   } = useArticleAudio(id, Boolean(article));
 
   const navigation = useNavigation();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { fancyDisplayFontStyle } = useFont();
 
@@ -330,9 +326,8 @@ export default function ArticleDetailScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: '',
-      headerTransparent: true,
       headerShadowVisible: false,
-      headerStyle: { backgroundColor: 'transparent' },
+      headerStyle: { backgroundColor: theme.surface },
       headerTintColor: theme.text,
       headerLeftContainerStyle: styles.headerSideContainer,
       headerRightContainerStyle: styles.headerRightContainer,
@@ -393,13 +388,12 @@ export default function ArticleDetailScreen() {
         <View style={styles.articleContainer}>
           <ArticleSkeletonLoadingLayer
             styles={styles}
-            headerHeight={headerHeight}
             accessibilityLabel={t('loading')}
           />
         </View>
       ) : error && !article ? (
         <View
-          style={[styles.center, { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA }]}
+          style={[styles.center, { paddingTop: ARTICLE_SCROLL_TOP_EXTRA }]}
         >
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
@@ -498,7 +492,11 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
+                    // Opaque header: react-native-screens' ScrollingViewBehavior already pushes the
+                    // screen content below the header, so the list only needs breathing room.
+                    // FlashList (CompatScrollView mode) applies this padding 3x to the content,
+                    // so divide the desired gap by 3 to land the title right below the header.
+                    paddingTop: (ARTICLE_SCROLL_TOP_EXTRA + 16) / 3,
                     paddingHorizontal: 20,
                   },
                 ]}
@@ -531,7 +529,7 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA,
+                    paddingTop: ARTICLE_SCROLL_TOP_EXTRA,
                   },
                 ]}
                 showsVerticalScrollIndicator={false}
@@ -580,7 +578,6 @@ export default function ArticleDetailScreen() {
           {refreshOverlayVisible ? (
             <ArticleSkeletonLoadingLayer
               styles={styles}
-              headerHeight={headerHeight}
               accessibilityLabel={t('loading')}
             />
           ) : null}
