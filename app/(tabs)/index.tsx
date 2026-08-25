@@ -180,7 +180,9 @@ export default function ArticlesListScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadInitial();
+      if (itemsRef.current.length === 0) {
+        loadInitial();
+      }
       void refreshReadStatesForCurrentItems();
     }, [loadInitial, refreshReadStatesForCurrentItems]),
   );

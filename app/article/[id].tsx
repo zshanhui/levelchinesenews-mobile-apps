@@ -47,17 +47,29 @@ import { useStopwords } from '../../lib/useStopwords';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 
-/** Space below the transparent header before the article title and metadata. */
-const ARTICLE_SCROLL_TOP_EXTRA = 75;
-
-/** Extra inset below the header for skeleton (list load + pull-to-refresh). */
-const SKELETON_TOP_EXTRA = 20;
-
+/** Article reader chrome — shorter than default 44pt header targets. */
+const ARTICLE_HEADER_SCALE = 0.5;
+/** Gap between the nav bar bottom edge and article title (opaque header). */
+const HEADER_CONTENT_GAP = 2;
+/** Navigation bar content height (excluding safe area). */
+const HEADER_BAR_HEIGHT = Math.round(44 * ARTICLE_HEADER_SCALE);
+/** Header icon button diameter. */
+const HEADER_ICON_SIZE = HEADER_BAR_HEIGHT;
+const HEADER_ICON_GLYPH_SIZE = Math.round(24 * ARTICLE_HEADER_SCALE);
 /** Minimum comfortable tap target for transparent header icon buttons. */
-const HEADER_ICON_SIZE = 44;
-const HEADER_ICON_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+const HEADER_ICON_HIT_SLOP = {
+  top: Math.round(8 * ARTICLE_HEADER_SCALE),
+  bottom: Math.round(8 * ARTICLE_HEADER_SCALE),
+  left: Math.round(8 * ARTICLE_HEADER_SCALE),
+  right: Math.round(8 * ARTICLE_HEADER_SCALE),
+} as const;
 /** Extra tappable margin on the screen edge for headerRight controls. */
-const HEADER_RIGHT_HIT_SLOP = { top: 8, bottom: 8, left: 12, right: 16 } as const;
+const HEADER_RIGHT_HIT_SLOP = {
+  top: Math.round(8 * ARTICLE_HEADER_SCALE),
+  bottom: Math.round(8 * ARTICLE_HEADER_SCALE),
+  left: Math.round(12 * ARTICLE_HEADER_SCALE),
+  right: Math.round(16 * ARTICLE_HEADER_SCALE),
+} as const;
 
 type ArticleSkeletonLayerStyles = {
   refreshOverlay: ViewStyle;
@@ -68,9 +80,11 @@ type ArticleSkeletonLayerStyles = {
 function ArticleSkeletonLoadingLayer({
   styles,
   accessibilityLabel,
+  paddingTop,
 }: {
   styles: ArticleSkeletonLayerStyles;
   accessibilityLabel: string;
+  paddingTop: number;
 }) {
   return (
     <View
@@ -81,7 +95,7 @@ function ArticleSkeletonLoadingLayer({
       <View
         style={[
           styles.skeletonFrame,
-          { paddingTop: SKELETON_TOP_EXTRA },
+          { paddingTop },
         ]}
       >
         <ArticleSkeleton centerContent />
@@ -133,7 +147,8 @@ export default function ArticleDetailScreen() {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const { bottom: bottomInset } = useSafeAreaInsets();
+  const { bottom: bottomInset, top: topInset } = useSafeAreaInsets();
+  const headerBottomClearance = topInset + HEADER_BAR_HEIGHT + HEADER_CONTENT_GAP;
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToastState | null>(
     null,
   );
@@ -327,7 +342,10 @@ export default function ArticleDetailScreen() {
     navigation.setOptions({
       title: '',
       headerShadowVisible: false,
-      headerStyle: { backgroundColor: theme.surface },
+      headerStyle: {
+        backgroundColor: theme.surface,
+        height: topInset + HEADER_BAR_HEIGHT,
+      },
       headerTintColor: theme.text,
       headerLeftContainerStyle: styles.headerSideContainer,
       headerRightContainerStyle: styles.headerRightContainer,
@@ -344,7 +362,7 @@ export default function ArticleDetailScreen() {
               >
                 <Ionicons
                   name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-                  size={24}
+                  size={HEADER_ICON_GLYPH_SIZE}
                   color={theme.accent}
                 />
               </Pressable>
@@ -360,11 +378,11 @@ export default function ArticleDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('openSettings')}
         >
-          <Ionicons name="settings-outline" size={24} color={theme.accent} />
+          <Ionicons name="settings-outline" size={HEADER_ICON_GLYPH_SIZE} color={theme.accent} />
         </Pressable>
       ),
     });
-  }, [navigation, openSettings, t, theme, styles]);
+  }, [navigation, openSettings, t, theme, styles, topInset]);
 
   const articleHeaderProps = useMemo(
     () =>
@@ -389,11 +407,12 @@ export default function ArticleDetailScreen() {
           <ArticleSkeletonLoadingLayer
             styles={styles}
             accessibilityLabel={t('loading')}
+            paddingTop={headerBottomClearance}
           />
         </View>
       ) : error && !article ? (
         <View
-          style={[styles.center, { paddingTop: ARTICLE_SCROLL_TOP_EXTRA }]}
+          style={[styles.center, { paddingTop: headerBottomClearance }]}
         >
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
@@ -492,11 +511,9 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    // Opaque header: react-native-screens' ScrollingViewBehavior already pushes the
-                    // screen content below the header, so the list only needs breathing room.
-                    // FlashList (CompatScrollView mode) applies this padding 3x to the content,
-                    // so divide the desired gap by 3 to land the title right below the header.
-                    paddingTop: (ARTICLE_SCROLL_TOP_EXTRA + 16) / 3,
+                    // Opaque header already insets content; only a small gap before the title.
+                    // FlashList (CompatScrollView mode) applies this padding 3× to the content.
+                    paddingTop: HEADER_CONTENT_GAP / 3,
                     paddingHorizontal: 20,
                   },
                 ]}
@@ -529,7 +546,7 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: ARTICLE_SCROLL_TOP_EXTRA,
+                    paddingTop: HEADER_CONTENT_GAP,
                   },
                 ]}
                 showsVerticalScrollIndicator={false}
@@ -579,6 +596,7 @@ export default function ArticleDetailScreen() {
             <ArticleSkeletonLoadingLayer
               styles={styles}
               accessibilityLabel={t('loading')}
+              paddingTop={headerBottomClearance}
             />
           ) : null}
         </View>
@@ -718,10 +736,12 @@ function createStyles(theme: Theme) {
   },
   headerSideContainer: {
     paddingHorizontal: 4,
+    paddingBottom: 0,
   },
   headerRightContainer: {
     paddingRight: 8,
     paddingLeft: 4,
+    paddingBottom: 0,
   },
   headerIconBackdrop: {
     width: HEADER_ICON_SIZE,
