@@ -207,14 +207,36 @@ function isPunctuationSegment(text: string): boolean {
 }
 
 /**
- * True when the segment should not open the study panel: whitespace, numbers, punctuation,
- * and tokens that are only Latin script (English / loanwords), including apostrophes and hyphens.
+ * True when the segment should not respond to taps at all: whitespace, punctuation, and
+ * symbols. (Latin words and numbers ARE tappable — see isLatinOrNumericSegment; they
+ * focus the sentence like stop words, without opening the study panel.)
  */
 function isNonTappableSegment(text: string): boolean {
   if (!text || !text.trim()) return true;
+  return /^[\p{P}\p{S}\s]+$/u.test(text.trim());
+}
+
+/** Hanzi numerals that can appear inside mixed number tokens like 3万 / 20亿. */
+const CJK_NUMERAL_CHARS = '零〇一二三四五六七八九十百千万億亿兆兩两';
+
+/**
+ * True for tokens made of Latin letters and/or digits — English words and loanwords
+ * (don't, e-mail), plain numbers (42, 3,000, 1.5, full-width digits), and mixed
+ * alphanumeric tokens (iPhone16, COVID-19, 3万). Tapping these focuses the sentence
+ * (helper bar shows) but never opens the word study panel or highlights the word —
+ * same as stop words.
+ */
+export function isLatinOrNumericSegment(text: string): boolean {
   const t = text.trim();
-  if (/^[\d０-９\s\p{P}\p{S}]+$/u.test(t)) return true;
-  return /^[\p{Script=Latin}]+(?:['’\-][\p{Script=Latin}]+)*$/u.test(t);
+  if (!t) return false;
+  // Must contain at least one Latin letter or digit (so pure hanzi numerals like
+  // 十二 remain dictionary words).
+  if (!/[\p{Script=Latin}\d０-９]/u.test(t)) return false;
+  const charset = new RegExp(
+    `^[\\p{Script=Latin}\\d０-９${CJK_NUMERAL_CHARS}]+(?:['’\\-.,，．·][\\p{Script=Latin}\\d０-９${CJK_NUMERAL_CHARS}]+)*$`,
+    'u',
+  );
+  return charset.test(t);
 }
 
 /** Noto Sans SC has taller line boxes than the system UI font; tighten the pinyin↔hanzi stack. */

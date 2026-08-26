@@ -23,6 +23,7 @@ import {
   type BookmarkToastState,
 } from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
+import { isLatinOrNumericSegment } from '../../lib/components/ArticleSentenceRow';
 import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
 import { parseSentenceKey } from '../../lib/sentenceKeys';
@@ -156,9 +157,13 @@ export default function ArticleDetailScreen() {
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
-      if (isStopWord(word)) {
-        // Stop words (e.g. 的/了/在) are ignored entirely: never open the popup,
-        // and leave any already-open popup / highlight untouched.
+      if (isStopWord(word) || isLatinOrNumericSegment(word)) {
+        // Stop words (e.g. 的/了/在), English words, and numbers don't open the
+        // dict popup and don't get highlighted themselves, but their sentence
+        // still gets focused so the sentence helper bar shows.
+        setSelectedWord(null);
+        setHighlightedWordKey(null);
+        setHighlightedSentenceKey(sentenceKey);
         return;
       }
       setSelectedWord({ word, pinyin });
