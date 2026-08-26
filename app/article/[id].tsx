@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -152,8 +153,29 @@ export default function ArticleDetailScreen() {
   const [markReadFooterVisible, setMarkReadFooterVisible] = useState(false);
   const bookmarkedSentenceKeyRef = useRef<string | null>(null);
   bookmarkedSentenceKeyRef.current = bookmarkedSentenceKey;
+  const highlightedWordKeyRef = useRef<string | null>(null);
+  highlightedWordKeyRef.current = highlightedWordKey;
+  const selectedWordRef = useRef<{
+    word: string;
+    pinyin: string | null;
+  } | null>(null);
+  selectedWordRef.current = selectedWord;
 
   const { isStopWord } = useStopwords();
+
+  const copyWordToClipboard = useCallback(
+    (word: string) => {
+      Clipboard.setStringAsync(word)
+        .then(() =>
+          setBookmarkToast((prev) => ({
+            message: t('copiedToClipboard'),
+            key: (prev?.key ?? 0) + 1,
+          })),
+        )
+        .catch(() => showErrorFeedback(t('copyWordFailed')));
+    },
+    [t],
+  );
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
@@ -166,11 +188,19 @@ export default function ArticleDetailScreen() {
         setHighlightedSentenceKey(sentenceKey);
         return;
       }
+      if (
+        selectedWordRef.current != null &&
+        highlightedWordKeyRef.current === wordKey
+      ) {
+        // Re-tapping the already-focused word copies it to the clipboard.
+        copyWordToClipboard(word);
+        return;
+      }
       setSelectedWord({ word, pinyin });
       setHighlightedWordKey(wordKey);
       setHighlightedSentenceKey(sentenceKey);
     },
-    [isStopWord]
+    [isStopWord, copyWordToClipboard]
   );
 
   const onClosePanel = useCallback(() => {

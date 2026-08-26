@@ -103,6 +103,8 @@ export const translations = {
     sentenceBookmarkSaved: 'Sentence bookmark saved',
     sentenceBookmarkRemoved: 'Sentence bookmark removed',
     sentenceBookmarkFailed: 'Could not update sentence bookmark',
+    copiedToClipboard: 'copied to clipboard',
+    copyWordFailed: 'Could not copy word',
     aiTranslatedWithDeepseek: 'AI translated with DeepSeek',
 
     // Not found
@@ -276,6 +278,8 @@ export const translations = {
     sentenceBookmarkSaved: 'Frase guardada como marcador',
     sentenceBookmarkRemoved: 'Marcador de frase eliminado',
     sentenceBookmarkFailed: 'No se pudo actualizar el marcador de frase',
+    copiedToClipboard: 'copiado al portapapeles',
+    copyWordFailed: 'No se pudo copiar la palabra',
     aiTranslatedWithDeepseek: 'Traducido con IA (DeepSeek)',
 
     // Not found
@@ -452,6 +456,8 @@ export const translations = {
     sentenceBookmarkSaved: 'Ayat ditandai',
     sentenceBookmarkRemoved: 'Penanda ayat dibuang',
     sentenceBookmarkFailed: 'Tidak dapat mengemas kini penanda ayat',
+    copiedToClipboard: 'disalin ke papan klip',
+    copyWordFailed: 'Tidak dapat menyalin perkataan',
     aiTranslatedWithDeepseek: 'Diterjemahkan AI dengan DeepSeek',
 
     // Not found
@@ -628,6 +634,8 @@ export const translations = {
     sentenceBookmarkSaved: 'Kalimat ditandai',
     sentenceBookmarkRemoved: 'Penanda kalimat dihapus',
     sentenceBookmarkFailed: 'Tidak dapat memperbarui penanda kalimat',
+    copiedToClipboard: 'disalin ke papan klip',
+    copyWordFailed: 'Tidak dapat menyalin kata',
     aiTranslatedWithDeepseek: 'Diterjemahkan AI dengan DeepSeek',
 
     // Not found
@@ -805,6 +813,8 @@ export const translations = {
     sentenceBookmarkSaved: 'Đã lưu đánh dấu câu',
     sentenceBookmarkRemoved: 'Đã bỏ đánh dấu câu',
     sentenceBookmarkFailed: 'Không cập nhật được đánh dấu câu',
+    copiedToClipboard: 'đã sao chép vào bộ nhớ tạm',
+    copyWordFailed: 'Không sao chép được từ',
     aiTranslatedWithDeepseek: 'Bản dịch AI bằng DeepSeek',
 
     // Not found
@@ -982,6 +992,8 @@ export const translations = {
     sentenceBookmarkSaved: 'Закладка сохранена',
     sentenceBookmarkRemoved: 'Закладка удалена',
     sentenceBookmarkFailed: 'Не удалось обновить закладку',
+    copiedToClipboard: 'скопировано в буфер обмена',
+    copyWordFailed: 'Не удалось скопировать слово',
     aiTranslatedWithDeepseek: 'Перевод ИИ (DeepSeek)',
 
     // Not found
@@ -1159,6 +1171,8 @@ export const translations = {
     sentenceBookmarkSaved: 'تم حفظ إشارة الجملة',
     sentenceBookmarkRemoved: 'تمت إزالة إشارة الجملة',
     sentenceBookmarkFailed: 'تعذّر تحديث إشارة الجملة',
+    copiedToClipboard: 'تم النسخ إلى الحافظة',
+    copyWordFailed: 'تعذّر نسخ الكلمة',
     aiTranslatedWithDeepseek: 'ترجمة بالذكاء الاصطناعي عبر DeepSeek',
 
     // Not found
@@ -1332,6 +1346,8 @@ export const translations = {
     sentenceBookmarkSaved: '已收藏该句',
     sentenceBookmarkRemoved: '已取消句子收藏',
     sentenceBookmarkFailed: '无法更新句子收藏',
+    copiedToClipboard: '已复制到剪贴板',
+    copyWordFailed: '复制词语失败',
     aiTranslatedWithDeepseek: '由 DeepSeek AI 翻译',
 
     // Not found

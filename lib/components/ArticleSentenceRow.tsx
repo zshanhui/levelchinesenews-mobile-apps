@@ -323,7 +323,6 @@ const WordBlock = memo(function WordBlock({
       ) : null}
       <Text
         style={[styles.word, articleContentFontStyle, { fontSize }, notoStack.word]}
-        selectable={true}
       >
         {text}
       </Text>
