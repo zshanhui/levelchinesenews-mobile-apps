@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   Platform,
@@ -46,29 +46,17 @@ import { useArticleTranslations } from '../../lib/useArticleTranslations';
 import { useStopwords } from '../../lib/useStopwords';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
+const ARTICLE_EXTRA_TOP_PADDING = 10;
 
-/** Article reader chrome — shorter than default 44pt header targets. */
-const ARTICLE_HEADER_SCALE = 0.5;
-/** Gap between the nav bar bottom edge and article title (opaque header). */
-const HEADER_CONTENT_GAP = 2;
-/** Navigation bar content height (excluding safe area). */
-const HEADER_BAR_HEIGHT = Math.round(44 * ARTICLE_HEADER_SCALE);
-/** Header icon button diameter. */
-const HEADER_ICON_SIZE = HEADER_BAR_HEIGHT;
-const HEADER_ICON_GLYPH_SIZE = Math.round(24 * ARTICLE_HEADER_SCALE);
-/** Minimum comfortable tap target for transparent header icon buttons. */
-const HEADER_ICON_HIT_SLOP = {
-  top: Math.round(8 * ARTICLE_HEADER_SCALE),
-  bottom: Math.round(8 * ARTICLE_HEADER_SCALE),
-  left: Math.round(8 * ARTICLE_HEADER_SCALE),
-  right: Math.round(8 * ARTICLE_HEADER_SCALE),
-} as const;
-/** Extra tappable margin on the screen edge for headerRight controls. */
-const HEADER_RIGHT_HIT_SLOP = {
-  top: Math.round(8 * ARTICLE_HEADER_SCALE),
-  bottom: Math.round(8 * ARTICLE_HEADER_SCALE),
-  left: Math.round(12 * ARTICLE_HEADER_SCALE),
-  right: Math.round(16 * ARTICLE_HEADER_SCALE),
+/** Floating settings button on the article reader (no nav bar). */
+const ARTICLE_FLOATING_BUTTON_SCALE = 0.6;
+const SETTINGS_BUTTON_SIZE = Math.round(44 * ARTICLE_FLOATING_BUTTON_SCALE);
+const SETTINGS_BUTTON_GLYPH_SIZE = Math.round(24 * ARTICLE_FLOATING_BUTTON_SCALE);
+const SETTINGS_BUTTON_HIT_SLOP = {
+  top: Math.round(8 * ARTICLE_FLOATING_BUTTON_SCALE),
+  bottom: Math.round(8 * ARTICLE_FLOATING_BUTTON_SCALE),
+  left: Math.round(12 * ARTICLE_FLOATING_BUTTON_SCALE),
+  right: Math.round(16 * ARTICLE_FLOATING_BUTTON_SCALE),
 } as const;
 
 type ArticleSkeletonLayerStyles = {
@@ -140,7 +128,6 @@ export default function ArticleDetailScreen() {
     mergeAudioFromPost,
   } = useArticleAudio(id, Boolean(article));
 
-  const navigation = useNavigation();
   const { theme } = useTheme();
   const { fancyDisplayFontStyle } = useFont();
 
@@ -148,7 +135,6 @@ export default function ArticleDetailScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const { bottom: bottomInset, top: topInset } = useSafeAreaInsets();
-  const headerBottomClearance = topInset + HEADER_BAR_HEIGHT + HEADER_CONTENT_GAP;
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToastState | null>(
     null,
   );
@@ -338,52 +324,6 @@ export default function ArticleDetailScreen() {
     router.push('/settings');
   }, []);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: '',
-      headerShadowVisible: false,
-      headerStyle: {
-        backgroundColor: theme.surface,
-        height: topInset + HEADER_BAR_HEIGHT,
-      },
-      headerTintColor: theme.text,
-      headerLeftContainerStyle: styles.headerSideContainer,
-      headerRightContainerStyle: styles.headerRightContainer,
-      headerLeft: () => (
-              <Pressable
-                onPress={() => router.back()}
-                hitSlop={HEADER_ICON_HIT_SLOP}
-                style={({ pressed }) => [
-                  styles.headerIconBackdrop,
-                  pressed && styles.headerIconBackdropPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t('back')}
-              >
-                <Ionicons
-                  name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-                  size={HEADER_ICON_GLYPH_SIZE}
-                  color={theme.accent}
-                />
-              </Pressable>
-            ),
-      headerRight: () => (
-        <Pressable
-          onPress={openSettings}
-          hitSlop={HEADER_RIGHT_HIT_SLOP}
-          style={({ pressed }) => [
-            styles.headerIconBackdrop,
-            pressed && styles.headerIconBackdropPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={t('openSettings')}
-        >
-          <Ionicons name="settings-outline" size={HEADER_ICON_GLYPH_SIZE} color={theme.accent} />
-        </Pressable>
-      ),
-    });
-  }, [navigation, openSettings, t, theme, styles, topInset]);
-
   const articleHeaderProps = useMemo(
     () =>
       article
@@ -401,19 +341,38 @@ export default function ArticleDetailScreen() {
   );
 
   return (
-    <>
+    <View style={styles.screenRoot}>
+      <View
+        style={[styles.floatingSettingsHost, { top: topInset + 4 }]}
+        pointerEvents="box-none"
+      >
+        <Pressable
+          onPress={openSettings}
+          hitSlop={SETTINGS_BUTTON_HIT_SLOP}
+          style={({ pressed }) => [
+            styles.settingsButtonBackdrop,
+            pressed && styles.settingsButtonBackdropPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={t('openSettings')}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={SETTINGS_BUTTON_GLYPH_SIZE}
+            color={theme.accent}
+          />
+        </Pressable>
+      </View>
       {loading && !article ? (
         <View style={styles.articleContainer}>
           <ArticleSkeletonLoadingLayer
             styles={styles}
             accessibilityLabel={t('loading')}
-            paddingTop={headerBottomClearance}
+            paddingTop={topInset + ARTICLE_EXTRA_TOP_PADDING}
           />
         </View>
       ) : error && !article ? (
-        <View
-          style={[styles.center, { paddingTop: headerBottomClearance }]}
-        >
+        <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryButton} onPress={refetch}>
@@ -511,9 +470,7 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    // Opaque header already insets content; only a small gap before the title.
-                    // FlashList (CompatScrollView mode) applies this padding 3× to the content.
-                    paddingTop: HEADER_CONTENT_GAP / 3,
+                    paddingTop: topInset + 8 + ARTICLE_EXTRA_TOP_PADDING,
                     paddingHorizontal: 20,
                   },
                 ]}
@@ -546,7 +503,7 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: HEADER_CONTENT_GAP,
+                    paddingTop: topInset + 16 + ARTICLE_EXTRA_TOP_PADDING,
                   },
                 ]}
                 showsVerticalScrollIndicator={false}
@@ -596,17 +553,26 @@ export default function ArticleDetailScreen() {
             <ArticleSkeletonLoadingLayer
               styles={styles}
               accessibilityLabel={t('loading')}
-              paddingTop={headerBottomClearance}
+              paddingTop={topInset + ARTICLE_EXTRA_TOP_PADDING}
             />
           ) : null}
         </View>
       ) : null}
-    </>
+    </View>
   );
 }
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    position: 'relative',
+  },
+  floatingSettingsHost: {
+    position: 'absolute',
+    right: 8,
+    zIndex: 20,
+  },
   center: {
     flex: 1,
     backgroundColor: theme.background,
@@ -734,19 +700,10 @@ function createStyles(theme: Theme) {
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 3,
   },
-  headerSideContainer: {
-    paddingHorizontal: 4,
-    paddingBottom: 0,
-  },
-  headerRightContainer: {
-    paddingRight: 8,
-    paddingLeft: 4,
-    paddingBottom: 0,
-  },
-  headerIconBackdrop: {
-    width: HEADER_ICON_SIZE,
-    height: HEADER_ICON_SIZE,
-    borderRadius: HEADER_ICON_SIZE / 2,
+  settingsButtonBackdrop: {
+    width: SETTINGS_BUTTON_SIZE,
+    height: SETTINGS_BUTTON_SIZE,
+    borderRadius: SETTINGS_BUTTON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: `${theme.surfaceElevated}E8`,
@@ -765,7 +722,7 @@ function createStyles(theme: Theme) {
       default: {},
     }),
   },
-  headerIconBackdropPressed: {
+  settingsButtonBackdropPressed: {
     opacity: 0.88,
   },
   studyPanelOverlay: {

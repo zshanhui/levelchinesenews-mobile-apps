@@ -36,7 +36,7 @@ function RootContent() {
           <I18nSync />
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="article/[id]" />
+            <Stack.Screen name="article/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="settings" options={{ headerShown: false }} />
             <Stack.Screen name="learn" options={{ headerShown: false }} />
             <Stack.Screen name="dictionary-settings" />
