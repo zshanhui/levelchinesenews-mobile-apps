@@ -94,11 +94,13 @@ export async function insertDictEntry(entry: DictEntry) {
   return id;
 }
 
-export async function getDictEntryByWord(chineseWord: string) {
-  // chineseWord is either simplified or traditional
+export async function getDictEntriesByWord(chineseWord: string): Promise<DictEntry[]> {
+  // chineseWord is either simplified or traditional. Returns ALL matching rows —
+  // polyphonic words (e.g. 行 hang2/xing2) have multiple CEDICT entries — ordered
+  // by rowid so the original dataset order is preserved.
   const db = await getLocalDatabase()
-  const result = await db.getFirstAsync<DictEntry>(`SELECT * FROM ${lcnDictTableName} WHERE simplified = ? OR traditional = ?`, [chineseWord, chineseWord])
-  return result
+  const result = await db.getAllAsync<DictEntry>(`SELECT * FROM ${lcnDictTableName} WHERE simplified = ? OR traditional = ? ORDER BY rowid`, [chineseWord, chineseWord])
+  return result ?? []
 }
 
 export async function dropLcnDictTable() {

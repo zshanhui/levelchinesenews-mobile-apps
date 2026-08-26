@@ -174,9 +174,10 @@ export default function ArticleDetailScreen() {
   );
 
   const onClosePanel = useCallback(() => {
+    // Dismissing the study panel (swipe or close) only closes the popup — the
+    // sentence stays highlighted/focused so the helper bar remains visible.
     setSelectedWord(null);
     setHighlightedWordKey(null);
-    setHighlightedSentenceKey(null);
   }, []);
 
   const onRefreshArticle = useCallback(async () => {

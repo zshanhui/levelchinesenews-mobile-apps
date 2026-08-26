@@ -150,6 +150,7 @@ export const translations = {
 
     // Article content
     nativeLanguageDefinitionPlaceholder: 'native language definition goes here..',
+    showMoreEntries: 'show more',
     loadLocalDictFirstHint: 'please load local dictionary first to see definitions here',
     setupLocalDict: 'setup local dictionary',
     getPleco: 'Get Pleco',
@@ -323,6 +324,7 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'la definición en tu idioma aparece aquí..',
+    showMoreEntries: 'mostrar más',
     loadLocalDictFirstHint: 'carga el diccionario local primero para ver las definiciones aquí',
     setupLocalDict: 'configurar diccionario local',
     getPleco: 'Obtener Pleco',
@@ -498,6 +500,7 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'definisi dalam bahasa ibunda akan muncul di sini..',
+    showMoreEntries: 'paparkan semua',
     loadLocalDictFirstHint: 'sila muat kamus tempatan dahulu untuk melihat definisi di sini',
     setupLocalDict: 'setup kamus tempatan',
     getPleco: 'Dapatkan Pleco',
@@ -673,6 +676,7 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'definisi dalam bahasa ibu akan muncul di sini..',
+    showMoreEntries: 'tampilkan semua',
     loadLocalDictFirstHint:
       'muat kamus lokal terlebih dahulu untuk melihat definisi di sini',
     setupLocalDict: 'atur kamus lokal',
@@ -849,6 +853,7 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'định nghĩa bằng ngôn ngữ của bạn sẽ hiện tại đây..',
+    showMoreEntries: 'xem thêm',
     loadLocalDictFirstHint:
       'hãy tải từ điển cục bộ trước để xem nghĩa tại đây',
     setupLocalDict: 'thiết lập từ điển cục bộ',
@@ -1025,6 +1030,7 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'здесь будет определение на вашем языке..',
+    showMoreEntries: 'показать всё',
     loadLocalDictFirstHint:
       'сначала загрузите локальный словарь, чтобы видеть определения',
     setupLocalDict: 'настроить локальный словарь',
@@ -1201,6 +1207,7 @@ export const translations = {
     // Article content
     nativeLanguageDefinitionPlaceholder:
       'سيظهر تعريف لغتك الأم هنا..',
+    showMoreEntries: 'عرض الكل',
     loadLocalDictFirstHint: 'يرجى تحميل القاموس المحلي أولاً لرؤية التعريفات هنا',
     setupLocalDict: 'إعداد القاموس المحلي',
     getPleco: 'تنزيل بليكو',
@@ -1369,6 +1376,7 @@ export const translations = {
 
     // Article content
     nativeLanguageDefinitionPlaceholder: '母语释义将显示在此处..',
+    showMoreEntries: '展开全部',
     loadLocalDictFirstHint: '请先加载本地词典以查看释义',
     setupLocalDict: '设置本地词典',
     getPleco: '获取 Pleco',
