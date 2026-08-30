@@ -3,11 +3,13 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFont } from '../../lib/FontContext';
+import { useTranslation } from '../../lib/i18n';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 
-export default function LearnScreen() {
+export default function LearnIndexScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const { fancyDisplayFontStyle } = useFont();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -37,6 +39,25 @@ export default function LearnScreen() {
             <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
           </View>
         </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.navRow,
+            pressed && styles.navRowPressed,
+          ]}
+          onPress={() => router.push('/learn/word-list')}
+        >
+          <View style={styles.navRowContent}>
+            <View style={styles.navRowIcon}>
+              <Ionicons name="list-outline" size={20} color={theme.accent} />
+            </View>
+            <Text style={[styles.navRowLabel, fancyDisplayFontStyle]}>
+              {t('wordList')}
+            </Text>
+          </View>
+          <View style={styles.navRowChevron}>
+            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+          </View>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -52,8 +73,10 @@ function createStyles(theme: Theme) {
       flex: 1,
     },
     scrollContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
       padding: 16,
-      paddingBottom: 40,
+      gap: 10,
     },
     navRow: {
       flexDirection: 'row',

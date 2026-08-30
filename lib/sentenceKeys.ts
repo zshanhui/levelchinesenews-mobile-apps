@@ -27,3 +27,23 @@ export function parseSentenceKey(sentenceKey: string): SentenceIndices | null {
   }
   return { paragraphIndex, sentenceIndex };
 }
+
+/** Article UI word key: `pidx:sidx:widx`. */
+export type WordKeyIndices = {
+  pidx: number;
+  sidx: number;
+  widx: number;
+};
+
+/** Parse `pidx:sidx:widx` from a word key. Null when malformed. */
+export function parseWordKey(wordKey: string): WordKeyIndices | null {
+  const parts = wordKey.split(':');
+  if (parts.length !== 3) return null;
+  const pidx = Number.parseInt(parts[0]!, 10);
+  const sidx = Number.parseInt(parts[1]!, 10);
+  const widx = Number.parseInt(parts[2]!, 10);
+  if (!Number.isInteger(pidx) || !Number.isInteger(sidx) || !Number.isInteger(widx)) {
+    return null;
+  }
+  return { pidx, sidx, widx };
+}

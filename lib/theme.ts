@@ -35,6 +35,11 @@ export const lightTheme = {
   highlightBg: 'rgba(139, 26, 26, 0.12)',
   /** Crop-mark brackets around the tapped word */
   wordBracket: 'rgba(139, 26, 26, 0.5)',
+
+  /** Word bookmark/action icon (gold outline on parchment) */
+  bookmarkGold: '#b8860b',
+  /** Learned-word checkmark */
+  learnedGreen: '#2e7d32',
 } as const;
 
 /**
@@ -74,6 +79,11 @@ export const darkTheme = {
   highlightBg: 'rgba(0, 255, 136, 0.15)',
   /** Crop-mark brackets around the tapped word */
   wordBracket: 'rgba(255, 68, 68, 0.5)',
+
+  /** Word bookmark/action icon (gold pops on the dark matrix palette) */
+  bookmarkGold: '#ffd75c',
+  /** Learned-word checkmark */
+  learnedGreen: '#00ff88',
 } as const;
 
 export type Theme = typeof lightTheme | typeof darkTheme;

@@ -23,7 +23,17 @@ import {
   resolveDictLookup,
   type DictLookupMatch,
 } from '../useLocalDictService';
+import { WordActionPanel } from './WordActionPanel';
 import type { Theme } from '../theme';
+import {
+  getWordStatusMap,
+  markLearned,
+  removeWordBySurface,
+  saveWord,
+  type SavedWordOccurrence,
+  type WordStatus,
+} from '../savedWordsDb';
+import { showErrorFeedback } from '../showErrorFeedback';
 
 const showPlecoButton = true;
 const useOptimisticPlecoOpen = true;
@@ -105,13 +115,15 @@ const hiddenMeasureStyle: TextStyle = {
   opacity: 0,
 };
 
-export type SentenceStudyPanelProps = {
+export type WordDictionaryPanelProps = {
   word: string;
   pinyin: string | null;
   articleId: string;
   highlightedWordKey: string;
   highlightedSentenceKey: string;
   bottomInset: number;
+  occurrence: SavedWordOccurrence | null;
+  onStudyActionSuccess?: (message: string) => void;
   /** Called after the panel finishes sliding off-screen (downward dismiss). */
   onRequestClose?: () => void;
 };
@@ -142,15 +154,17 @@ function buildPlecoUrl(
   return `plecoapi://x-callback-url/df?${dfParams.toString()}`;
 }
 
-export function SentenceStudyPanel({
+export function WordDictionaryPanel({
   word,
   pinyin,
   articleId,
   highlightedWordKey,
   highlightedSentenceKey,
   bottomInset,
+  occurrence,
+  onStudyActionSuccess,
   onRequestClose,
-}: SentenceStudyPanelProps) {
+}: WordDictionaryPanelProps) {
   const router = useRouter();
   const { height: windowHeight } = useWindowDimensions();
   const { theme, isDark } = useTheme();
@@ -162,6 +176,8 @@ export function SentenceStudyPanel({
   const [entriesExpanded, setEntriesExpanded] = useState(false);
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
   const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
+  const [wordActionsVisible, setWordActionsVisible] = useState(false);
+  const [savedStatus, setSavedStatus] = useState<WordStatus | null>(null);
   const stackPinyinUnderWord = word.length >= 4;
 
   /** Starts below the fold; slides up only when opening from a closed panel (mount or remount). */
@@ -174,6 +190,7 @@ export function SentenceStudyPanel({
 
   useEffect(() => {
     translateY.stopAnimation();
+    setWordActionsVisible(false);
     if (!hasPlayedEnterAnimationRef.current) {
       hasPlayedEnterAnimationRef.current = true;
       translateY.setValue(windowHeight);
@@ -276,6 +293,63 @@ export function SentenceStudyPanel({
   }, [word]);
 
   useEffect(() => {
+    let cancelled = false;
+    setSavedStatus(null);
+    void getWordStatusMap([word])
+      .then((map) => {
+        if (!cancelled) setSavedStatus(map.get(word) ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setSavedStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [word]);
+
+  const showSave = occurrence != null && savedStatus == null;
+  const showMarkLearned = occurrence != null && savedStatus !== 'learned';
+  const showRemove = savedStatus != null;
+  const showWordActionsButton = occurrence != null || showRemove;
+  const wordIsSaved = savedStatus != null;
+  const canOpenWordActions = showSave || showMarkLearned || showRemove;
+
+  const onSaveWord = useCallback(async () => {
+    if (!occurrence) throw new Error('missing occurrence');
+    try {
+      await saveWord(occurrence);
+      setSavedStatus('studying');
+      onStudyActionSuccess?.(t('wordSaved'));
+    } catch (err) {
+      showErrorFeedback(t('saveWordFailed'));
+      throw err;
+    }
+  }, [occurrence, onStudyActionSuccess, t]);
+
+  const onMarkLearned = useCallback(async () => {
+    if (!occurrence) throw new Error('missing occurrence');
+    try {
+      await markLearned(occurrence);
+      setSavedStatus('learned');
+      onStudyActionSuccess?.(t('wordMarkedLearned'));
+    } catch (err) {
+      showErrorFeedback(t('markLearnedFailed'));
+      throw err;
+    }
+  }, [occurrence, onStudyActionSuccess, t]);
+
+  const onRemoveWord = useCallback(async () => {
+    try {
+      await removeWordBySurface(word);
+      setSavedStatus(null);
+      onStudyActionSuccess?.(t('wordRemoved'));
+    } catch (err) {
+      showErrorFeedback(t('removeWordFailed'));
+      throw err;
+    }
+  }, [word, onStudyActionSuccess, t]);
+
+  useEffect(() => {
     if (!showPlecoButton) {
       setIsPlecoInstalled(false);
       return;
@@ -360,16 +434,51 @@ export function SentenceStudyPanel({
           >
             {word}
           </Text>
-          {pinyin ? (
-            <Text
-              style={[
-                styles.panelPinyin,
-                stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
-                compactMultiSplit && styles.panelPinyinCompact,
-              ]}
-            >
-              {pinyin}
-            </Text>
+          {pinyin || showWordActionsButton ? (
+            <View style={styles.pinyinRow}>
+              {pinyin ? (
+                <Text
+                  style={[
+                    styles.panelPinyin,
+                    stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
+                    compactMultiSplit && styles.panelPinyinCompact,
+                  ]}
+                >
+                  {pinyin}
+                </Text>
+              ) : null}
+              {showWordActionsButton ? (
+                <Pressable
+                  onPress={() => {
+                    if (canOpenWordActions) setWordActionsVisible(true);
+                  }}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.wordActionsButton,
+                    pressed && canOpenWordActions && styles.wordActionsButtonPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: wordIsSaved }}
+                  accessibilityLabel={t('wordActions')}
+                >
+                  <Ionicons
+                    name={
+                      savedStatus === 'learned'
+                        ? 'checkmark-circle'
+                        : wordIsSaved
+                          ? 'bookmark'
+                          : 'bookmark-outline'
+                    }
+                    size={compactMultiSplit ? 16 : 18}
+                    color={
+                      savedStatus === 'learned'
+                        ? theme.learnedGreen
+                        : theme.bookmarkGold
+                    }
+                  />
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
         </View>
         <View style={styles.panelHeaderRight}>
@@ -537,6 +646,17 @@ export function SentenceStudyPanel({
         </View>
       ) : null}
       </View>
+      {wordActionsVisible ? (
+        <WordActionPanel
+          showSave={showSave}
+          showMarkLearned={showMarkLearned}
+          showRemove={showRemove}
+          onSaveWord={onSaveWord}
+          onMarkLearned={onMarkLearned}
+          onRemoveWord={onRemoveWord}
+          onRequestClose={() => setWordActionsVisible(false)}
+        />
+      ) : null}
     </Animated.View>
   );
 }
@@ -735,6 +855,20 @@ function createStyles(theme: Theme, isDark: boolean) {
       borderRadius: 6,
     },
     plecoButtonPressed: {
+      opacity: 1,
+    },
+    /** Row holding pinyin + bookmark action; baseline aligns under the word/pinyin line. */
+    pinyinRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    wordActionsButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.85,
+    },
+    wordActionsButtonPressed: {
       opacity: 1,
     },
   });

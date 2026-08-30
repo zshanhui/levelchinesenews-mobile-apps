@@ -61,6 +61,9 @@ export default function ArticlesListScreen() {
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
+  const filterActive =
+    topicFilterTags !== null && topicFilterTags.length > 0;
+
   const openFilterSheet = useCallback(() => {
     setFilterSheetOpen(true);
   }, []);
@@ -163,7 +166,11 @@ export default function ArticlesListScreen() {
             accessibilityRole="button"
             accessibilityLabel="Open article filters"
           >
-            <Ionicons name="funnel-outline" size={22} color={theme.accent} />
+            <Ionicons
+              name={filterActive ? 'funnel' : 'funnel-outline'}
+              size={22}
+              color={theme.accent}
+            />
           </Pressable>
         </View>
       ),
@@ -173,8 +180,10 @@ export default function ArticlesListScreen() {
     usingCache,
     cachedAt,
     openFilterSheet,
+    filterActive,
     styles.filterHeaderButton,
     styles.headerRightRow,
+    theme.accent,
     theme.text,
   ]);
 

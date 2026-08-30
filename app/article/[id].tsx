@@ -25,9 +25,9 @@ import {
 } from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { isLatinOrNumericSegment } from '../../lib/components/ArticleSentenceRow';
-import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
+import { WordDictionaryPanel } from '../../lib/components/WordDictionaryPanel';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
-import { parseSentenceKey } from '../../lib/sentenceKeys';
+import { parseSentenceKey, parseWordKey } from '../../lib/sentenceKeys';
 import {
   articleDetailToListItem,
   clearSentenceBookmark,
@@ -39,6 +39,7 @@ import {
   upsertSavedArticleWithSentenceBookmark,
 } from '../../lib/savedArticlesDb';
 import { EXTRA_BOTTOM_PADDING } from '../../lib/constants';
+import { useLearnedWords } from '../../lib/useLearnedWords';
 import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
@@ -46,9 +47,13 @@ import { useArticle } from '../../lib/useArticle';
 import { useArticleAudio } from '../../lib/useArticleAudio';
 import { useArticleTranslations } from '../../lib/useArticleTranslations';
 import { useStopwords } from '../../lib/useStopwords';
+import type { SavedWordOccurrence } from '../../lib/savedWordsDb';
+import type { ParsedParagraph } from '../../lib/types';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
 const ARTICLE_EXTRA_TOP_PADDING = 10;
+/** Second tap on the same learned segment within this window opens the dict panel. */
+const LEARNED_WORD_DOUBLE_TAP_MS = 400;
 
 /** Floating settings button on the article reader (no nav bar). */
 const ARTICLE_FLOATING_BUTTON_SCALE = 0.6;
@@ -162,6 +167,8 @@ export default function ArticleDetailScreen() {
   selectedWordRef.current = selectedWord;
 
   const { isStopWord } = useStopwords();
+  const { isLearnedWord } = useLearnedWords();
+  const lastLearnedTapRef = useRef<{ wordKey: string; at: number } | null>(null);
 
   const copyWordToClipboard = useCallback(
     (word: string) => {
@@ -183,10 +190,28 @@ export default function ArticleDetailScreen() {
         // Stop words (e.g. 的/了/在), English words, and numbers don't open the
         // dict popup and don't get highlighted themselves, but their sentence
         // still gets focused so the sentence helper bar shows.
+        lastLearnedTapRef.current = null;
         setSelectedWord(null);
         setHighlightedWordKey(null);
         setHighlightedSentenceKey(sentenceKey);
         return;
+      }
+      if (isLearnedWord(word)) {
+        const now = Date.now();
+        const last = lastLearnedTapRef.current;
+        const isDoubleTap =
+          last != null &&
+          last.wordKey === wordKey &&
+          now - last.at <= LEARNED_WORD_DOUBLE_TAP_MS;
+        lastLearnedTapRef.current = { wordKey, at: now };
+        if (!isDoubleTap) {
+          setSelectedWord(null);
+          setHighlightedWordKey(null);
+          setHighlightedSentenceKey(sentenceKey);
+          return;
+        }
+      } else {
+        lastLearnedTapRef.current = null;
       }
       if (
         selectedWordRef.current != null &&
@@ -200,8 +225,41 @@ export default function ArticleDetailScreen() {
       setHighlightedWordKey(wordKey);
       setHighlightedSentenceKey(sentenceKey);
     },
-    [isStopWord, copyWordToClipboard]
+    [isStopWord, isLearnedWord, copyWordToClipboard]
   );
+
+  const selectedOccurrence = useMemo((): SavedWordOccurrence | null => {
+    if (!selectedWord || !id || !highlightedWordKey) return null;
+    const loc = parseWordKey(highlightedWordKey);
+    if (!loc) return null;
+    const sentenceText = sentenceTextForKey(
+      article?.parsed_content,
+      highlightedSentenceKey ?? '',
+    );
+    if (!sentenceText) return null;
+    return {
+      word: selectedWord.word,
+      pinyin: selectedWord.pinyin,
+      articleId: id,
+      pidx: loc.pidx,
+      sidx: loc.sidx,
+      widx: loc.widx,
+      sentenceText,
+    };
+  }, [
+    selectedWord,
+    id,
+    highlightedWordKey,
+    highlightedSentenceKey,
+    article?.parsed_content,
+  ]);
+
+  const onStudyActionSuccess = useCallback((message: string) => {
+    setBookmarkToast((prev) => ({
+      message,
+      key: (prev?.key ?? 0) + 1,
+    }));
+  }, []);
 
   const onClosePanel = useCallback(() => {
     // Dismissing the study panel (swipe or close) only closes the popup — the
@@ -574,13 +632,15 @@ export default function ArticleDetailScreen() {
           </View>
           {selectedWord && !refreshOverlayVisible ? (
             <View style={styles.studyPanelOverlay} pointerEvents="box-none">
-              <SentenceStudyPanel
+              <WordDictionaryPanel
                 word={selectedWord.word}
                 pinyin={selectedWord.pinyin}
                 articleId={id ?? ''}
                 highlightedWordKey={highlightedWordKey ?? ''}
                 highlightedSentenceKey={highlightedSentenceKey ?? ''}
                 bottomInset={bottomInset}
+                occurrence={selectedOccurrence}
+                onStudyActionSuccess={onStudyActionSuccess}
                 onRequestClose={onClosePanel}
               />
             </View>
@@ -596,6 +656,15 @@ export default function ArticleDetailScreen() {
       ) : null}
     </View>
   );
+}
+
+function sentenceTextForKey(
+  parsed: ParsedParagraph[] | null | undefined,
+  sentenceKey: string,
+): string {
+  const indices = parseSentenceKey(sentenceKey);
+  if (!indices || !parsed) return '';
+  return parsed[indices.paragraphIndex]?.s?.[indices.sentenceIndex]?.f ?? '';
 }
 
 function createStyles(theme: Theme) {

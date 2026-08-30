@@ -90,6 +90,8 @@ export type ArticleSentenceRowProps = {
   showPinyin: boolean;
   /** Stop words never show pinyin even when `showPinyin` is on */
   stopwordsSet?: ReadonlySet<string> | null;
+  /** Learned words hide pinyin and tighten spacing, same as stop words */
+  learnedSet?: ReadonlySet<string> | null;
   fontSize: number;
   articleContentFontStyle: { fontFamily?: string };
   articleContentPinyinFontStyle: { fontFamily?: string };
@@ -196,6 +198,14 @@ export function createArticleSentenceRowStyles(theme: Theme, isDark: boolean) {
 function isOpeningPunctuationSegment(text: string): boolean {
   if (!text || !text.trim()) return false;
   return /^[\p{Ps}\p{Pi}]+$/u.test(text.trim());
+}
+
+function isPinyinHiddenSegment(
+  text: string,
+  stopwordsSet: ReadonlySet<string> | null | undefined,
+  learnedSet: ReadonlySet<string> | null | undefined,
+): boolean {
+  return (stopwordsSet?.has(text) ?? false) || (learnedSet?.has(text) ?? false);
 }
 
 /** True when the segment is only punctuation/symbols (，。、%（）etc.) — rendered flush against
@@ -478,6 +488,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
   sentenceCachedTranslation,
   showPinyin,
   stopwordsSet = null,
+  learnedSet = null,
   fontSize,
   articleContentFontStyle,
   articleContentPinyinFontStyle,
@@ -559,20 +570,21 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
           // next segment is punctuation-only (comma, period, %, closing marks), or when this
           // segment is an opening mark (（《「" — gap belongs after the following word).
           const nextIsPunctuation = nextWord != null && isPunctuationSegment(nextWord.t);
-          const nextIsStopWord = nextWord != null && (stopwordsSet?.has(nextWord.t) ?? false);
+          const nextHidesPinyin =
+            nextWord != null && isPinyinHiddenSegment(nextWord.t, stopwordsSet, learnedSet);
           const isOpeningPunctuation = isOpeningPunctuationSegment(word.t);
-          const isStopWordSegment = stopwordsSet?.has(word.t) ?? false;
-          // Stop words are fully gapless: they hug the following word (0 own margin) and
-          // the preceding word drops its margin too. Closing/opening punctuation hug likewise.
+          const hidesPinyin = isPinyinHiddenSegment(word.t, stopwordsSet, learnedSet);
+          // Stop words and learned words are fully gapless: they hug the following word
+          // (0 own margin) and the preceding word drops its margin too.
           const wordPressableLayout =
             showPinyin &&
-            !isStopWordSegment &&
-            !nextIsStopWord &&
+            !hidesPinyin &&
+            !nextHidesPinyin &&
             !nextIsPunctuation &&
             !isOpeningPunctuation
               ? styles.wordPressable
               : styles.wordPressableTight;
-          const showWordPinyin = showPinyin && !isStopWordSegment;
+          const showWordPinyin = showPinyin && !hidesPinyin;
           return tappable ? (
             <Pressable
               key={wordIndex}

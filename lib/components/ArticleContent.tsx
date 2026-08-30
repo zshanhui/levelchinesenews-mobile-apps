@@ -32,6 +32,7 @@ import { hasCachedSentenceAudio } from '../useArticleAudio';
 import { getCachedSentenceTranslationText } from '../useArticleTranslations';
 import { useSentenceAudioOnPress } from '../useSentenceAudioOnPress';
 import { useSentenceAudioPlayer } from '../useSentenceAudioPlayer';
+import { useLearnedWords } from '../useLearnedWords';
 import { useStopwords } from '../useStopwords';
 import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
 import { formatSentenceKey } from '../sentenceKeys';
@@ -145,6 +146,7 @@ export function ArticleContent({
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { stopwordsSet } = useStopwords();
+  const { learnedSet, learnedRevision } = useLearnedWords();
   const { showPinyin, showWordHighlight, lineSpacing, articleFontSize, articleContentFontStyle, articleContentPinyinFontStyle } =
     useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
@@ -398,6 +400,7 @@ export function ArticleContent({
           sentenceCachedTranslation={sentenceCachedTranslation}
           showPinyin={showPinyin}
           stopwordsSet={stopwordsSet}
+          learnedSet={learnedSet}
           fontSize={deferredFontSize}
           articleContentFontStyle={articleContentFontStyle}
           articleContentPinyinFontStyle={articleContentPinyinFontStyle}
@@ -443,6 +446,7 @@ export function ArticleContent({
       showPinyin,
       showWordHighlight,
       stopwordsSet,
+      learnedSet,
       t,
       theme,
       translatingSentenceKey,
@@ -496,7 +500,7 @@ export function ArticleContent({
         sentenceTranslateExpanded,
       )}\0${playingSentenceKey}\0${loadingSentenceKey}\0${generatingAudioSentenceKey}\0${
         sentenceAudioError ?? ''
-      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}\0${stopwordsKey}`,
+      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}\0${stopwordsKey}\0${learnedRevision}`,
     [
       highlightedSentenceKey,
       bookmarkedSentenceKey,
@@ -509,6 +513,7 @@ export function ArticleContent({
       articleAudioLoading,
       articleAudioCacheKey,
       stopwordsKey,
+      learnedRevision,
     ],
   );
 

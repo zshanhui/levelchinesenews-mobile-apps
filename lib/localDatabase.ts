@@ -6,6 +6,11 @@ const lcnDictTableName = 'lcndict';
 export const userSavedArticlesTableName = 'user_saved_articles';
 export const articleDetailCacheTableName = 'article_detail_cache';
 export const userProfileTableName = 'userprofile';
+export const userSavedWordsTableName = 'user_saved_words';
+export const userSavedWordExamplesTableName = 'user_saved_word_examples';
+
+/** Highest PRAGMA user_version this build applies. Additive only — never drop user tables. */
+export const LOCAL_SCHEMA_VERSION = 5;
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -112,7 +117,7 @@ export async function migrateLocalDatabaseIfNeeded(db: SQLite.SQLiteDatabase) {
     'PRAGMA user_version'
   );
   const currentDbVersion = result?.user_version ?? 0;
-  if (currentDbVersion >= 4) return;
+  if (currentDbVersion >= LOCAL_SCHEMA_VERSION) return;
   await runMigrations(db);
 }
 
@@ -166,6 +171,38 @@ export async function runMigrations(db: SQLite.SQLiteDatabase) {
     `, db);
     await db.execAsync('PRAGMA user_version = 4');
   }
+
+  // user_saved_words + examples: on-device study list (no backend).
+  if (current < 5) {
+    await execWithReconnectRetry(`
+      PRAGMA foreign_keys = ON;
+      CREATE TABLE IF NOT EXISTS ${userSavedWordsTableName} (
+        id TEXT PRIMARY KEY,
+        word TEXT NOT NULL UNIQUE,
+        pinyin TEXT,
+        status TEXT NOT NULL CHECK (status IN ('studying', 'learned')),
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_saved_words_status ON ${userSavedWordsTableName} (status);
+      CREATE INDEX IF NOT EXISTS idx_user_saved_words_created_at ON ${userSavedWordsTableName} (created_at DESC);
+      CREATE TABLE IF NOT EXISTS ${userSavedWordExamplesTableName} (
+        id TEXT PRIMARY KEY,
+        word_id TEXT NOT NULL REFERENCES ${userSavedWordsTableName}(id) ON DELETE CASCADE,
+        article_id TEXT NOT NULL,
+        pidx INTEGER NOT NULL,
+        sidx INTEGER NOT NULL,
+        widx INTEGER NOT NULL,
+        sentence_text TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        UNIQUE (article_id, pidx, sidx, widx)
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_saved_word_examples_word_id ON ${userSavedWordExamplesTableName} (word_id);
+    `, db);
+    await db.execAsync('PRAGMA user_version = 5');
+  }
+
+  await db.execAsync('PRAGMA foreign_keys = ON');
 }
 
 export async function ensureLcnDictTableExists(db: SQLite.SQLiteDatabase) {

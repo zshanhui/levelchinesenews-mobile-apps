@@ -104,7 +104,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="learn"
+        name="learn-index-screen"
         options={{
           title: t('tabs.learn'),
           tabBarIcon: ({ color, focused }) => (
