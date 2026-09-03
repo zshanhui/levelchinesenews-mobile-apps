@@ -1,12 +1,18 @@
 import {
   API_PREFIX,
+  ARTICLE_REQUEST_TIMEOUT_MS,
   GENERATE_SUMMARY_TIMEOUT_MS,
   POST_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
 } from './constants';
 import { i18n } from './i18n';
 import { isChineseWord } from './text-utils';
-import type { ArticleListItem, StopwordsResponse, WordSentencesResponse } from './types';
+import type {
+  ArticleListItem,
+  HskWordsResponse,
+  StopwordsResponse,
+  WordSentencesResponse,
+} from './types';
 
 export const envConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
@@ -218,6 +224,14 @@ export async function searchSentencesByWord(
 /** Fetch the app-level stopwords list (GET /config/stopwords). */
 export async function fetchStopwords(): Promise<StopwordsResponse> {
   return fetchWithTimeout<StopwordsResponse>(apiReadUrl('/config/stopwords'));
+}
+
+/** Fetch the HSK 2025 word index (GET /words/hsk). */
+export async function fetchHskWords(): Promise<HskWordsResponse> {
+  return fetchWithTimeout<HskWordsResponse>(
+    apiReadUrl('/words/hsk'),
+    ARTICLE_REQUEST_TIMEOUT_MS,
+  );
 }
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */

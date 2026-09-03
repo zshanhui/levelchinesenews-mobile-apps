@@ -36,8 +36,8 @@ export const lightTheme = {
   /** Crop-mark brackets around the tapped word */
   wordBracket: 'rgba(139, 26, 26, 0.5)',
 
-  /** Word bookmark/action icon (gold outline on parchment) */
-  bookmarkGold: '#b8860b',
+  /** Word bookmark/action icon (yellow on parchment) */
+  bookmarkGold: '#e6bc00',
   /** Learned-word checkmark */
   learnedGreen: '#2e7d32',
 } as const;
@@ -80,8 +80,8 @@ export const darkTheme = {
   /** Crop-mark brackets around the tapped word */
   wordBracket: 'rgba(255, 68, 68, 0.5)',
 
-  /** Word bookmark/action icon (gold pops on the dark matrix palette) */
-  bookmarkGold: '#ffd75c',
+  /** Word bookmark/action icon (yellow on the dark matrix palette) */
+  bookmarkGold: '#ffe44d',
   /** Learned-word checkmark */
   learnedGreen: '#00ff88',
 } as const;

@@ -5,6 +5,7 @@ import { capitalizeFirstWord } from '../../lib/text-utils';
 import { useTranslation } from '../../lib/i18n';
 import {
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -26,6 +27,8 @@ import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { envConfig } from '../../lib/api';
 import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
+import { HSK_HIDE_LEVELS, useHskHide } from '../../lib/useHskHide';
+import { showErrorFeedback } from '../../lib/showErrorFeedback';
 
 const URL_ABOUT_PAGE = 'https://levelchinese.app/about';
 const URL_CONTACT_PAGE = 'https://levelchinese.app/contact';
@@ -61,7 +64,20 @@ export default function SettingsScreen() {
     fontSize,
     setFontSize,
     fancyDisplayFontStyle,
+    articleContentFontStyle,
   } = useFont();
+  const {
+    enabled: hideByHskEnabled,
+    maxLevel: hskHideMaxLevel,
+    setEnabled: setHideByHskEnabled,
+    setMaxLevel: setHskHideMaxLevel,
+  } = useHskHide();
+  const [hskHintVisible, setHskHintVisible] = useState(false);
+  const [hskSwitchOn, setHskSwitchOn] = useState(hideByHskEnabled);
+
+  useEffect(() => {
+    setHskSwitchOn(hideByHskEnabled);
+  }, [hideByHskEnabled]);
 
   const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
     boolean | null
@@ -186,6 +202,77 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <View style={styles.settingLabelRow}>
+            <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+              {t('hidePinyinByHskLevel')}
+            </Text>
+            <Pressable
+              onPress={() => setHskHintVisible(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('hidePinyinByHskLevelHint')}
+              style={styles.settingHintButton}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color={theme.textMuted}
+              />
+            </Pressable>
+          </View>
+          <Switch
+            value={hskSwitchOn}
+            onValueChange={(on) => {
+              setHskSwitchOn(on);
+              void setHideByHskEnabled(on).then((ok) => {
+                if (on && !ok) {
+                  setHskSwitchOn(false);
+                  showErrorFeedback(t('hskWordListDownloadFailed'));
+                }
+              });
+            }}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={hskSwitchOn ? theme.accent : theme.textMuted}
+          />
+        </View>
+
+        {hskSwitchOn ? (
+          <View style={styles.etchedSection}>
+            <View style={[styles.segmentedRow, styles.hskLevelRow]}>
+              {HSK_HIDE_LEVELS.map((level, index) => {
+                const selected =
+                  hskHideMaxLevel != null && level <= hskHideMaxLevel;
+                return (
+                  <Pressable
+                    key={level}
+                    onPress={() => {
+                      void setHskHideMaxLevel(level);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`HSK ${level}`}
+                    style={[
+                      styles.segmentButton,
+                      index === HSK_HIDE_LEVELS.length - 1 && styles.segmentButtonLast,
+                      selected && styles.segmentButtonSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentLabel,
+                        selected && styles.segmentLabelSelected,
+                      ]}
+                    >
+                      {level}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.etchedSection}>
           <Text style={[styles.sectionLabel, fancyDisplayFontStyle]}>
             {capitalizeFirstWord(t('adjustLineSpacing'))}
@@ -227,26 +314,42 @@ export default function SettingsScreen() {
             {capitalizeFirstWord(t('adjustFontSize'))}
           </Text>
           <View style={styles.segmentedRow}>
-            {FONT_SIZE_LEVELS.map((level, index) => (
-              <Pressable
-                key={level}
-                onPress={() => setFontSize(level)}
-                style={[
-                  styles.segmentButton,
-                  index === FONT_SIZE_LEVELS.length - 1 && styles.segmentButtonLast,
-                  fontSize === level && styles.segmentButtonSelected,
-                ]}
-              >
-                <Text
+            {FONT_SIZE_LEVELS.map((level, index) => {
+              const sizePx = ARTICLE_FONT_SIZE_MAP[level];
+              const selected = fontSize === level;
+              return (
+                <Pressable
+                  key={level}
+                  onPress={() => setFontSize(level)}
                   style={[
-                    styles.segmentLabel,
-                    fontSize === level && styles.segmentLabelSelected,
+                    styles.segmentButton,
+                    styles.fontSizeSegmentButton,
+                    index === FONT_SIZE_LEVELS.length - 1 && styles.segmentButtonLast,
+                    selected && styles.segmentButtonSelected,
                   ]}
                 >
-                  {ARTICLE_FONT_SIZE_MAP[level]}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[
+                      styles.segmentLabel,
+                      selected && styles.segmentLabelSelected,
+                    ]}
+                  >
+                    {sizePx}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.fontSizeSample,
+                      articleContentFontStyle,
+                      { fontSize: sizePx, lineHeight: sizePx + 2 },
+                      selected && styles.fontSizeSampleSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    阅读
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
@@ -314,6 +417,36 @@ export default function SettingsScreen() {
           ) : null}
         </Pressable>
       </ScrollView>
+      <Modal
+        visible={hskHintVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setHskHintVisible(false)}
+      >
+        <Pressable
+          style={styles.hintModalOverlay}
+          onPress={() => setHskHintVisible(false)}
+        >
+          <Pressable style={styles.hintModalCard} onPress={() => {}}>
+            <View style={styles.hintModalHeader}>
+              <Text style={[styles.hintModalTitle, fancyDisplayFontStyle]}>
+                {t('hidePinyinByHskLevel')}
+              </Text>
+              <Pressable
+                onPress={() => setHskHintVisible(false)}
+                hitSlop={8}
+                accessibilityRole="button"
+                style={styles.hintModalClose}
+              >
+                <Ionicons name="close" size={20} color={theme.textMuted} />
+              </Pressable>
+            </View>
+            <Text style={styles.hintModalBody}>
+              {t('hidePinyinByHskLevelHint')}
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -440,6 +573,16 @@ function createStyles(theme: Theme) {
     color: theme.text,
     flex: 1,
   },
+  settingLabelRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingRight: 8,
+  },
+  settingHintButton: {
+    padding: 2,
+  },
   settingDescription: {
     marginTop: 2,
     fontSize: 11,
@@ -454,6 +597,9 @@ function createStyles(theme: Theme) {
     borderColor: theme.border,
     backgroundColor: theme.surface,
   },
+  hskLevelRow: {
+    marginTop: 0,
+  },
   segmentButton: {
     flex: 1,
     paddingVertical: 4,
@@ -462,6 +608,10 @@ function createStyles(theme: Theme) {
     gap: 2,
     borderRightWidth: 1,
     borderRightColor: theme.border,
+  },
+  fontSizeSegmentButton: {
+    paddingVertical: 8,
+    overflow: 'hidden',
   },
   segmentButtonLast: {
     borderRightWidth: 0,
@@ -482,6 +632,12 @@ function createStyles(theme: Theme) {
     color: theme.textMuted,
   },
   segmentNumbersSelected: {
+    color: theme.accent,
+  },
+  fontSizeSample: {
+    color: theme.text,
+  },
+  fontSizeSampleSelected: {
     color: theme.accent,
   },
   debugSection: {
@@ -544,6 +700,42 @@ function createStyles(theme: Theme) {
   },
   versionButtonPressed: {
     opacity: 0.7,
+  },
+  hintModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  hintModalCard: {
+    backgroundColor: theme.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  hintModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 10,
+  },
+  hintModalTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.text,
+  },
+  hintModalClose: {
+    padding: 2,
+  },
+  hintModalBody: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: theme.textSecondary,
   },
   });
 }

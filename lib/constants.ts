@@ -69,3 +69,10 @@ export const MAX_RECENT_SENTENCE_SEARCHES = 20;
 export const STORAGE_KEY_STOP_WORDS = '@lcn/stopwords';
 /** 1 day in ms; cached stopwords younger than this skip the remote refetch. */
 export const STOP_WORDS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// HSK word index (GET /words/hsk)
+export const STORAGE_KEY_HSK_WORDS = '@lcn/hskWords';
+/** 7 days in ms; unused by the one-shot download (first toggle on). Kept for cache age checks. */
+export const HSK_WORDS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const STORAGE_KEY_HSK_HIDE_ENABLED = '@lcn/hskHideEnabled';
+export const STORAGE_KEY_HSK_HIDE_MAX_LEVEL = '@lcn/hskHideMaxLevel';

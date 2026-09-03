@@ -59,6 +59,11 @@ export const translations = {
     localDatabaseNotSupportedOnWeb:
       'The local dictionary and other offline database features are not available in the web reader. Download the Android app to use the full features',
     readerPreferences: 'reader preferences',
+    hskWordList: 'HSK word list',
+    hidePinyinByHskLevel: 'Hide pinyin by HSK level',
+    hidePinyinByHskLevelHint:
+      'Hides pinyin for HSK words at the selected level and every level below it, the same way learned words are treated. Choosing 4 also hides HSK 1–3.',
+    hskWordListDownloadFailed: 'Could not download HSK word list',
     articleContentFont: 'article reader font',
     articleContentFontPreview: '中文阅读',
     showPinyin: 'show pinyin in article reader',

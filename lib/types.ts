@@ -43,6 +43,12 @@ export interface StopwordsResponse {
   stopwords: string[];
 }
 
+/** GET /api/v1/words/hsk — HSK 2025 word → level (1–7; 7 = HSK 7–9 combined) */
+export interface HskWordsResponse {
+  total: number;
+  words: Record<string, number>;
+}
+
 /** Word segment from parsed_content (API uses aliases t, p) */
 export interface WordSegment {
   t: string;  // text

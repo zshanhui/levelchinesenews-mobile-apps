@@ -92,42 +92,46 @@ export function WordActionPanel({
   return (
     <Animated.View style={[styles.host, { transform: [{ translateX }] }]}>
       <View style={styles.card}>
-        {flags.showSave ? (
-          <Pressable
-            onPress={() => runThenClose(onSaveWord)}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
-          >
-            <Ionicons name="bookmark-outline" size={18} color={theme.accent} />
-            <Text style={styles.actionLabel}>{t('saveWord')}</Text>
-          </Pressable>
-        ) : null}
-        {flags.showSave && (flags.showMarkLearned || flags.showRemove) ? (
-          <View style={styles.divider} />
-        ) : null}
-        {flags.showMarkLearned ? (
-          <Pressable
-            onPress={() => runThenClose(onMarkLearned)}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
-          >
-            <Ionicons name="checkmark-circle-outline" size={18} color={theme.accent} />
-            <Text style={styles.actionLabel}>{t('markLearned')}</Text>
-          </Pressable>
-        ) : null}
-        {flags.showMarkLearned && flags.showRemove ? <View style={styles.divider} /> : null}
-        {flags.showRemove ? (
-          <Pressable
-            onPress={() => runThenClose(onRemoveWord)}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
-          >
-            <Ionicons name="trash-outline" size={18} color={theme.error} />
-            <Text style={[styles.actionLabel, styles.actionLabelDanger]}>
-              {t('removeWord')}
-            </Text>
-          </Pressable>
-        ) : null}
+        <View style={styles.actionPair}>
+          {flags.showMarkLearned ? (
+            <Pressable
+              onPress={() => runThenClose(onMarkLearned)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.actionCell, pressed && styles.pressed]}
+            >
+              <Ionicons name="checkmark-circle-outline" size={18} color={theme.learnedGreen} />
+              <Text style={[styles.actionLabel, styles.actionCellLabel]} numberOfLines={2}>
+                {t('markLearned')}
+              </Text>
+            </Pressable>
+          ) : null}
+          {flags.showSave ? (
+            <Pressable
+              onPress={() => runThenClose(onSaveWord)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.actionCell, pressed && styles.pressed]}
+            >
+              <Ionicons name="bookmark-outline" size={18} color={theme.bookmarkGold} />
+              <Text style={[styles.actionLabel, styles.actionCellLabel]} numberOfLines={2}>
+                {t('saveWord')}
+              </Text>
+            </Pressable>
+          ) : flags.showRemove ? (
+            <Pressable
+              onPress={() => runThenClose(onRemoveWord)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.actionCell, pressed && styles.pressed]}
+            >
+              <Ionicons name="trash-outline" size={18} color={theme.error} />
+              <Text
+                style={[styles.actionLabel, styles.actionCellLabel, styles.actionLabelDanger]}
+                numberOfLines={2}
+              >
+                {t('removeWord')}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </Animated.View>
   );
@@ -159,23 +163,31 @@ function createStyles(theme: Theme, _isDark: boolean) {
       shadowRadius: 14,
       elevation: 12,
     },
-    actionRow: {
+    actionPair: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      gap: 20,
+    },
+    actionCell: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      justifyContent: 'center',
+      gap: 8,
       minHeight: 44,
+      paddingHorizontal: 4,
     },
     actionLabel: {
       fontSize: 15,
       fontWeight: '600',
       color: theme.accent,
     },
+    actionCellLabel: {
+      flexShrink: 1,
+      textAlign: 'center',
+    },
     actionLabelDanger: {
       color: theme.error,
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: theme.border,
     },
     pressed: {
       opacity: 0.6,

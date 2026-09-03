@@ -10,7 +10,7 @@
  * `scrollToIndex` + `viewPosition` is unreliable near the list end (FlashList scrolls the wrong
  * way). For that row we **`scrollToEnd`** instead.
  *
- * ## Two scroll “modes”
+ * ## Scroll “modes”
  *
  * 1. **Study / selection** — user tapped a word; we scroll the highlighted sentence into view
  *    only if it is **not** already fully visible (see `fullyVisibleSentenceKeysRef` in `ArticleContent`).
@@ -36,6 +36,11 @@
  *   - For **far** bookmarks, schedules **`finalizeBookmarkScroll`** after the last backup **+ 650ms**:
  *     one **animated** `scrollToIndex` after instant steps have (hopefully) brought the target
  *     near the viewport.
+ *
+ * 3. **Reader layout restore** — pinyin on/off or article font size changes row height while
+ *    the pixel scroll offset stays put, so the reader jumps. We snapshot the **topmost visible
+ *    sentence** during render (before the new layout), then `scrollToIndex` that row (instant)
+ *    after FlashList relayouts.
  *
  * @see https://shopify.github.io/flash-list/
  */
@@ -71,7 +76,7 @@ function scheduleAfterInteractions(callback: () => void): { cancel: () => void }
  */
 export const FAR_BOOKMARK_SENTENCE_INDEX = 32;
 
-type ScrollListOptions = { useInstantForFarBookmark?: boolean };
+type ScrollListOptions = { useInstantForFarBookmark?: boolean; animated?: boolean };
 
 /**
  * Encapsulates all `FlashList` scrolling for the article body: study highlight and DB bookmark.
@@ -84,6 +89,7 @@ export function useArticleSmartScroll<Item>({
   parsedContentLength,
   articleId,
   sentenceListLength,
+  layoutRestoreKey,
 }: {
   /** Map `sentenceKey` (`"paragraphIdx:sentenceIdx"`) → `FlashList` `data` index. */
   sentenceKeyToIndex: Map<string, number>;
@@ -100,16 +106,40 @@ export function useArticleSmartScroll<Item>({
   articleId?: string | null;
   /** `flatData.length` — used to detect the last sentence row for `scrollToEnd` vs `scrollToIndex`. */
   sentenceListLength: number;
+  /**
+   * Changes when reader typography that affects row height changes (pinyin, font size).
+   * Used to restore the top visible sentence after relayout.
+   */
+  layoutRestoreKey: string;
 }): {
   listRef: RefObject<FlashListRef<Item> | null>;
   /** Sentence keys (`paragraph:sentence`) whose row is 100% visible; updated by `ArticleContent` viewable tracking. */
   fullyVisibleSentenceKeysRef: RefObject<Set<string>>;
+  /** Lowest-index sentence currently in the viewport (any visibility); updated by `ArticleContent`. */
+  topVisibleSentenceKeyRef: RefObject<string | null>;
 } {
   const listRef = useRef<FlashListRef<Item>>(null);
   const fullyVisibleSentenceKeysRef = useRef<Set<string>>(new Set());
+  const topVisibleSentenceKeyRef = useRef<string | null>(null);
   const bookmarkSessionKeyRef = useRef<string | null>(null);
   /** True after we handled initial bookmark behavior for this session (scroll or skip due to study). */
   const initialBookmarkAutoScrollConsumedRef = useRef(false);
+  const prevLayoutRestoreKeyRef = useRef(layoutRestoreKey);
+  const pendingLayoutRestoreRef = useRef<{
+    key: string;
+    viewPosition: number;
+  } | null>(null);
+
+  if (prevLayoutRestoreKeyRef.current !== layoutRestoreKey) {
+    const restoreKey = highlightedSentenceKey ?? topVisibleSentenceKeyRef.current;
+    pendingLayoutRestoreRef.current = restoreKey
+      ? {
+          key: restoreKey,
+          viewPosition: highlightedSentenceKey ? 0.4 : 0.08,
+        }
+      : null;
+    prevLayoutRestoreKeyRef.current = layoutRestoreKey;
+  }
 
   const bookmarkSessionKey = `${articleId ?? ''}\0${bookmarkedSentenceKey ?? ''}\0${parsedContentLength}`;
 
@@ -134,7 +164,8 @@ export function useArticleSmartScroll<Item>({
       const useInstantForBookmark =
         Boolean(options?.useInstantForFarBookmark) &&
         index >= FAR_BOOKMARK_SENTENCE_INDEX;
-      const animated = !useInstantForBookmark;
+      const animated =
+        options?.animated != null ? options.animated : !useInstantForBookmark;
 
       const lastIndex =
         sentenceListLength > 0 ? sentenceListLength - 1 : -1;
@@ -255,5 +286,23 @@ export function useArticleSmartScroll<Item>({
     sentenceKeyToIndex,
   ]);
 
-  return { listRef, fullyVisibleSentenceKeysRef };
+  useEffect(() => {
+    const pending = pendingLayoutRestoreRef.current;
+    if (!pending) return;
+    const { key, viewPosition } = pending;
+    const tryScroll = () => {
+      scrollListToSentenceKey(key, viewPosition, { animated: false });
+    };
+    const rafId = requestAnimationFrame(() => {
+      tryScroll();
+      requestAnimationFrame(tryScroll);
+    });
+    const timeoutIds = [32, 120].map((ms) => setTimeout(tryScroll, ms));
+    return () => {
+      cancelAnimationFrame(rafId);
+      timeoutIds.forEach(clearTimeout);
+    };
+  }, [layoutRestoreKey, scrollListToSentenceKey]);
+
+  return { listRef, fullyVisibleSentenceKeysRef, topVisibleSentenceKeyRef };
 }

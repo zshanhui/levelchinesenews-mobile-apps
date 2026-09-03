@@ -33,6 +33,7 @@ import { getCachedSentenceTranslationText } from '../useArticleTranslations';
 import { useSentenceAudioOnPress } from '../useSentenceAudioOnPress';
 import { useSentenceAudioPlayer } from '../useSentenceAudioPlayer';
 import { useLearnedWords } from '../useLearnedWords';
+import { useHskHide } from '../useHskHide';
 import { useStopwords } from '../useStopwords';
 import { useSentenceTranslationOnExpand } from '../useSentenceTranslationOnExpand';
 import { formatSentenceKey } from '../sentenceKeys';
@@ -147,6 +148,7 @@ export function ArticleContent({
   const { t } = useTranslation();
   const { stopwordsSet } = useStopwords();
   const { learnedSet, learnedRevision } = useLearnedWords();
+  const { hideSet: hskHideSet, hideRevision: hskHideRevision } = useHskHide();
   const { showPinyin, showWordHighlight, lineSpacing, articleFontSize, articleContentFontStyle, articleContentPinyinFontStyle } =
     useFont();
   const deferredFontSize = useDeferredValue(articleFontSize);
@@ -202,15 +204,19 @@ export function ArticleContent({
     [],
   );
 
-  // List scroll: bookmark + highlight behavior — see `useArticleSmartScroll` in lib/scrolling-utils.ts
-  const { listRef, fullyVisibleSentenceKeysRef } = useArticleSmartScroll<ArticleSentenceListItem>({
-    sentenceKeyToIndex,
-    bookmarkedSentenceKey: bookmarkedSentenceKey ?? null,
-    highlightedSentenceKey: highlightedSentenceKey ?? null,
-    parsedContentLength: parsedContent.length,
-    articleId: articleId ?? null,
-    sentenceListLength: flatData.length,
-  });
+  const layoutRestoreKey = `${showPinyin ? '1' : '0'}\0${deferredFontSize}`;
+
+  // List scroll: bookmark + highlight + typography restore — see `useArticleSmartScroll`
+  const { listRef, fullyVisibleSentenceKeysRef, topVisibleSentenceKeyRef } =
+    useArticleSmartScroll<ArticleSentenceListItem>({
+      sentenceKeyToIndex,
+      bookmarkedSentenceKey: bookmarkedSentenceKey ?? null,
+      highlightedSentenceKey: highlightedSentenceKey ?? null,
+      parsedContentLength: parsedContent.length,
+      articleId: articleId ?? null,
+      sentenceListLength: flatData.length,
+      layoutRestoreKey,
+    });
 
   const onFullyVisibleItemsChanged = useCallback(
     ({
@@ -220,9 +226,9 @@ export function ArticleContent({
       changed: ViewToken<ArticleSentenceListItem>[];
     }) => {
       const next = new Set<string>();
-      for (const t of viewableItems) {
-        if (t.isViewable && t.item?.sentenceKey) {
-          next.add(t.item.sentenceKey);
+      for (const token of viewableItems) {
+        if (token.isViewable && token.item?.sentenceKey) {
+          next.add(token.item.sentenceKey);
         }
       }
       fullyVisibleSentenceKeysRef.current = next;
@@ -230,13 +236,54 @@ export function ArticleContent({
     [fullyVisibleSentenceKeysRef],
   );
 
+  const onTopVisibleItemsChanged = useCallback(
+    ({
+      viewableItems,
+    }: {
+      viewableItems: ViewToken<ArticleSentenceListItem>[];
+      changed: ViewToken<ArticleSentenceListItem>[];
+    }) => {
+      let topIndex = Number.POSITIVE_INFINITY;
+      let topKey: string | null = null;
+      for (const token of viewableItems) {
+        if (
+          !token.isViewable ||
+          token.index == null ||
+          !token.item?.sentenceKey
+        ) {
+          continue;
+        }
+        if (token.index < topIndex) {
+          topIndex = token.index;
+          topKey = token.item.sentenceKey;
+        }
+      }
+      topVisibleSentenceKeyRef.current = topKey;
+    },
+    [topVisibleSentenceKeyRef],
+  );
+
+  const topSentenceViewabilityConfig = useMemo(
+    () =>
+      ({
+        itemVisiblePercentThreshold: 1,
+        minimumViewTime: 0,
+        waitForInteraction: false,
+      }) satisfies ViewabilityConfig,
+    [],
+  );
+
   const viewabilityConfigCallbackPairs = useMemo(() => {
     const fullPair = {
       viewabilityConfig: fullSentenceViewabilityConfig,
       onViewableItemsChanged: onFullyVisibleItemsChanged,
     };
+    const topPair = {
+      viewabilityConfig: topSentenceViewabilityConfig,
+      onViewableItemsChanged: onTopVisibleItemsChanged,
+    };
     if (!onLastSentenceBecameVisible) {
-      return [fullPair];
+      return [fullPair, topPair];
     }
     return [
       {
@@ -244,13 +291,16 @@ export function ArticleContent({
         onViewableItemsChanged,
       },
       fullPair,
+      topPair,
     ];
   }, [
     fullSentenceViewabilityConfig,
     lastSentenceViewabilityConfig,
     onFullyVisibleItemsChanged,
     onLastSentenceBecameVisible,
+    onTopVisibleItemsChanged,
     onViewableItemsChanged,
+    topSentenceViewabilityConfig,
   ]);
 
   const {
@@ -401,6 +451,7 @@ export function ArticleContent({
           showPinyin={showPinyin}
           stopwordsSet={stopwordsSet}
           learnedSet={learnedSet}
+          hskHideSet={hskHideSet}
           fontSize={deferredFontSize}
           articleContentFontStyle={articleContentFontStyle}
           articleContentPinyinFontStyle={articleContentPinyinFontStyle}
@@ -447,6 +498,7 @@ export function ArticleContent({
       showWordHighlight,
       stopwordsSet,
       learnedSet,
+      hskHideSet,
       t,
       theme,
       translatingSentenceKey,
@@ -500,7 +552,7 @@ export function ArticleContent({
         sentenceTranslateExpanded,
       )}\0${playingSentenceKey}\0${loadingSentenceKey}\0${generatingAudioSentenceKey}\0${
         sentenceAudioError ?? ''
-      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}\0${stopwordsKey}\0${learnedRevision}`,
+      }\0${String(articleAudioLoading)}\0${articleAudioCacheKey}\0${stopwordsKey}\0${learnedRevision}\0${hskHideRevision}\0${showPinyin ? '1' : '0'}\0${deferredFontSize}`,
     [
       highlightedSentenceKey,
       bookmarkedSentenceKey,
@@ -514,6 +566,9 @@ export function ArticleContent({
       articleAudioCacheKey,
       stopwordsKey,
       learnedRevision,
+      hskHideRevision,
+      showPinyin,
+      deferredFontSize,
     ],
   );
 

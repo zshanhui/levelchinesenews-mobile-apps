@@ -92,6 +92,8 @@ export type ArticleSentenceRowProps = {
   stopwordsSet?: ReadonlySet<string> | null;
   /** Learned words hide pinyin and tighten spacing, same as stop words */
   learnedSet?: ReadonlySet<string> | null;
+  /** HSK words at or under the chosen hide-level, same treatment as learned words */
+  hskHideSet?: ReadonlySet<string> | null;
   fontSize: number;
   articleContentFontStyle: { fontFamily?: string };
   articleContentPinyinFontStyle: { fontFamily?: string };
@@ -204,8 +206,13 @@ function isPinyinHiddenSegment(
   text: string,
   stopwordsSet: ReadonlySet<string> | null | undefined,
   learnedSet: ReadonlySet<string> | null | undefined,
+  hskHideSet?: ReadonlySet<string> | null,
 ): boolean {
-  return (stopwordsSet?.has(text) ?? false) || (learnedSet?.has(text) ?? false);
+  return (
+    (stopwordsSet?.has(text) ?? false) ||
+    (learnedSet?.has(text) ?? false) ||
+    (hskHideSet?.has(text) ?? false)
+  );
 }
 
 /** True when the segment is only punctuation/symbols (，。、%（）etc.) — rendered flush against
@@ -489,6 +496,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
   showPinyin,
   stopwordsSet = null,
   learnedSet = null,
+  hskHideSet = null,
   fontSize,
   articleContentFontStyle,
   articleContentPinyinFontStyle,
@@ -571,11 +579,17 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
           // segment is an opening mark (（《「" — gap belongs after the following word).
           const nextIsPunctuation = nextWord != null && isPunctuationSegment(nextWord.t);
           const nextHidesPinyin =
-            nextWord != null && isPinyinHiddenSegment(nextWord.t, stopwordsSet, learnedSet);
+            nextWord != null &&
+            isPinyinHiddenSegment(nextWord.t, stopwordsSet, learnedSet, hskHideSet);
           const isOpeningPunctuation = isOpeningPunctuationSegment(word.t);
-          const hidesPinyin = isPinyinHiddenSegment(word.t, stopwordsSet, learnedSet);
-          // Stop words and learned words are fully gapless: they hug the following word
-          // (0 own margin) and the preceding word drops its margin too.
+          const hidesPinyin = isPinyinHiddenSegment(
+            word.t,
+            stopwordsSet,
+            learnedSet,
+            hskHideSet,
+          );
+          // Stop words, learned words, and HSK-hidden words are fully gapless: they hug
+          // the following word (0 own margin) and the preceding word drops its margin too.
           const wordPressableLayout =
             showPinyin &&
             !hidesPinyin &&

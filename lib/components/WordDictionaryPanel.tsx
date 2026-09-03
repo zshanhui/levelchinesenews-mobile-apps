@@ -55,6 +55,20 @@ const DEFINITION_MAX_LINES = 3;
 /** A word with multiple dict entries (polyphonic 行/重/得) shows this many entry
  * lines by default; "show more" reveals the rest. */
 const DEFAULT_VISIBLE_ENTRY_LINES_MAX = 2;
+/** Greedy-split sub-words show one sense by default so the panel stays compact. */
+const DEFAULT_VISIBLE_SPLIT_ENTRY_LINES_MAX = 1;
+
+function sortAndCapDictEntries<T extends { definitions?: string | null }>(
+  entries: T[],
+  expanded: boolean,
+  maxVisible: number = DEFAULT_VISIBLE_ENTRY_LINES_MAX,
+): { visible: T[]; hiddenCount: number } {
+  const sorted = [...entries].sort(
+    (a, b) => (b.definitions?.length ?? 0) - (a.definitions?.length ?? 0),
+  );
+  const visible = expanded ? sorted : sorted.slice(0, maxVisible);
+  return { visible, hiddenCount: sorted.length - visible.length };
+}
 
 /**
  * Dictionary definition capped at DEFINITION_MAX_LINES. A hidden (absolute, opacity-0) clone
@@ -385,14 +399,20 @@ export function WordDictionaryPanel({
   const showSplitMatches = dictMatches.length > 1;
   const singleMatch = dictMatches[0] ?? null;
   const singleMatchEntries = singleMatch?.entries ?? [];
-  // Longer definitions first — richer senses surface before terse ones.
-  const sortedSingleEntries = [...singleMatchEntries].sort(
-    (a, b) => (b.definitions?.length ?? 0) - (a.definitions?.length ?? 0),
+  const { visible: visibleSingleEntries, hiddenCount: hiddenSingleEntryCount } =
+    sortAndCapDictEntries(singleMatchEntries, entriesExpanded);
+  const splitMatchDisplays = dictMatches.map((match) => {
+    const capped = sortAndCapDictEntries(
+      match.entries,
+      entriesExpanded,
+      DEFAULT_VISIBLE_SPLIT_ENTRY_LINES_MAX,
+    );
+    return { match, ...capped };
+  });
+  const hiddenSplitEntryCount = splitMatchDisplays.reduce(
+    (n, item) => n + item.hiddenCount,
+    0,
   );
-  const visibleSingleEntries = entriesExpanded
-    ? sortedSingleEntries
-    : sortedSingleEntries.slice(0, DEFAULT_VISIBLE_ENTRY_LINES_MAX);
-  const hiddenSingleEntryCount = sortedSingleEntries.length - visibleSingleEntries.length;
   /** Tighten list + header spacing when many sub-word lines would make the panel very tall. */
   const compactMultiSplit = dictMatches.length >= 3;
 
@@ -548,55 +568,94 @@ export function WordDictionaryPanel({
                 compactMultiSplit && styles.panelDefinitionListCompact,
               ]}
             >
-              {dictMatches.map((match, idx) => (
-                <View
-                  key={`${match.lookupText}:${match.entries[0]?.id ?? idx}`}
-                  style={[
-                    styles.panelDefinitionItem,
-                    compactMultiSplit && styles.panelDefinitionItemCompact,
-                    idx > 0
-                      ? [
-                          styles.panelDefinitionItemDivider,
-                          compactMultiSplit && styles.panelDefinitionItemDividerCompact,
-                        ]
-                      : null,
-                  ]}
-                >
+              {splitMatchDisplays.map(({ match, visible }, idx) => {
+                const showHeaderPinyin = visible.length <= 1;
+                return (
                   <View
+                    key={`${match.lookupText}:${visible[0]?.id ?? idx}`}
                     style={[
-                      styles.panelDefinitionItemHeader,
-                      compactMultiSplit && styles.panelDefinitionItemHeaderCompact,
+                      styles.panelDefinitionItem,
+                      compactMultiSplit && styles.panelDefinitionItemCompact,
+                      idx > 0
+                        ? [
+                            styles.panelDefinitionItemDivider,
+                            compactMultiSplit && styles.panelDefinitionItemDividerCompact,
+                          ]
+                        : null,
                     ]}
                   >
-                    <Text
+                    <View
                       style={[
-                        styles.panelDefinitionItemWord,
-                        compactMultiSplit && styles.panelDefinitionItemWordCompact,
+                        styles.panelDefinitionItemHeader,
+                        compactMultiSplit && styles.panelDefinitionItemHeaderCompact,
                       ]}
                     >
-                      {match.lookupText}
-                    </Text>
-                    {match.entries[0]?.pinyin ? (
                       <Text
                         style={[
-                          styles.panelDefinitionItemPinyin,
-                          compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                          styles.panelDefinitionItemWord,
+                          compactMultiSplit && styles.panelDefinitionItemWordCompact,
                         ]}
                       >
-                        {match.entries[0]?.pinyin}
+                        {match.lookupText}
                       </Text>
-                    ) : null}
+                      {showHeaderPinyin && visible[0]?.pinyin ? (
+                        <Text
+                          style={[
+                            styles.panelDefinitionItemPinyin,
+                            compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                          ]}
+                        >
+                          {visible[0].pinyin}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {visible.map((entry, entryIdx) => (
+                      <View
+                        key={entry.id}
+                        style={
+                          entryIdx > 0
+                            ? compactMultiSplit
+                              ? styles.panelSplitEntryFollowOnCompact
+                              : styles.panelSplitEntryFollowOn
+                            : null
+                        }
+                      >
+                        {!showHeaderPinyin && entry.pinyin ? (
+                          <Text
+                            style={[
+                              styles.panelDefinitionItemPinyin,
+                              compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                            ]}
+                          >
+                            {entry.pinyin}
+                          </Text>
+                        ) : null}
+                        <ExpandableDefinitionText
+                          text={entry.definitions ?? ''}
+                          textStyle={[
+                            styles.panelDefinitionText,
+                            compactMultiSplit && styles.panelDefinitionTextSplitCompact,
+                            styles.panelDefinitionTextLoaded,
+                          ]}
+                        />
+                      </View>
+                    ))}
                   </View>
-                  <ExpandableDefinitionText
-                    text={match.entries[0]?.definitions ?? ''}
-                    textStyle={[
-                      styles.panelDefinitionText,
-                      compactMultiSplit && styles.panelDefinitionTextSplitCompact,
-                      styles.panelDefinitionTextLoaded,
-                    ]}
-                  />
-                </View>
-              ))}
+                );
+              })}
+              {hiddenSplitEntryCount > 0 ? (
+                <Pressable
+                  onPress={() => setEntriesExpanded(true)}
+                  accessibilityRole="button"
+                  style={({ pressed }) =>
+                    pressed ? styles.panelDefinitionLinkRowPressed : null
+                  }
+                >
+                  <Text style={styles.panelDefinitionShowMore}>
+                    {t('showMoreEntries')}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : singleMatchEntries.length > 0 ? (
             // One line per dict entry (polyphonic words have several); default cap
@@ -761,6 +820,14 @@ function createStyles(theme: Theme, isDark: boolean) {
     },
     panelDefinitionItemCompact: {
       gap: 2,
+    },
+    panelSplitEntryFollowOn: {
+      gap: 6,
+      paddingTop: 8,
+    },
+    panelSplitEntryFollowOnCompact: {
+      gap: 2,
+      paddingTop: 4,
     },
     panelDefinitionItemDivider: {
       borderTopWidth: StyleSheet.hairlineWidth,
