@@ -10,6 +10,18 @@ export interface CachedArticleList {
   cachedAt: string;
 }
 
+/** Pagination fields that match a cached list already sitting in memory. */
+export function paginationFromCachedCount(
+  itemCount: number,
+  pageSize: number,
+): { lastPageLen: number; page: number } {
+  const remainder = itemCount % pageSize;
+  return {
+    lastPageLen: remainder === 0 ? pageSize : remainder,
+    page: Math.ceil(itemCount / pageSize) || 1,
+  };
+}
+
 /** Deduplicate items by id, preserving first occurrence order. */
 export function dedupeById(items: ArticleListItem[]): ArticleListItem[] {
   const seen = new Set<string>();

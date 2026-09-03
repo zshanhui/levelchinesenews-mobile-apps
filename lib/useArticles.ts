@@ -5,6 +5,7 @@ import { ARTICLE_REQUEST_TIMEOUT_MS, PAGE_SIZE } from './constants';
 import {
   dedupeById,
   loadCachedList,
+  paginationFromCachedCount,
   saveCachedList,
   updateCachedArticle,
 } from './articleListCache';
@@ -34,7 +35,7 @@ export function useArticles(tagsFilter: string[] | null = null) {
   const [items, setItems] = useState<ArticleListItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPageLen, setLastPageLen] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,9 +104,10 @@ export function useArticles(tagsFilter: string[] | null = null) {
         setUsingCache(true);
         setCachedAt(cached.cachedAt);
         setItems(cached.items);
-        const remainder = cached.items.length % PAGE_SIZE;
-        setLastPageLen(remainder === 0 ? PAGE_SIZE : remainder);
-        setPage(Math.ceil(cached.items.length / PAGE_SIZE) || 1);
+        const { lastPageLen: cachedLastPageLen, page: cachedPage } =
+          paginationFromCachedCount(cached.items.length, PAGE_SIZE);
+        setLastPageLen(cachedLastPageLen);
+        setPage(cachedPage);
         return {
           items: cached.items,
           page: 1,
@@ -117,17 +119,37 @@ export function useArticles(tagsFilter: string[] | null = null) {
   }, []);
 
   const loadInitial = useCallback(async () => {
-    setLoading(true);
     setError(null);
+    let hasItems = itemsRef.current.length > 0;
+    if (!hasItems && !isActiveTopicFilter(tagsFilterRef.current)) {
+      const cached = await loadCachedList();
+      if (cached && cached.items.length > 0) {
+        setUsingCache(true);
+        setCachedAt(cached.cachedAt);
+        setItems(cached.items);
+        const { lastPageLen: cachedLastPageLen, page: cachedPage } =
+          paginationFromCachedCount(cached.items.length, PAGE_SIZE);
+        setLastPageLen(cachedLastPageLen);
+        setPage(cachedPage);
+        itemsRef.current = cached.items;
+        hasItems = true;
+        setLoading(false);
+      }
+    }
+    if (!hasItems) {
+      setLoading(true);
+    }
     try {
       await fetchPage(1, false);
     } catch (err) {
       setError(getUserFriendlyErrorMessage(err, t('failedToLoadArticles')));
-      setItems([]);
-      setLastPageLen(0);
-      setPage(1);
-      setUsingCache(false);
-      setCachedAt(null);
+      if (!hasItems) {
+        setItems([]);
+        setLastPageLen(0);
+        setPage(1);
+        setUsingCache(false);
+        setCachedAt(null);
+      }
     } finally {
       setLoading(false);
     }

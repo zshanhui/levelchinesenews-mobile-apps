@@ -61,6 +61,8 @@ export const STORAGE_KEY_THEME = '@lcn/darkMode';
 export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
 /** Last Chinese words searched on Learn → Sentence examples */
 export const STORAGE_KEY_RECENT_SENTENCE_SEARCHES = '@lcn/recentSentenceSearches';
+/** Last article reader route — restored after the OS kills the JS process. */
+export const STORAGE_KEY_LAST_ARTICLE_ROUTE = '@lcn/lastArticleRoute';
 export const MAX_RECENT_SENTENCE_SEARCHES = 20;
 
 // Stopwords (GET /config/stopwords)

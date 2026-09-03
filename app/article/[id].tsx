@@ -39,6 +39,10 @@ import {
   upsertSavedArticleWithSentenceBookmark,
 } from '../../lib/savedArticlesDb';
 import { EXTRA_BOTTOM_PADDING } from '../../lib/constants';
+import {
+  clearLastArticleRoute,
+  saveLastArticleRoute,
+} from '../../lib/lastArticleRoute';
 import { useLearnedWords } from '../../lib/useLearnedWords';
 import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
@@ -299,6 +303,24 @@ export default function ArticleDetailScreen() {
     },
     []
   );
+
+  useEffect(() => {
+    if (!id) return;
+    void saveLastArticleRoute({
+      id,
+      word: selectedWord?.word,
+      wordKey: highlightedWordKey ?? undefined,
+      sentenceKey: highlightedSentenceKey ?? undefined,
+    });
+  }, [id, selectedWord, highlightedWordKey, highlightedSentenceKey]);
+
+  useEffect(() => {
+    return () => {
+      if (id) {
+        void clearLastArticleRoute(id);
+      }
+    };
+  }, [id]);
 
   useEffect(() => {
     setReadState(false);
