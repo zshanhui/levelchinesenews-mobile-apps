@@ -159,18 +159,6 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
-            {t('darkMode')}
-          </Text>
-          <Switch
-            value={isDark}
-            onValueChange={setDark}
-            trackColor={{ false: theme.border, true: theme.accent + '66' }}
-            thumbColor={isDark ? theme.accent : theme.textMuted}
-          />
-        </View>
-
         {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
 
         <Pressable
@@ -202,6 +190,18 @@ export default function SettingsScreen() {
             />
           </View>
         </Pressable>
+
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+            {t('darkMode')}
+          </Text>
+          <Switch
+            value={isDark}
+            onValueChange={setDark}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={isDark ? theme.accent : theme.textMuted}
+          />
+        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
@@ -506,7 +506,7 @@ function createStyles(theme: Theme) {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: theme.surface,
     borderRadius: 10,
