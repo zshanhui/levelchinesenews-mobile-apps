@@ -13,20 +13,13 @@ export const userSavedWordExamplesTableName = 'user_saved_word_examples';
 export const LOCAL_SCHEMA_VERSION = 5;
 
 let _db: SQLite.SQLiteDatabase | null = null;
+let _opening: Promise<SQLite.SQLiteDatabase> | null = null;
 
 async function openFreshDatabase() {
-  _db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME);
-  await runMigrations(_db);
-  return _db;
-}
-
-async function isDatabaseConnectionHealthy(db: SQLite.SQLiteDatabase): Promise<boolean> {
-  try {
-    await db.getFirstAsync<{ ok: number }>('SELECT 1 AS ok');
-    return true;
-  } catch {
-    return false;
-  }
+  const db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME);
+  await runMigrations(db);
+  _db = db;
+  return db;
 }
 
 async function execWithReconnectRetry(
@@ -49,25 +42,24 @@ async function execWithReconnectRetry(
 }
 
 export async function getLocalDatabase() {
-  if (!_db) {
-    return openFreshDatabase();
-  }
+  if (_opening) return _opening;
+  if (_db) return _db;
 
-  const healthy = await isDatabaseConnectionHealthy(_db);
-  if (healthy) return _db;
-
-  try {
-    await _db.closeAsync();
-  } catch {
-    // noop: best-effort close before reopening
-  }
-  return openFreshDatabase();
+  _opening = openFreshDatabase().catch((err) => {
+    _db = null;
+    throw err;
+  }).finally(() => {
+    _opening = null;
+  });
+  return _opening;
 }
 
 export async function closeLocalDatabase() {
-  if (_db) {
-    await _db.closeAsync()
-    _db = null
+  const db = _db;
+  _db = null;
+  _opening = null;
+  if (db) {
+    await db.closeAsync();
   }
 }
 

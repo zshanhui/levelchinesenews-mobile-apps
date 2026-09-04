@@ -11,6 +11,8 @@ export enum NativeLanguage {
   RU = 'ru',
   AR = 'ar',
   ZH = 'zh',
+  DE = 'de',
+  JA = 'ja',
 }
 
 const LEGACY_STORAGE_MAP: Record<string, NativeLanguage> = {

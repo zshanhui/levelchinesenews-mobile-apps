@@ -26,6 +26,8 @@ const NATIVE_LANGUAGE_OPTIONS: {
   { value: NativeLanguage.ES, labelKey: 'langSpanish' },
   { value: NativeLanguage.MS, labelKey: 'langMalay' },
   { value: NativeLanguage.RU, labelKey: 'langRussian' },
+  { value: NativeLanguage.DE, labelKey: 'langGerman' },
+  { value: NativeLanguage.JA, labelKey: 'langJapanese' },
 ];
 
 export function NativeLanguageSelector() {

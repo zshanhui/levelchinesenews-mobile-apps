@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { NativeLanguage } from '../nativeLanguage';
+import { hasCjkIdeograph } from '../text-utils';
 import type { Theme } from '../theme';
 import type { WordSegment } from '../types';
 import { SentenceHelperBar } from './SentenceHelperBar';
@@ -224,13 +225,12 @@ function isPunctuationSegment(text: string): boolean {
 }
 
 /**
- * True when the segment should not respond to taps at all: whitespace, punctuation, and
- * symbols. (Latin words and numbers ARE tappable — see isLatinOrNumericSegment; they
- * focus the sentence like stop words, without opening the study panel.)
+ * True when the segment should not respond to taps at all: whitespace, punctuation,
+ * symbols, Latin/English runs, and numbers. The local dictionary is Chinese-only.
  */
 function isNonTappableSegment(text: string): boolean {
   if (!text || !text.trim()) return true;
-  return /^[\p{P}\p{S}\s]+$/u.test(text.trim());
+  return !hasCjkIdeograph(text);
 }
 
 /** Hanzi numerals that can appear inside mixed number tokens like 3万 / 20亿. */
@@ -239,9 +239,9 @@ const CJK_NUMERAL_CHARS = '零〇一二三四五六七八九十百千万億亿�
 /**
  * True for tokens made of Latin letters and/or digits — English words and loanwords
  * (don't, e-mail), plain numbers (42, 3,000, 1.5, full-width digits), and mixed
- * alphanumeric tokens (iPhone16, COVID-19, 3万). Tapping these focuses the sentence
- * (helper bar shows) but never opens the word study panel or highlights the word —
- * same as stop words.
+ * alphanumeric tokens (iPhone16, COVID-19, 3万). Pure Latin/number tokens are also
+ * non-tappable (`isNonTappableSegment`). Mixed tokens like 3万 stay tappable for
+ * sentence focus but never open the word study panel.
  */
 export function isLatinOrNumericSegment(text: string): boolean {
   const t = text.trim();

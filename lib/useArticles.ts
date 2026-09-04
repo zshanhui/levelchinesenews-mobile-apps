@@ -9,6 +9,10 @@ import {
   saveCachedList,
   updateCachedArticle,
 } from './articleListCache';
+import {
+  articleLengthBounds,
+  type ArticleLengthBucket,
+} from './articleLength';
 import type {
   ArticleListItem,
   ArticleListOrderBy,
@@ -24,13 +28,41 @@ function isActiveTopicFilter(tagsFilter: string[] | null | undefined): boolean {
   return Array.isArray(tagsFilter) && tagsFilter.length > 0;
 }
 
+function isFilteredList(
+  tagsFilter: string[] | null | undefined,
+  lengthFilter: ArticleLengthBucket | null | undefined,
+  simplified: boolean,
+): boolean {
+  return isActiveTopicFilter(tagsFilter) || lengthFilter != null || simplified;
+}
+
+function listQueryKey(
+  tagsFilter: string[] | null | undefined,
+  lengthFilter: ArticleLengthBucket | null | undefined,
+  simplified: boolean,
+): string | null {
+  const tags =
+    isActiveTopicFilter(tagsFilter) && tagsFilter
+      ? tagsFilter.join('\0')
+      : '';
+  const length = lengthFilter ?? '';
+  const simp = simplified ? '1' : '';
+  if (!tags && !length && !simp) return null;
+  return `${tags}|${length}|${simp}`;
+}
+
 /**
  * Paginated `GET /articles` list. Pass `tagsFilter` (topic tag strings) to add `?tags=…` (OR).
- * Topic filtering uses the same `orderBy` / `order_by` as the main list (e.g. Created At).
- * Offline list cache is used only for the **main** list (no topic filter); topic results are
- * never written to or read from that cache.
+ * Pass `lengthFilter` to add `min_words` / `max_words`.
+ * Pass `simplified` for `?simplified=1` (L4/L5 simplified feed).
+ * Topic/length/simplified filtering uses the same `orderBy` / `order_by` as the main list.
+ * Offline list cache is used only for the **main** list (no topic, length, or simplified filter).
  */
-export function useArticles(tagsFilter: string[] | null = null) {
+export function useArticles(
+  tagsFilter: string[] | null = null,
+  lengthFilter: ArticleLengthBucket | null = null,
+  simplified = false,
+) {
   const { t } = useTranslation();
   const [items, setItems] = useState<ArticleListItem[]>([]);
   const [page, setPage] = useState(1);
@@ -45,12 +77,22 @@ export function useArticles(tagsFilter: string[] | null = null) {
   const [sortReloading, setSortReloading] = useState(false);
   const orderByRef = useRef<ArticleListOrderBy>('published_date');
   const tagsFilterRef = useRef(tagsFilter);
-  /** `undefined` = effect never ran; then stable key `null` | string for topic identity. */
-  const tagsFilterKeyRef = useRef<string | null | undefined>(undefined);
+  const lengthFilterRef = useRef(lengthFilter);
+  const simplifiedRef = useRef(simplified);
+  /** `undefined` = effect never ran; then stable key `null` | string for list query identity. */
+  const listQueryKeyRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     tagsFilterRef.current = tagsFilter;
   }, [tagsFilter]);
+
+  useEffect(() => {
+    lengthFilterRef.current = lengthFilter;
+  }, [lengthFilter]);
+
+  useEffect(() => {
+    simplifiedRef.current = simplified;
+  }, [simplified]);
 
   const itemsRef = useRef<ArticleListItem[]>([]);
   useEffect(() => {
@@ -60,7 +102,11 @@ export function useArticles(tagsFilter: string[] | null = null) {
   const hasMore = lastPageLen === PAGE_SIZE;
 
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
-    const topicActive = isActiveTopicFilter(tagsFilterRef.current);
+    const filtered = isFilteredList(
+      tagsFilterRef.current,
+      lengthFilterRef.current,
+      simplifiedRef.current,
+    );
     const tags = tagsQueryParam(tagsFilterRef.current);
     const params: Record<string, string | number | boolean> = {
       page: pageNum,
@@ -70,6 +116,16 @@ export function useArticles(tagsFilter: string[] | null = null) {
     };
     if (tags) {
       params.tags = tags;
+    }
+    if (lengthFilterRef.current) {
+      const bounds = articleLengthBounds(lengthFilterRef.current);
+      params.min_words = bounds.minWords;
+      if (bounds.maxWords != null) {
+        params.max_words = bounds.maxWords;
+      }
+    }
+    if (simplifiedRef.current) {
+      params.simplified = '1';
     }
     const url = apiReadUrl('/articles', params);
     const headers: Record<string, string> = {};
@@ -91,12 +147,18 @@ export function useArticles(tagsFilter: string[] | null = null) {
       setItems(append ? deduped : data.items);
       setLastPageLen(data.items.length);
       setPage(data.page);
-      if (!topicActive) {
+      if (!filtered) {
         saveCachedList(deduped, PAGE_SIZE).catch(() => {});
       }
       return data;
     } catch (err) {
-      if (isActiveTopicFilter(tagsFilterRef.current)) {
+      if (
+        isFilteredList(
+          tagsFilterRef.current,
+          lengthFilterRef.current,
+          simplifiedRef.current,
+        )
+      ) {
         throw err;
       }
       const cached = await loadCachedList();
@@ -121,7 +183,14 @@ export function useArticles(tagsFilter: string[] | null = null) {
   const loadInitial = useCallback(async () => {
     setError(null);
     let hasItems = itemsRef.current.length > 0;
-    if (!hasItems && !isActiveTopicFilter(tagsFilterRef.current)) {
+    if (
+      !hasItems &&
+      !isFilteredList(
+        tagsFilterRef.current,
+        lengthFilterRef.current,
+        simplifiedRef.current,
+      )
+    ) {
       const cached = await loadCachedList();
       if (cached && cached.items.length > 0) {
         setUsingCache(true);
@@ -156,15 +225,11 @@ export function useArticles(tagsFilter: string[] | null = null) {
   }, [fetchPage, t]);
 
   useEffect(() => {
-    // Stable string for "which topic filter is active": join tags with \0 so we never
-    // merge distinct tag lists into the same key (commas could appear inside a tag).
-    const key = isActiveTopicFilter(tagsFilter) && tagsFilter
-      ? tagsFilter.join('\0')
-      : null;
-    const prevKey = tagsFilterKeyRef.current;
+    const key = listQueryKey(tagsFilter, lengthFilter, simplified);
+    const prevKey = listQueryKeyRef.current;
 
     if (prevKey === undefined) {
-      tagsFilterKeyRef.current = key;
+      listQueryKeyRef.current = key;
       if (key !== null) {
         setItems([]);
         setLastPageLen(0);
@@ -179,13 +244,13 @@ export function useArticles(tagsFilter: string[] | null = null) {
       return;
     }
 
-    tagsFilterKeyRef.current = key;
+    listQueryKeyRef.current = key;
     setItems([]);
     setLastPageLen(0);
     setUsingCache(false);
     setCachedAt(null);
     void loadInitial();
-  }, [tagsFilter, loadInitial]);
+  }, [tagsFilter, lengthFilter, simplified, loadInitial]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -237,7 +302,13 @@ export function useArticles(tagsFilter: string[] | null = null) {
     setItems((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     );
-    if (!isActiveTopicFilter(tagsFilterRef.current)) {
+    if (
+      !isFilteredList(
+        tagsFilterRef.current,
+        lengthFilterRef.current,
+        simplifiedRef.current,
+      )
+    ) {
       updateCachedArticle(id, patch).catch(() => {});
     }
   }, []);

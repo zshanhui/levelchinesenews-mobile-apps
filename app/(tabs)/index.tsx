@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useFocusEffect, useNavigation } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import { generateArticleSummary } from '../../lib/api';
@@ -18,7 +18,11 @@ import { ArticleListFilterShelve } from '../../lib/components/ArticleListFilterS
 import { ArticleListSkeleton } from '../../lib/components/ArticleListSkeleton';
 import { CacheIndicator } from '../../lib/components/CacheIndicator';
 import { ArticleCard } from '../../lib/components/ArticleCard';
-import { getReadStatesForArticleIds } from '../../lib/savedArticlesDb';
+import {
+  getReadStatesForArticleIds,
+  upsertSavedArticle,
+} from '../../lib/savedArticlesDb';
+import type { ArticleLengthBucket } from '../../lib/articleLength';
 import { useFont } from '../../lib/FontContext';
 import { useArticles } from '../../lib/useArticles';
 import type { Theme } from '../../lib/theme';
@@ -35,7 +39,27 @@ export default function ArticlesListScreen() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [topicFilterTags, setTopicFilterTags] = useState<string[] | null>(null);
   const [activeTopicKey, setActiveTopicKey] = useState<string | null>(null);
+  const [lengthFilter, setLengthFilter] = useState<ArticleLengthBucket | null>(
+    null,
+  );
+  const [simplifiedFilter, setSimplifiedFilter] = useState(false);
   const topicCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { tag: tagParam } = useLocalSearchParams<{ tag?: string | string[] }>();
+  const appliedTagParamRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const raw = Array.isArray(tagParam) ? tagParam[0] : tagParam;
+    const tag = raw?.trim() ?? '';
+    if (!tag) {
+      appliedTagParamRef.current = null;
+      return;
+    }
+    if (appliedTagParamRef.current === tag) return;
+    appliedTagParamRef.current = tag;
+    setActiveTopicKey(tag);
+    setTopicFilterTags([tag]);
+    router.setParams({ tag: undefined });
+  }, [tagParam]);
 
   const {
     items,
@@ -53,7 +77,7 @@ export default function ArticlesListScreen() {
     refresh,
     loadMore,
     updateArticle,
-  } = useArticles(topicFilterTags);
+  } = useArticles(topicFilterTags, lengthFilter, simplifiedFilter);
 
   const [readByArticleId, setReadByArticleId] = useState<Record<string, boolean>>(
     {},
@@ -62,7 +86,9 @@ export default function ArticlesListScreen() {
   itemsRef.current = items;
 
   const filterActive =
-    topicFilterTags !== null && topicFilterTags.length > 0;
+    (topicFilterTags !== null && topicFilterTags.length > 0) ||
+    lengthFilter != null ||
+    simplifiedFilter;
 
   const openFilterSheet = useCallback(() => {
     setFilterSheetOpen(true);
@@ -106,6 +132,14 @@ export default function ArticlesListScreen() {
     },
     [activeTopicKey, closeFilterSheet, topicFilterTags],
   );
+
+  const onSelectLength = useCallback((bucket: ArticleLengthBucket) => {
+    setLengthFilter((prev) => (prev === bucket ? null : bucket));
+  }, []);
+
+  const onToggleSimplified = useCallback(() => {
+    setSimplifiedFilter((prev) => !prev);
+  }, []);
 
   const refreshReadStatesForCurrentItems = useCallback(async () => {
     const ids = itemsRef.current.map((i) => i.id);
@@ -167,7 +201,7 @@ export default function ArticlesListScreen() {
             accessibilityLabel="Open article filters"
           >
             <Ionicons
-              name={filterActive ? 'funnel' : 'funnel-outline'}
+              name={filterActive ? 'options' : 'options-outline'}
               size={22}
               color={theme.accent}
             />
@@ -195,6 +229,17 @@ export default function ArticlesListScreen() {
       void refreshReadStatesForCurrentItems();
     }, [loadInitial, refreshReadStatesForCurrentItems]),
   );
+
+  const onOpenArticle = useCallback((item: ArticleListItem) => {
+    const open = () => {
+      router.push(`/article/${item.id}`);
+    };
+    if (readByArticleId[item.id] ?? false) {
+      open();
+      return;
+    }
+    void upsertSavedArticle(item).then(open, open);
+  }, [readByArticleId]);
 
   const showListSkeleton =
     (loading && items.length === 0) || sortReloading || refreshing;
@@ -226,7 +271,7 @@ export default function ArticlesListScreen() {
           item={item}
           index={index}
           read={readByArticleId[item.id] ?? false}
-          onPress={() => router.push(`/article/${item.id}`)}
+          onPress={() => onOpenArticle(item)}
           onRequestTranslation={onRequestTranslation}
         />
       )}
@@ -284,8 +329,12 @@ export default function ArticlesListScreen() {
         void setOrderBy(next);
         closeFilterSheet();
       }}
+      lengthFilter={lengthFilter}
+      onSelectLength={onSelectLength}
       activeTopicKey={activeTopicKey}
       onTopicSelect={onTopicSelect}
+      simplified={simplifiedFilter}
+      onToggleSimplified={onToggleSimplified}
     />
     </>
   );

@@ -1,8 +1,8 @@
 /**
  * Saved "my articles" persistence via SQLite.
  *
- * Rows include parsed articles and any article marked read from the public feed
- * (see upsertArticleMarkedRead).
+ * Rows include parsed articles, unread articles opened from the public feed,
+ * and any article marked read (see upsertArticleMarkedRead).
  *
  * Article list payload is stored as JSON in `article_list_item` (SQLite TEXT).
  * Datetime columns store Unix epoch milliseconds (INTEGER).

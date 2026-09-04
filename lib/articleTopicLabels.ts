@@ -35,3 +35,14 @@ export function articleTopicDisplayLabel(
   }
   return ARTICLE_TOPIC_LABEL_EN[topicKeyZh] ?? topicKeyZh;
 }
+
+/** 4-character Chinese topic chips wrap 2+2, not 3+1. */
+export function formatTopicChipLabel(
+  label: string,
+  nativeLanguage: NativeLanguage,
+): string {
+  if (nativeLanguage !== NativeLanguage.ZH) return label;
+  const chars = Array.from(label);
+  if (chars.length !== 4) return label;
+  return `${chars[0]}${chars[1]}\n${chars[2]}${chars[3]}`;
+}

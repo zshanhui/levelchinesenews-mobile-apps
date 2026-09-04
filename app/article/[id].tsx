@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArticleContent } from '../../lib/components/ArticleContent';
 import { ArticleDetailHeader } from '../../lib/components/ArticleDetailHeader';
+import { ArticleTags } from '../../lib/components/ArticleTags';
 import { BottomMediaSourceLink } from '../../lib/components/BottomMediaSourceLink';
 import {
   BookmarkToast,
@@ -25,6 +26,7 @@ import {
 } from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
 import { isLatinOrNumericSegment } from '../../lib/components/ArticleSentenceRow';
+import { hasCjkIdeograph } from '../../lib/text-utils';
 import { WordDictionaryPanel } from '../../lib/components/WordDictionaryPanel';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
 import { parseSentenceKey, parseWordKey } from '../../lib/sentenceKeys';
@@ -190,10 +192,14 @@ export default function ArticleDetailScreen() {
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
-      if (isStopWord(word) || isLatinOrNumericSegment(word)) {
-        // Stop words (e.g. 的/了/在), English words, and numbers don't open the
-        // dict popup and don't get highlighted themselves, but their sentence
-        // still gets focused so the sentence helper bar shows.
+      if (
+        isStopWord(word) ||
+        !hasCjkIdeograph(word) ||
+        isLatinOrNumericSegment(word)
+      ) {
+        // Stop words (e.g. 的/了/在), English/Latin runs, and numbers don't open
+        // the dict popup and don't get highlighted themselves. English tokens
+        // are also non-tappable in the sentence row; this guards other callers.
         lastLearnedTapRef.current = null;
         setSelectedWord(null);
         setHighlightedWordKey(null);
@@ -291,6 +297,12 @@ export default function ArticleDetailScreen() {
       const { word, wordKey, sentenceKey } = params;
       const key = Array.isArray(sentenceKey) ? sentenceKey[0] : sentenceKey;
       if (word && wordKey && key) {
+        if (!hasCjkIdeograph(word) || isLatinOrNumericSegment(word)) {
+          setSelectedWord(null);
+          setHighlightedWordKey(null);
+          setHighlightedSentenceKey(key);
+          return;
+        }
         setSelectedWord({ word, pinyin: null });
         setHighlightedWordKey(wordKey);
         setHighlightedSentenceKey(key);
@@ -456,6 +468,8 @@ export default function ArticleDetailScreen() {
     [article, id, usingCache],
   );
 
+  const showArticleTags = Boolean(article?.tags?.some((tag) => tag.trim()));
+
   return (
     <View style={styles.screenRoot}>
       <View
@@ -504,9 +518,19 @@ export default function ArticleDetailScreen() {
                 parsedContent={article.parsed_content}
                 listHeader={<ArticleDetailHeader {...articleHeaderProps} />}
                 listFooter={
-                  <>
+                  <View
+                    style={
+                      showArticleTags ? styles.articleTagsAndSource : undefined
+                    }
+                  >
+                    <ArticleTags tags={article.tags} />
                     {markReadFooterVisible ? (
-                      <View style={styles.articleBottomBar}>
+                      <View
+                        style={[
+                          styles.articleBottomBar,
+                          showArticleTags && styles.articleFooterAfterTags,
+                        ]}
+                      >
                         <View style={styles.bottomBarLeft}>
                           {article.source_url ? (
                             <BottomMediaSourceLink
@@ -573,14 +597,19 @@ export default function ArticleDetailScreen() {
                       </View>
                     ) : null}
                     {article.source_url && !markReadFooterVisible ? (
-                      <View style={styles.bottomMediaLinkStandalone}>
+                      <View
+                        style={[
+                          styles.bottomMediaLinkStandalone,
+                          showArticleTags && styles.articleFooterAfterTags,
+                        ]}
+                      >
                         <BottomMediaSourceLink
                           sourceUrl={article.source_url}
                           mediaSourceLabel={article.source}
                         />
                       </View>
                     ) : null}
-                  </>
+                  </View>
                 }
                 onLastSentenceBecameVisible={onLastSentenceBecameVisible}
                 contentContainerStyle={[
@@ -640,14 +669,28 @@ export default function ArticleDetailScreen() {
                   <Text style={styles.emptyContent}>
                     {t('noContentAvailable')}
                   </Text>
-                  {article.source_url ? (
-                    <View style={styles.bottomMediaLinkStandalone}>
-                      <BottomMediaSourceLink
-                        sourceUrl={article.source_url}
-                        mediaSourceLabel={article.source}
-                      />
-                    </View>
-                  ) : null}
+                  <View
+                    style={
+                      showArticleTags
+                        ? styles.articleTagsAndSourceEmpty
+                        : undefined
+                    }
+                  >
+                    <ArticleTags tags={article.tags} />
+                    {article.source_url ? (
+                      <View
+                        style={[
+                          styles.bottomMediaLinkStandalone,
+                          showArticleTags && styles.articleFooterAfterTags,
+                        ]}
+                      >
+                        <BottomMediaSourceLink
+                          sourceUrl={article.source_url}
+                          mediaSourceLabel={article.source}
+                        />
+                      </View>
+                    ) : null}
+                  </View>
                 </Pressable>
               </ScrollView>
             )}
@@ -764,6 +807,17 @@ function createStyles(theme: Theme) {
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: 10,
+  },
+  /** Same as `sentenceListTopSpacer` so tags sit midway to the source link. */
+  articleTagsAndSource: {
+    gap: 16,
+  },
+  articleTagsAndSourceEmpty: {
+    marginTop: 16,
+    gap: 16,
+  },
+  articleFooterAfterTags: {
+    marginTop: 0,
   },
   bottomBarLeft: {
     flex: 1,
