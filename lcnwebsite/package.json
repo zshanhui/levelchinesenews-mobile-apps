@@ -10,8 +10,6 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "worker:dev": "wrangler dev --config workers/wrangler.toml",
-    "worker:dep": "wrangler deploy --config workers/wrangler.toml",
     "page:dep": "astro build && wrangler pages deploy dist --project-name=levelchineseapplanding"
   },
   "dependencies": {
