@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeContext';
+import { darkTheme } from '../../lib/theme';
 
 function triggerTabHaptic() {
   void Haptics.selectionAsync().catch(() => {});
@@ -37,21 +38,55 @@ function LogoIcon({ theme }: { theme: { accent: string; text: string } }) {
   );
 }
 
-function AppHeader({ theme }: { theme: { accent: string; text: string } }) {
+function AppHeader({
+  theme,
+}: {
+  theme: { accent: string; accentPressed: string; text: string; textMuted: string; background: string };
+}) {
+  const zhColor =
+    theme.background === darkTheme.background ? '#c41e1e' : theme.accentPressed;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3 }}>
       <LogoIcon theme={theme} />
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: '600',
-          color: theme.text,
-          lineHeight: 18,
-          includeFontPadding: false,
-        }}
-      >
-        CN<Text style={{ fontSize: 15 }}>中文</Text>
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: theme.text,
+              lineHeight: 18,
+              includeFontPadding: false,
+            }}
+          >
+            CN
+          </Text>
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: '700',
+              color: zhColor,
+              lineHeight: 18,
+              includeFontPadding: false,
+              marginBottom: 1,
+            }}
+          >
+            中文
+          </Text>
+        </View>
+        <Text
+          style={{
+            fontSize: 10,
+            fontWeight: '400',
+            color: theme.textMuted,
+            lineHeight: 12,
+            marginLeft: 3,
+            includeFontPadding: false,
+          }}
+        >
+          (preview)
+        </Text>
+      </View>
     </View>
   );
 }

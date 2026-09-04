@@ -183,7 +183,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Russian',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -390,7 +391,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Vietnamita',
     langRussian: '🇷🇺 Ruso',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -600,7 +602,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Bahasa Rusia',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -810,7 +813,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Rusia',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -1021,7 +1025,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Tiếng Nga',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -1232,7 +1237,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Русский',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -1443,7 +1449,8 @@ export const translations = {
     langVietnamese: '🇻🇳 الفيتنامية',
     langRussian: '🇷🇺 الروسية',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -1647,7 +1654,8 @@ export const translations = {
     langVietnamese: '🇻🇳 越南语',
     langRussian: '🇷🇺 俄语',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -1850,7 +1858,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Russian',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
@@ -2051,7 +2060,8 @@ export const translations = {
     langVietnamese: '🇻🇳 Tiếng Việt',
     langRussian: '🇷🇺 Russian',
     langArabic: '🇪🇬 العربية',
-    langChinese: '🇨🇳 简体中文 (only UI)',
+    langChinese: '🇨🇳 简体中文',
+    langChineseUiNote: '(user interface)',
     langGerman: '🇩🇪 Deutsch',
     langJapanese: '🇯🇵 日本語',
 
