@@ -21,9 +21,9 @@ export const PAGE_SIZE = 15;
 // Create tab / Parse
 export const SUPPORTED_URLS = [
   'https://www.zaobao.com',
+  'https://www.thepaper.cn',
   'https://m.huanqiu.com',
   'https://www.worldjournal.com',
-  'https://www.thepaper.cn',
 ];
 export const MAX_DAILY_PARSES = 20;
 export const STORAGE_KEY_DAILY = 'daily_parse_count';

@@ -43,6 +43,26 @@ import type { ArticleListItem, ScrapeResponse } from '../../lib/types';
 
 const translationInFlight = new Map<string, Promise<ArticleListItem | null>>();
 
+/** Short brand label for a supported-site URL, e.g. https://www.zaobao.com -> "zaobao". */
+function siteDisplayName(url: string): string {
+  const host = url.replace(/^https?:\/\//, '').split(/[/?#]/)[0].toLowerCase();
+  const parts = host.split('.').filter(Boolean);
+  // Drop leading subdomain labels such as www / m.
+  while (parts.length > 1 && ['www', 'm', 'mobile', 'wap'].includes(parts[0])) {
+    parts.shift();
+  }
+  // Drop trailing TLD segments, including multi-part ones like .com.sg.
+  const TLD = new Set([
+    'com', 'co', 'net', 'org', 'gov', 'edu', 'info', 'io', 'me',
+    'cn', 'sg', 'hk', 'tw', 'my', 'id', 'vn', 'th', 'ph',
+    'ru', 'de', 'jp', 'fr', 'es', 'it', 'uk', 'us', 'au', 'ca', 'kr', 'in',
+  ]);
+  while (parts.length > 1 && TLD.has(parts[parts.length - 1])) {
+    parts.pop();
+  }
+  return parts.join('.') || host;
+}
+
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -550,7 +570,11 @@ export default function CreateScreen() {
 
             <View style={styles.supportedCard}>
               <Text style={styles.supportedLabel}>{t('supportedSites')}</Text>
-              <View style={styles.supportedLinks}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.supportedLinks}
+              >
                 {SUPPORTED_URLS.map((site) => (
                   <Pressable
                     key={site}
@@ -560,12 +584,12 @@ export default function CreateScreen() {
                     ]}
                     onPress={() => Linking.openURL(site)}
                   >
-                    <Text style={styles.supportedUrl}>
-                      {site.replace(/^https?:\/\//, '')}
+                    <Text style={styles.supportedUrl} numberOfLines={1}>
+                      {siteDisplayName(site)}
                     </Text>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           </View>
         </ScrollView>
@@ -821,23 +845,19 @@ function createStyles(theme: Theme) {
     },
     supportedLinks: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
       gap: 10,
     },
     supportedChip: {
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: theme.border,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      backgroundColor: theme.background,
+      paddingVertical: 4,
+      flexShrink: 0,
     },
     supportedChipPressed: {
-      opacity: 0.75,
+      opacity: 0.6,
     },
     supportedUrl: {
       fontSize: 13,
       color: theme.textSecondary,
+      textDecorationLine: 'underline',
     },
     list: {
       flex: 1,
