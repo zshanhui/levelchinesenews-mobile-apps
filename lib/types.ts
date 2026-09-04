@@ -43,6 +43,15 @@ export interface StopwordsResponse {
   stopwords: string[];
 }
 
+/** GET /api/v1/config/android_latest — currently published Android APK */
+export interface AndroidLatestResponse {
+  version: string;
+  apk_url: string;
+  apk_size_bytes?: number | null;
+  release_notes_url?: string | null;
+  force?: boolean;
+}
+
 /** GET /api/v1/words/hsk — HSK 2025 word → level (1–7; 7 = HSK 7–9 combined) */
 export interface HskWordsResponse {
   total: number;

@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { capitalizeFirstWord } from '../../lib/text-utils';
 import { useTranslation } from '../../lib/i18n';
 import {
@@ -13,7 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type {
   FontSizeLevel,
@@ -25,16 +24,34 @@ import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelec
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
-import { envConfig } from '../../lib/api';
-import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
+import { fetchAndroidLatest } from '../../lib/api';
+import type { AndroidLatestResponse } from '../../lib/types';
 import { HSK_HIDE_LEVELS, useHskHide } from '../../lib/useHskHide';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
 
 const URL_ABOUT_PAGE = 'https://levelchinese.app/about';
 const URL_CONTACT_PAGE = 'https://levelchinese.app/contact';
+
+/** True when `latest` is a strictly newer dotted version than `installed` (e.g. 0.7.6 > 0.7.5). */
+export function isVersionBehind(installed: string, latest: string): boolean {
+  const parse = (v: string) =>
+    v
+      .trim()
+      .replace(/^v/i, '')
+      .split('.')
+      .map((part) => parseInt(part, 10) || 0);
+  const a = parse(installed);
+  const b = parse(latest);
+  const length = Math.max(a.length, b.length);
+  for (let i = 0; i < length; i++) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+    if (av !== bv) return av < bv;
+  }
+  return false;
+}
 import {
   getOrCreateInstallationId,
-  userSavedArticlesTableName,
 } from '../../lib/localDatabase';
 
 const LINE_SPACING_OPTIONS: {
@@ -53,7 +70,6 @@ export default function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
   const { t } = useTranslation();
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'dev';
-  const shouldEnableDebugPanel = process.env.EXPO_PUBLIC_DEBUG === '1';
   const {
     showPinyin,
     setShowPinyin,
@@ -79,19 +95,13 @@ export default function SettingsScreen() {
     setHskSwitchOn(hideByHskEnabled);
   }, [hideByHskEnabled]);
 
-  const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
-    boolean | null
-  >(null);
   const [installationId, setInstallationId] = useState<string | null>(null);
-  const [showDebugPanel, setShowDebugPanel] = useState(!__DEV__);
-  const lastVersionTapAtRef = useRef(0);
-
-  useEffect(() => {
-    if (!shouldEnableDebugPanel) return;
-    AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
-      setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
-    });
-  }, [shouldEnableDebugPanel]);
+  const [androidLatest, setAndroidLatest] = useState<AndroidLatestResponse | null>(
+    null,
+  );
+  const [updateCheckState, setUpdateCheckState] = useState<
+    'checking' | 'ready' | 'error'
+  >('checking');
 
   useEffect(() => {
     getOrCreateInstallationId()
@@ -101,14 +111,37 @@ export default function SettingsScreen() {
       });
   }, []);
 
-  const handleVersionPress = () => {
-    if (!shouldEnableDebugPanel || !__DEV__) return;
-
-    const now = Date.now();
-    if (now - lastVersionTapAtRef.current < 400) {
-      setShowDebugPanel((current) => !current);
+  const checkForAppUpdate = useCallback(async () => {
+    setUpdateCheckState('checking');
+    try {
+      const data = await fetchAndroidLatest();
+      setAndroidLatest(data);
+      setUpdateCheckState('ready');
+    } catch (err) {
+      console.warn('Failed to check for app updates:', err);
+      setUpdateCheckState('error');
     }
-    lastVersionTapAtRef.current = now;
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void checkForAppUpdate();
+    }, [checkForAppUpdate]),
+  );
+
+  const updateAvailable =
+    updateCheckState === 'ready' &&
+    androidLatest != null &&
+    isVersionBehind(appVersion, androidLatest.version);
+
+  const handleUpdatePress = () => {
+    if (updateCheckState === 'error') {
+      void checkForAppUpdate();
+      return;
+    }
+    if (updateAvailable && androidLatest) {
+      void Linking.openURL(androidLatest.apk_url);
+    }
   };
 
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -353,37 +386,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {shouldEnableDebugPanel && showDebugPanel && (
-          <View style={styles.debugSection}>
-            <Text style={styles.debugSectionTitle}>
-              {t('debugEnvVars')}
-            </Text>
-            <Text
-              style={styles.debugBlock}
-              selectable
-            >
-              {[
-                `EXPO_PUBLIC_GLITCHTIP_DSN=${
-                  process.env.EXPO_PUBLIC_GLITCHTIP_DSN ? '(configured)' : '(not set)'
-                }`,
-                `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
-                `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
-                `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
-                `__DEV__=${__DEV__}`,
-                '',
-                `MY_ARTICLES_LIST=SQLite table ${userSavedArticlesTableName}`,
-                ...(legacyMyArticlesKeyPresent === null
-                  ? ['MY_ARTICLES_LEGACY_ASYNCSTORAGE=checking…']
-                  : legacyMyArticlesKeyPresent
-                    ? [
-                        `MY_ARTICLES_LEGACY_ASYNCSTORAGE=present (key ${STORAGE_KEY_ARTICLES}; open Create tab to migrate)`,
-                      ]
-                    : ['MY_ARTICLES_LEGACY_ASYNCSTORAGE=absent (migrated or never used)']),
-              ].join('\n')}
-            </Text>
-          </View>
-        )}
-
         <View style={styles.footerLinksRow}>
           <Pressable
             accessibilityRole="link"
@@ -394,6 +396,33 @@ export default function SettingsScreen() {
             ]}
           >
             <Text style={[styles.footerLinkText, fancyDisplayFontStyle]}>{t('aboutLink')}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={
+              updateCheckState === 'checking' ||
+              (updateCheckState === 'ready' && !updateAvailable)
+            }
+            onPress={handleUpdatePress}
+            style={({ pressed }) => [
+              styles.footerLinkButton,
+              pressed && styles.footerLinkButtonPressed,
+              (updateCheckState === 'checking' ||
+                (updateCheckState === 'ready' && !updateAvailable)) &&
+                styles.footerLinkButtonDisabled,
+            ]}
+          >
+            <Text
+              style={[styles.footerLinkText, fancyDisplayFontStyle]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {updateCheckState === 'ready' && !updateAvailable
+                ? t('appUpdateNoUpdateNeeded')
+                : t('updateApp', {
+                    version: androidLatest?.version ?? '…',
+                  })}
+            </Text>
           </Pressable>
           <Pressable
             accessibilityRole="link"
@@ -407,15 +436,12 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={handleVersionPress}
-          style={({ pressed }) => [styles.versionButton, pressed && styles.versionButtonPressed]}
-        >
+        <View style={styles.versionButton}>
           <Text style={styles.versionText}>Version {appVersion}</Text>
           {installationId ? (
             <Text style={styles.versionSubtext}>{installationId}</Text>
           ) : null}
-        </Pressable>
+        </View>
       </ScrollView>
       <Modal
         visible={hskHintVisible}
@@ -640,25 +666,6 @@ function createStyles(theme: Theme) {
   fontSizeSampleSelected: {
     color: theme.accent,
   },
-  debugSection: {
-    marginTop: 24,
-  },
-  debugSectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.textMuted,
-    marginBottom: 6,
-  },
-  debugBlock: {
-    fontSize: 11,
-    fontFamily: 'monospace',
-    color: theme.textMuted,
-    backgroundColor: theme.etchedBg,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
   footerLinksRow: {
     flexDirection: 'row',
     marginTop: 24,
@@ -680,8 +687,11 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.etchedBg,
   },
   footerLinkText: {
-    fontSize: 16,
+    fontSize: 14,
     color: theme.accent,
+  },
+  footerLinkButtonDisabled: {
+    opacity: 0.6,
   },
   versionText: {
     fontSize: 12,
@@ -697,9 +707,6 @@ function createStyles(theme: Theme) {
   versionButton: {
     marginTop: 24,
     marginBottom: 8,
-  },
-  versionButtonPressed: {
-    opacity: 0.7,
   },
   hintModalOverlay: {
     flex: 1,

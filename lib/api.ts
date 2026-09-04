@@ -8,6 +8,7 @@ import {
 import { i18n } from './i18n';
 import { isChineseWord } from './text-utils';
 import type {
+  AndroidLatestResponse,
   ArticleListItem,
   HskWordsResponse,
   StopwordsResponse,
@@ -224,6 +225,11 @@ export async function searchSentencesByWord(
 /** Fetch the app-level stopwords list (GET /config/stopwords). */
 export async function fetchStopwords(): Promise<StopwordsResponse> {
   return fetchWithTimeout<StopwordsResponse>(apiReadUrl('/config/stopwords'));
+}
+
+/** Fetch the currently published Android APK info (GET /config/android_latest). */
+export async function fetchAndroidLatest(): Promise<AndroidLatestResponse> {
+  return fetchWithTimeout<AndroidLatestResponse>(apiReadUrl('/config/android_latest'));
 }
 
 /** Fetch the HSK 2025 word index (GET /words/hsk). */

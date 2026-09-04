@@ -85,6 +85,8 @@ export const translations = {
     debugEnvVars: 'Debug – environment variables',
     aboutLink: 'About',
     contactLink: 'Contact',
+    updateApp: 'Update to {{version}}',
+    appUpdateNoUpdateNeeded: 'No update needed',
 
     // Article detail
     article: 'article',
@@ -293,6 +295,8 @@ export const translations = {
     debugEnvVars: 'Depuración – variables de entorno',
     aboutLink: 'Acerca de',
     contactLink: 'Contacto',
+    updateApp: 'Actualizar a {{version}}',
+    appUpdateNoUpdateNeeded: 'No se necesita actualización',
 
     // Article detail
     article: 'artículo',
@@ -504,6 +508,8 @@ export const translations = {
     debugEnvVars: 'Debug – pemboleh ubah persekitaran',
     aboutLink: 'Perihal',
     contactLink: 'Hubungi',
+    updateApp: 'Kemas kini ke {{version}}',
+    appUpdateNoUpdateNeeded: 'Tiada kemas kini diperlukan',
 
     // Article detail
     article: 'artikel',
@@ -715,6 +721,8 @@ export const translations = {
     debugEnvVars: 'Debug – variabel lingkungan',
     aboutLink: 'Tentang',
     contactLink: 'Kontak',
+    updateApp: 'Perbarui ke {{version}}',
+    appUpdateNoUpdateNeeded: 'Tidak perlu pembaruan',
 
     // Article detail
     article: 'artikel',
@@ -927,6 +935,8 @@ export const translations = {
     debugEnvVars: 'Gỡ lỗi – biến môi trường',
     aboutLink: 'Giới thiệu',
     contactLink: 'Liên hệ',
+    updateApp: 'Cập nhật lên {{version}}',
+    appUpdateNoUpdateNeeded: 'Không cần cập nhật',
 
     // Article detail
     article: 'bài viết',
@@ -1139,6 +1149,8 @@ export const translations = {
     debugEnvVars: 'Отладка – переменные среды',
     aboutLink: 'О приложении',
     contactLink: 'Контакты',
+    updateApp: 'Обновить до {{version}}',
+    appUpdateNoUpdateNeeded: 'Обновление не требуется',
 
     // Article detail
     article: 'статья',
@@ -1351,6 +1363,8 @@ export const translations = {
     debugEnvVars: 'تصحيح الأخطاء – متغيرات البيئة',
     aboutLink: 'حول',
     contactLink: 'اتصل',
+    updateApp: 'تحديث إلى {{version}}',
+    appUpdateNoUpdateNeeded: 'لا حاجة إلى تحديث',
 
     // Article detail
     article: 'مقال',
@@ -1560,6 +1574,8 @@ export const translations = {
     debugEnvVars: '调试 – 环境变量',
     aboutLink: '关于',
     contactLink: '联系',
+    updateApp: '更新到 {{version}}',
+    appUpdateNoUpdateNeeded: '已是最新版本',
 
     // Article detail
     article: '文章',
@@ -1765,6 +1781,8 @@ export const translations = {
     debugEnvVars: 'Debug – Umgebungsvariablen',
     aboutLink: 'Über',
     contactLink: 'Kontakt',
+    updateApp: 'Auf {{version}} aktualisieren',
+    appUpdateNoUpdateNeeded: 'Kein Update erforderlich',
 
     article: 'Artikel',
     back: 'zurück',
@@ -1967,6 +1985,8 @@ export const translations = {
     debugEnvVars: 'デバッグ – 環境変数',
     aboutLink: 'About',
     contactLink: 'お問い合わせ',
+    updateApp: '{{version}} にアップデート',
+    appUpdateNoUpdateNeeded: 'アップデートはありません',
 
     article: '記事',
     back: '戻る',
