@@ -12,7 +12,7 @@
 
 - **Build and deploy the Astro marketing site** in `lcnwebsite/` to Cloudflare Pages. Production is https://levelchinese.app (not the reader host). Needs Node `>=22.12.0` and Wrangler auth.
   - Deploy pages: `cd lcnwebsite && npm run page:dep` (`astro build` then `wrangler pages deploy dist --project-name=levelchineseapplanding`).
-  - Contact-form Worker is separate: `npm run worker:dep` (only when `lcnwebsite/workers/` changed).
+  - Contact-form forwards to a Cloudflare worker that uses [ebram](https://github.com/zshanhui/ebram/tree/main)
   - **After every deploy**, open the live production site in the browser (not `astro preview`, not curl). Always check:
     - Index: https://levelchinese.app
     - Sentence Examples: https://levelchinese.app/example-sentences (client-side search; wait for the page JS, then search a Chinese word such as `中国` and confirm result cards render)

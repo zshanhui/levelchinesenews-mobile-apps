@@ -57,8 +57,10 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
         class="contact-textarea"
         name="message"
         required={!!formAction}
+        minlength={formAction ? 20 : undefined}
+        title="Your message should be at least 20 characters"
         rows={6}
-        placeholder="Your message…"
+        placeholder="Your message (min. 20 characters)…"
         disabled={!formAction}
       />
 
@@ -77,8 +79,8 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
         ) : (
           <p class="contact-config-error">
             <strong>Contact form not configured.</strong> Set <code>PUBLIC_CONTACT_WORKER_URL</code> to
-            your Cloudflare Worker URL and redeploy the site. Deploy the worker from <code>workers/</code>{' '}
-            and add the secret <code>RESEND_API_KEY</code>. You can still reach us at{' '}
+            your Cloudflare Worker URL and redeploy the site. The worker lives in{' '}
+            <code>bugfixagent/efw</code>. You can still reach us at{' '}
             <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
           </p>
         )
