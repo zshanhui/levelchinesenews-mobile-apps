@@ -2,8 +2,8 @@ export const siteConfig = {
   brandName: 'LevelChineseNews',
   contactEmail: 'contact@levelchinese.app',
   cta: {
-    expoLabel: 'Download Android v0.7.6 apk',
-    expoUrl: 'https://apk-download.levelchinese.app/v0.7.6-31818b9dab64.apk',
+    expoLabel: 'Download Android v0.8.1 apk',
+    expoUrl: 'https://apk-download.levelchinese.app/v0.8.1-build-1788709444419.apk',
     githubLabel: 'View on GitHub',
     githubUrl: 'https://github.com/zshanhui/levelchinesenews-mobile-apps',
   },
@@ -17,7 +17,7 @@ export const siteConfig = {
       alt: 'Read articles with pinyin support, turn off when not needed',
     },
     {
-      src: '/screenshots/showcase/article-reader-translation-02.jpg',
+      src: '/screenshots/v0.8.1-screens/translate-sentence-popup-dict.jpg',
       alt: 'Translate any Chinese sentence with a single tap'
     },
     {
