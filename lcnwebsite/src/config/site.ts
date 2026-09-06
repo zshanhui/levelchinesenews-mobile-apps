@@ -9,13 +9,13 @@ export const siteConfig = {
   },
   heroScreens: [
     {
-      src: '/screenshots/showcase/reader-screen-01.jpg',
-      alt: 'Read articles with pinyin and popup dictionary',
-    },
-    {
       src: '/screenshots/showcase/articlecontent-header.jpg',
       alt: 'Read articles with pinyin support, turn off when not needed',
     },
+    // {
+    //   src: '/screenshots/showcase/reader-screen-01.jpg',
+    //   alt: 'Read articles with pinyin and popup dictionary',
+    // },
     {
       src: '/screenshots/v0.8.1-screens/translate-sentence-popup-dict.jpg',
       alt: 'Translate any Chinese sentence with a single tap'
