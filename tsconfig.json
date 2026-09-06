@@ -4,7 +4,8 @@
     "strict": true,
     "jsx": "react-native",
     "lib": ["DOM", "ESNext"],
-    "target": "ESNext"
+    "target": "ESNext",
+    "types": ["jest"]
   },
   "exclude": ["node_modules", "lcnwebsite"]
 }

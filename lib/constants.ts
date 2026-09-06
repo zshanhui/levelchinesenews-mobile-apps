@@ -21,9 +21,9 @@ export const PAGE_SIZE = 15;
 // Create tab / Parse
 export const SUPPORTED_URLS = [
   'https://www.zaobao.com',
+  'https://www.thepaper.cn',
   'https://m.huanqiu.com',
   'https://www.worldjournal.com',
-  'https://www.thepaper.cn',
 ];
 export const MAX_DAILY_PARSES = 20;
 export const STORAGE_KEY_DAILY = 'daily_parse_count';
@@ -54,10 +54,25 @@ export const STORAGE_KEY_FONT = '@lcn/useNotoSansSC';
 export const STORAGE_KEY_ARTICLE_FONT = '@lcn/articleFont';
 export const STORAGE_KEY_REMOTE_FONTS = '@lcn/remoteFonts';
 export const STORAGE_KEY_PINYIN = '@lcn/showPinyin';
+export const STORAGE_KEY_WORD_HIGHLIGHT = '@lcn/wordHighlight';
 export const STORAGE_KEY_LINE_SPACING = '@lcn/lineSpacing';
 export const STORAGE_KEY_FONT_SIZE = '@lcn/fontSize';
 export const STORAGE_KEY_THEME = '@lcn/darkMode';
 export const STORAGE_KEY_NATIVE_LANGUAGE = '@lcn/nativeLanguage';
 /** Last Chinese words searched on Learn → Sentence examples */
 export const STORAGE_KEY_RECENT_SENTENCE_SEARCHES = '@lcn/recentSentenceSearches';
+/** Last article reader route — restored after the OS kills the JS process. */
+export const STORAGE_KEY_LAST_ARTICLE_ROUTE = '@lcn/lastArticleRoute';
 export const MAX_RECENT_SENTENCE_SEARCHES = 20;
+
+// Stopwords (GET /config/stopwords)
+export const STORAGE_KEY_STOP_WORDS = '@lcn/stopwords';
+/** 1 day in ms; cached stopwords younger than this skip the remote refetch. */
+export const STOP_WORDS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// HSK word index (GET /words/hsk)
+export const STORAGE_KEY_HSK_WORDS = '@lcn/hskWords';
+/** 7 days in ms; unused by the one-shot download (first toggle on). Kept for cache age checks. */
+export const HSK_WORDS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const STORAGE_KEY_HSK_HIDE_ENABLED = '@lcn/hskHideEnabled';
+export const STORAGE_KEY_HSK_HIDE_MAX_LEVEL = '@lcn/hskHideMaxLevel';

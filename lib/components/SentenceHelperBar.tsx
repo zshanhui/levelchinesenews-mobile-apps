@@ -7,7 +7,7 @@ import { SentenceTranslateToggle } from './SentenceTranslateToggle';
 
 /** Toggle hit target is 27×27; vertical padding adds breathing room above/below the icon. */
 const TOGGLE_HIT_SIZE = 27;
-const BAR_PADDING_VERTICAL = 4;
+const BAR_PADDING_VERTICAL = 2;
 const BAR_PADDING_LEFT = 8;
 const BAR_PADDING_RIGHT = 6;
 const ACTION_GAP = 8;

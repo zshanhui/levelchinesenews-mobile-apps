@@ -14,6 +14,7 @@ import {
   STORAGE_KEY_FONT_SIZE,
   STORAGE_KEY_LINE_SPACING,
   STORAGE_KEY_PINYIN,
+  STORAGE_KEY_WORD_HIGHLIGHT,
 } from './constants';
 import {
   type ArticleFontId,
@@ -56,6 +57,9 @@ type FontContextValue = {
   /** Whether to show Pinyin above Chinese words in article view */
   showPinyin: boolean;
   setShowPinyin: (value: boolean) => void;
+  /** Whether to draw corner brackets around the tapped word in article view */
+  showWordHighlight: boolean;
+  setShowWordHighlight: (value: boolean) => void;
   /** Line spacing level for article content */
   lineSpacing: LineSpacingLevel;
   setLineSpacing: (value: LineSpacingLevel) => void;
@@ -86,6 +90,7 @@ const FontContext = createContext<FontContextValue | null>(null);
 export function FontProvider({ children }: { children: React.ReactNode }) {
   const articleFont = useArticleFont(systemArticleContentFontLabel);
   const [showPinyin, setShowPinyinState] = useState(true);
+  const [showWordHighlight, setShowWordHighlightState] = useState(true);
   const [lineSpacing, setLineSpacingState] = useState<LineSpacingLevel>('normal');
   const [fontSize, setFontSizeState] = useState<FontSizeLevel>('md');
 
@@ -97,6 +102,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.getItem(STORAGE_KEY_PINYIN).then((stored) => {
       if (stored !== null) {
         setShowPinyinState(stored === 'true');
+      }
+    });
+    AsyncStorage.getItem(STORAGE_KEY_WORD_HIGHLIGHT).then((stored) => {
+      if (stored !== null) {
+        setShowWordHighlightState(stored === 'true');
       }
     });
   }, []);
@@ -120,6 +130,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
   const setShowPinyin = useCallback((value: boolean) => {
     setShowPinyinState(value);
     AsyncStorage.setItem(STORAGE_KEY_PINYIN, String(value));
+  }, []);
+
+  const setShowWordHighlight = useCallback((value: boolean) => {
+    setShowWordHighlightState(value);
+    AsyncStorage.setItem(STORAGE_KEY_WORD_HIGHLIGHT, String(value));
   }, []);
 
   const setLineSpacing = useCallback((value: LineSpacingLevel) => {
@@ -146,6 +161,8 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
     setUseNotoSansSC: articleFont.setUseNotoSansSC,
     showPinyin,
     setShowPinyin,
+    showWordHighlight,
+    setShowWordHighlight,
     lineSpacing,
     setLineSpacing,
     fontSize,

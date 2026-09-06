@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   dedupeById,
   loadCachedList,
+  paginationFromCachedCount,
   saveCachedList,
   ARTICLE_LIST_CACHE_KEY,
   MAX_CACHED_ARTICLES,
@@ -36,6 +37,20 @@ function makeItem(id: string, title = 'Article'): ArticleListItem {
 beforeEach(() => {
   mockGetItem.mockReset();
   mockSetItem.mockReset();
+});
+
+describe('paginationFromCachedCount', () => {
+  it('uses a full last page when the count divides evenly', () => {
+    expect(paginationFromCachedCount(30, 15)).toEqual({ lastPageLen: 15, page: 2 });
+  });
+
+  it('uses the remainder when the last page is partial', () => {
+    expect(paginationFromCachedCount(17, 15)).toEqual({ lastPageLen: 2, page: 2 });
+  });
+
+  it('returns page 1 when the count is zero', () => {
+    expect(paginationFromCachedCount(0, 15)).toEqual({ lastPageLen: 15, page: 1 });
+  });
 });
 
 describe('dedupeById', () => {

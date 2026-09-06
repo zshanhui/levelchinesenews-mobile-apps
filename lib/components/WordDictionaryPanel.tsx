@@ -5,12 +5,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Image,
   PanResponder,
   Pressable,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
+  type StyleProp,
+  type TextLayoutEvent,
+  type TextStyle,
 } from 'react-native';
 import { i18n, useTranslation } from '../i18n';
 import { getTotalLcnDictEntriesCount } from '../localDatabase';
@@ -19,10 +23,22 @@ import {
   resolveDictLookup,
   type DictLookupMatch,
 } from '../useLocalDictService';
+import { WordActionPanel } from './WordActionPanel';
 import type { Theme } from '../theme';
+import {
+  getWordStatusMap,
+  markLearned,
+  removeWordBySurface,
+  saveWord,
+  type SavedWordOccurrence,
+  type WordStatus,
+} from '../savedWordsDb';
+import { showErrorFeedback } from '../showErrorFeedback';
 
 const showPlecoButton = true;
 const useOptimisticPlecoOpen = true;
+
+const plecoLogoSource = require('../../assets/component-image-assets/pleco-logo.jpg');
 
 const STUDY_PANEL_ENTER_MS = 280;
 
@@ -33,13 +49,95 @@ const STUDY_PANEL_DISMISS_VY = 0.42;
 /** Minimum drag distance when using velocity-only dismiss. */
 const STUDY_PANEL_DISMISS_VY_MIN_DY = 22;
 
-export type SentenceStudyPanelProps = {
+/** Definitions longer than this many lines collapse with an ellipsis; tap to expand/collapse. */
+const DEFINITION_MAX_LINES = 3;
+
+/** A word with multiple dict entries (polyphonic 行/重/得) shows this many entry
+ * lines by default; "show more" reveals the rest. */
+const DEFAULT_VISIBLE_ENTRY_LINES_MAX = 2;
+/** Greedy-split sub-words show one sense by default so the panel stays compact. */
+const DEFAULT_VISIBLE_SPLIT_ENTRY_LINES_MAX = 1;
+
+function sortAndCapDictEntries<T extends { definitions?: string | null }>(
+  entries: T[],
+  expanded: boolean,
+  maxVisible: number = DEFAULT_VISIBLE_ENTRY_LINES_MAX,
+): { visible: T[]; hiddenCount: number } {
+  const sorted = [...entries].sort(
+    (a, b) => (b.definitions?.length ?? 0) - (a.definitions?.length ?? 0),
+  );
+  const visible = expanded ? sorted : sorted.slice(0, maxVisible);
+  return { visible, hiddenCount: sorted.length - visible.length };
+}
+
+/**
+ * Dictionary definition capped at DEFINITION_MAX_LINES. A hidden (absolute, opacity-0) clone
+ * measures the untruncated line count; when it exceeds the cap, the visible text truncates
+ * and tapping toggles between full length and collapsed.
+ */
+function ExpandableDefinitionText({
+  text,
+  textStyle,
+}: {
+  text: string;
+  textStyle: StyleProp<TextStyle>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [needsTruncation, setNeedsTruncation] = useState(false);
+
+  const onFullTextLayout = useCallback((e: TextLayoutEvent) => {
+    setNeedsTruncation(e.nativeEvent.lines.length > DEFINITION_MAX_LINES);
+  }, []);
+
+  const onPress = useCallback(() => {
+    setExpanded((v) => !v);
+  }, []);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!needsTruncation}
+      accessibilityRole={needsTruncation ? 'button' : 'text'}
+      accessibilityLabel={text}
+    >
+      <View>
+        <Text
+          style={textStyle}
+          numberOfLines={expanded || !needsTruncation ? undefined : DEFINITION_MAX_LINES}
+        >
+          {text}
+        </Text>
+        {/* Hidden measurement clone — same width/styles, never truncated. */}
+        <Text
+          style={[textStyle, hiddenMeasureStyle]}
+          onTextLayout={onFullTextLayout}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        >
+          {text}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const hiddenMeasureStyle: TextStyle = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  top: 0,
+  opacity: 0,
+};
+
+export type WordDictionaryPanelProps = {
   word: string;
   pinyin: string | null;
   articleId: string;
   highlightedWordKey: string;
   highlightedSentenceKey: string;
   bottomInset: number;
+  occurrence: SavedWordOccurrence | null;
+  onStudyActionSuccess?: (message: string) => void;
   /** Called after the panel finishes sliding off-screen (downward dismiss). */
   onRequestClose?: () => void;
 };
@@ -70,15 +168,17 @@ function buildPlecoUrl(
   return `plecoapi://x-callback-url/df?${dfParams.toString()}`;
 }
 
-export function SentenceStudyPanel({
+export function WordDictionaryPanel({
   word,
   pinyin,
   articleId,
   highlightedWordKey,
   highlightedSentenceKey,
   bottomInset,
+  occurrence,
+  onStudyActionSuccess,
   onRequestClose,
-}: SentenceStudyPanelProps) {
+}: WordDictionaryPanelProps) {
   const router = useRouter();
   const { height: windowHeight } = useWindowDimensions();
   const { theme, isDark } = useTheme();
@@ -86,8 +186,12 @@ export function SentenceStudyPanel({
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
   const [dictMatches, setDictMatches] = useState<DictLookupMatch[]>([]);
   const [lookupComplete, setLookupComplete] = useState(false);
+  /** True after tapping "show more": reveal all entries instead of the default cap. */
+  const [entriesExpanded, setEntriesExpanded] = useState(false);
   const [hasLocalDictData, setHasLocalDictData] = useState<boolean | null>(null);
   const [isPlecoInstalled, setIsPlecoInstalled] = useState(false);
+  const [wordActionsVisible, setWordActionsVisible] = useState(false);
+  const [savedStatus, setSavedStatus] = useState<WordStatus | null>(null);
   const stackPinyinUnderWord = word.length >= 4;
 
   /** Starts below the fold; slides up only when opening from a closed panel (mount or remount). */
@@ -100,6 +204,7 @@ export function SentenceStudyPanel({
 
   useEffect(() => {
     translateY.stopAnimation();
+    setWordActionsVisible(false);
     if (!hasPlayedEnterAnimationRef.current) {
       hasPlayedEnterAnimationRef.current = true;
       translateY.setValue(windowHeight);
@@ -174,6 +279,7 @@ export function SentenceStudyPanel({
     setDictMatches([]);
     setLookupComplete(false);
     setHasLocalDictData(null);
+    setEntriesExpanded(false);
     const runLookup = async () => {
       try {
         const [lookupResult, totalCount] = await Promise.all([
@@ -199,6 +305,63 @@ export function SentenceStudyPanel({
       cancelled = true;
     };
   }, [word]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSavedStatus(null);
+    void getWordStatusMap([word])
+      .then((map) => {
+        if (!cancelled) setSavedStatus(map.get(word) ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setSavedStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [word]);
+
+  const showSave = occurrence != null && savedStatus == null;
+  const showMarkLearned = occurrence != null && savedStatus !== 'learned';
+  const showRemove = savedStatus != null;
+  const showWordActionsButton = occurrence != null || showRemove;
+  const wordIsSaved = savedStatus != null;
+  const canOpenWordActions = showSave || showMarkLearned || showRemove;
+
+  const onSaveWord = useCallback(async () => {
+    if (!occurrence) throw new Error('missing occurrence');
+    try {
+      await saveWord(occurrence);
+      setSavedStatus('studying');
+      onStudyActionSuccess?.(t('wordSaved'));
+    } catch (err) {
+      showErrorFeedback(t('saveWordFailed'));
+      throw err;
+    }
+  }, [occurrence, onStudyActionSuccess, t]);
+
+  const onMarkLearned = useCallback(async () => {
+    if (!occurrence) throw new Error('missing occurrence');
+    try {
+      await markLearned(occurrence);
+      setSavedStatus('learned');
+      onStudyActionSuccess?.(t('wordMarkedLearned'));
+    } catch (err) {
+      showErrorFeedback(t('markLearnedFailed'));
+      throw err;
+    }
+  }, [occurrence, onStudyActionSuccess, t]);
+
+  const onRemoveWord = useCallback(async () => {
+    try {
+      await removeWordBySurface(word);
+      setSavedStatus(null);
+      onStudyActionSuccess?.(t('wordRemoved'));
+    } catch (err) {
+      showErrorFeedback(t('removeWordFailed'));
+      throw err;
+    }
+  }, [word, onStudyActionSuccess, t]);
 
   useEffect(() => {
     if (!showPlecoButton) {
@@ -231,9 +394,25 @@ export function SentenceStudyPanel({
 
   const showMissingDictSetup = lookupComplete && !hasLocalDictData;
   const showDefinitionText =
-    !lookupComplete || dictMatches.some((match) => Boolean(match.entry.definitions));
+    !lookupComplete ||
+    dictMatches.some((match) => match.entries.some((entry) => Boolean(entry.definitions)));
   const showSplitMatches = dictMatches.length > 1;
   const singleMatch = dictMatches[0] ?? null;
+  const singleMatchEntries = singleMatch?.entries ?? [];
+  const { visible: visibleSingleEntries, hiddenCount: hiddenSingleEntryCount } =
+    sortAndCapDictEntries(singleMatchEntries, entriesExpanded);
+  const splitMatchDisplays = dictMatches.map((match) => {
+    const capped = sortAndCapDictEntries(
+      match.entries,
+      entriesExpanded,
+      DEFAULT_VISIBLE_SPLIT_ENTRY_LINES_MAX,
+    );
+    return { match, ...capped };
+  });
+  const hiddenSplitEntryCount = splitMatchDisplays.reduce(
+    (n, item) => n + item.hiddenCount,
+    0,
+  );
   /** Tighten list + header spacing when many sub-word lines would make the panel very tall. */
   const compactMultiSplit = dictMatches.length >= 3;
 
@@ -275,16 +454,51 @@ export function SentenceStudyPanel({
           >
             {word}
           </Text>
-          {pinyin ? (
-            <Text
-              style={[
-                styles.panelPinyin,
-                stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
-                compactMultiSplit && styles.panelPinyinCompact,
-              ]}
-            >
-              {pinyin}
-            </Text>
+          {pinyin || showWordActionsButton ? (
+            <View style={styles.pinyinRow}>
+              {pinyin ? (
+                <Text
+                  style={[
+                    styles.panelPinyin,
+                    stackPinyinUnderWord ? styles.panelPinyinUnderWord : null,
+                    compactMultiSplit && styles.panelPinyinCompact,
+                  ]}
+                >
+                  {pinyin}
+                </Text>
+              ) : null}
+              {showWordActionsButton ? (
+                <Pressable
+                  onPress={() => {
+                    if (canOpenWordActions) setWordActionsVisible(true);
+                  }}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.wordActionsButton,
+                    pressed && canOpenWordActions && styles.wordActionsButtonPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: wordIsSaved }}
+                  accessibilityLabel={t('wordActions')}
+                >
+                  <Ionicons
+                    name={
+                      savedStatus === 'learned'
+                        ? 'checkmark-circle'
+                        : wordIsSaved
+                          ? 'bookmark'
+                          : 'bookmark-outline'
+                    }
+                    size={compactMultiSplit ? 16 : 18}
+                    color={
+                      savedStatus === 'learned'
+                        ? theme.learnedGreen
+                        : theme.bookmarkGold
+                    }
+                  />
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
         </View>
         <View style={styles.panelHeaderRight}>
@@ -295,7 +509,6 @@ export function SentenceStudyPanel({
               }}
               style={({ pressed }) => [
                 styles.plecoButton,
-                !isPlecoInstalled ? styles.plecoWebsiteButton : null,
                 compactMultiSplit && styles.plecoButtonCompact,
                 pressed && styles.plecoButtonPressed,
               ]}
@@ -304,18 +517,13 @@ export function SentenceStudyPanel({
                 isPlecoInstalled ? t('openInPleco') : t('openPlecoWebsite')
               }
             >
-              <Text
+              <Image
+                source={plecoLogoSource}
                 style={[
-                  styles.plecoButtonText,
-                  !isPlecoInstalled ? styles.plecoWebsiteButtonText : null,
+                  styles.plecoLogo,
+                  compactMultiSplit && styles.plecoLogoCompact,
                 ]}
-              >
-                {isPlecoInstalled ? t('pleco') : t('getPleco')}
-              </Text>
-              <Ionicons
-                name={isPlecoInstalled ? 'search-outline' : 'open-outline'}
-                size={isPlecoInstalled ? 14 : 12}
-                color={isPlecoInstalled ? '#fff' : theme.textMuted}
+                resizeMode="cover"
               />
             </Pressable>
           ) : null}
@@ -360,70 +568,154 @@ export function SentenceStudyPanel({
                 compactMultiSplit && styles.panelDefinitionListCompact,
               ]}
             >
-              {dictMatches.map((match, idx) => (
-                <View
-                  key={`${match.lookupText}:${match.entry.id}`}
-                  style={[
-                    styles.panelDefinitionItem,
-                    compactMultiSplit && styles.panelDefinitionItemCompact,
-                    idx > 0
-                      ? [
-                          styles.panelDefinitionItemDivider,
-                          compactMultiSplit && styles.panelDefinitionItemDividerCompact,
-                        ]
-                      : null,
-                  ]}
-                >
+              {splitMatchDisplays.map(({ match, visible }, idx) => {
+                const showHeaderPinyin = visible.length <= 1;
+                return (
                   <View
+                    key={`${match.lookupText}:${visible[0]?.id ?? idx}`}
                     style={[
-                      styles.panelDefinitionItemHeader,
-                      compactMultiSplit && styles.panelDefinitionItemHeaderCompact,
+                      styles.panelDefinitionItem,
+                      compactMultiSplit && styles.panelDefinitionItemCompact,
+                      idx > 0
+                        ? [
+                            styles.panelDefinitionItemDivider,
+                            compactMultiSplit && styles.panelDefinitionItemDividerCompact,
+                          ]
+                        : null,
                     ]}
                   >
-                    <Text
+                    <View
                       style={[
-                        styles.panelDefinitionItemWord,
-                        compactMultiSplit && styles.panelDefinitionItemWordCompact,
+                        styles.panelDefinitionItemHeader,
+                        compactMultiSplit && styles.panelDefinitionItemHeaderCompact,
                       ]}
                     >
-                      {match.lookupText}
-                    </Text>
-                    {match.entry.pinyin ? (
                       <Text
                         style={[
-                          styles.panelDefinitionItemPinyin,
-                          compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                          styles.panelDefinitionItemWord,
+                          compactMultiSplit && styles.panelDefinitionItemWordCompact,
                         ]}
                       >
-                        {match.entry.pinyin}
+                        {match.lookupText}
                       </Text>
-                    ) : null}
+                      {showHeaderPinyin && visible[0]?.pinyin ? (
+                        <Text
+                          style={[
+                            styles.panelDefinitionItemPinyin,
+                            compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                          ]}
+                        >
+                          {visible[0].pinyin}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {visible.map((entry, entryIdx) => (
+                      <View
+                        key={entry.id}
+                        style={
+                          entryIdx > 0
+                            ? compactMultiSplit
+                              ? styles.panelSplitEntryFollowOnCompact
+                              : styles.panelSplitEntryFollowOn
+                            : null
+                        }
+                      >
+                        {!showHeaderPinyin && entry.pinyin ? (
+                          <Text
+                            style={[
+                              styles.panelDefinitionItemPinyin,
+                              compactMultiSplit && styles.panelDefinitionItemPinyinCompact,
+                            ]}
+                          >
+                            {entry.pinyin}
+                          </Text>
+                        ) : null}
+                        <ExpandableDefinitionText
+                          text={entry.definitions ?? ''}
+                          textStyle={[
+                            styles.panelDefinitionText,
+                            compactMultiSplit && styles.panelDefinitionTextSplitCompact,
+                            styles.panelDefinitionTextLoaded,
+                          ]}
+                        />
+                      </View>
+                    ))}
                   </View>
-                  <Text
-                    style={[
+                );
+              })}
+              {hiddenSplitEntryCount > 0 ? (
+                <Pressable
+                  onPress={() => setEntriesExpanded(true)}
+                  accessibilityRole="button"
+                  style={({ pressed }) =>
+                    pressed ? styles.panelDefinitionLinkRowPressed : null
+                  }
+                >
+                  <Text style={styles.panelDefinitionShowMore}>
+                    {t('showMoreEntries')}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : singleMatchEntries.length > 0 ? (
+            // One line per dict entry (polyphonic words have several); default cap
+            // of DEFAULT_VISIBLE_ENTRY_LINES_MAX until "show more" is tapped.
+            <View style={styles.panelDefinitionList}>
+              {visibleSingleEntries.map((entry, idx) => (
+                <View
+                  key={entry.id}
+                  style={[
+                    styles.panelDefinitionItem,
+                    idx > 0 ? styles.panelDefinitionItemDivider : null,
+                  ]}
+                >
+                  {entry.pinyin ? (
+                    <Text style={styles.panelDefinitionItemPinyin}>{entry.pinyin}</Text>
+                  ) : null}
+                  <ExpandableDefinitionText
+                    text={entry.definitions}
+                    textStyle={[
                       styles.panelDefinitionText,
-                      compactMultiSplit && styles.panelDefinitionTextSplitCompact,
                       styles.panelDefinitionTextLoaded,
                     ]}
-                  >
-                    {match.entry.definitions}
-                  </Text>
+                  />
                 </View>
               ))}
+              {hiddenSingleEntryCount > 0 ? (
+                <Pressable
+                  onPress={() => setEntriesExpanded(true)}
+                  accessibilityRole="button"
+                  style={({ pressed }) =>
+                    pressed ? styles.panelDefinitionLinkRowPressed : null
+                  }
+                >
+                  <Text style={styles.panelDefinitionShowMore}>
+                    {t('showMoreEntries')}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : (
-            <Text
-              style={[
-                styles.panelDefinitionText,
-                singleMatch?.entry.definitions ? styles.panelDefinitionTextLoaded : null,
-              ]}
-            >
-              {singleMatch?.entry.definitions ?? t('nativeLanguageDefinitionPlaceholder')}
-            </Text>
+            <ExpandableDefinitionText
+              key="placeholder"
+              text={t('nativeLanguageDefinitionPlaceholder')}
+              textStyle={styles.panelDefinitionText}
+            />
           )}
         </View>
       ) : null}
       </View>
+      {wordActionsVisible ? (
+        <WordActionPanel
+          showSave={showSave}
+          showMarkLearned={showMarkLearned}
+          showRemove={showRemove}
+          onSaveWord={onSaveWord}
+          onMarkLearned={onMarkLearned}
+          onRemoveWord={onRemoveWord}
+          onRequestClose={() => setWordActionsVisible(false)}
+        />
+      ) : null}
     </Animated.View>
   );
 }
@@ -529,6 +821,14 @@ function createStyles(theme: Theme, isDark: boolean) {
     panelDefinitionItemCompact: {
       gap: 2,
     },
+    panelSplitEntryFollowOn: {
+      gap: 6,
+      paddingTop: 8,
+    },
+    panelSplitEntryFollowOnCompact: {
+      gap: 2,
+      paddingTop: 4,
+    },
     panelDefinitionItemDivider: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: theme.border,
@@ -576,6 +876,13 @@ function createStyles(theme: Theme, isDark: boolean) {
       color: theme.textMuted,
       fontStyle: 'italic',
     },
+    panelDefinitionShowMore: {
+      fontSize: 12,
+      color: theme.accent,
+      paddingVertical: 2,
+      textAlign: 'center',
+      alignSelf: 'stretch',
+    },
     panelDefinitionLink: {
       fontSize: 14,
       color: theme.accent,
@@ -591,39 +898,45 @@ function createStyles(theme: Theme, isDark: boolean) {
     panelDefinitionLinkRowPressed: {
       opacity: 0.75,
     },
+    /** Hit area kept at the original 34px; the visible logo is 20% smaller and centered. */
     plecoButton: {
+      width: 34,
+      height: 34,
+      alignItems: 'center',
+      justifyContent: 'center',
+      // Muted so the bright logo blends into the panel; full color on tap.
+      opacity: 0.8,
+    },
+    plecoButtonCompact: {
+      width: 28,
+      height: 28,
+    },
+    plecoLogo: {
+      width: 27,
+      height: 27,
+      borderRadius: 7,
+    },
+    plecoLogoCompact: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+    },
+    plecoButtonPressed: {
+      opacity: 1,
+    },
+    /** Row holding pinyin + bookmark action; baseline aligns under the word/pinyin line. */
+    pinyinRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      backgroundColor: '#0078c3',
-      borderRadius: 8,
     },
-    plecoButtonCompact: {
-      paddingVertical: 5,
-      paddingHorizontal: 9,
-      gap: 4,
+    wordActionsButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.85,
     },
-    plecoWebsiteButton: {
-      backgroundColor: '#fff',
-      borderWidth: 1,
-      borderColor: theme.border,
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-      borderRadius: 7,
-    },
-    plecoButtonPressed: {
-      opacity: 0.9,
-    },
-    plecoButtonText: {
-      fontSize: 14,
-      color: '#fff',
-      fontWeight: '400',
-    },
-    plecoWebsiteButtonText: {
-      color: theme.textMuted,
-      fontSize: 12,
+    wordActionsButtonPressed: {
+      opacity: 1,
     },
   });
 }

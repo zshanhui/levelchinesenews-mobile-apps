@@ -12,6 +12,8 @@ i18n.use(initReactI18next).init({
     ru: { translation: translations.ru },
     ar: { translation: translations.ar },
     zh: { translation: translations.zh },
+    de: { translation: translations.de },
+    ja: { translation: translations.ja },
   },
   lng: 'en',
   fallbackLng: 'en',

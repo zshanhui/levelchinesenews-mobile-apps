@@ -1,12 +1,19 @@
 import {
   API_PREFIX,
+  ARTICLE_REQUEST_TIMEOUT_MS,
   GENERATE_SUMMARY_TIMEOUT_MS,
   POST_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
 } from './constants';
 import { i18n } from './i18n';
 import { isChineseWord } from './text-utils';
-import type { ArticleListItem, WordSentencesResponse } from './types';
+import type {
+  AndroidLatestResponse,
+  ArticleListItem,
+  HskWordsResponse,
+  StopwordsResponse,
+  WordSentencesResponse,
+} from './types';
 
 export const envConfig = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
@@ -213,6 +220,24 @@ export async function searchSentencesByWord(
     apiReadUrl('/sentences', params),
   );
   return data;
+}
+
+/** Fetch the app-level stopwords list (GET /config/stopwords). */
+export async function fetchStopwords(): Promise<StopwordsResponse> {
+  return fetchWithTimeout<StopwordsResponse>(apiReadUrl('/config/stopwords'));
+}
+
+/** Fetch the currently published Android APK info (GET /config/android_latest). */
+export async function fetchAndroidLatest(): Promise<AndroidLatestResponse> {
+  return fetchWithTimeout<AndroidLatestResponse>(apiReadUrl('/config/android_latest'));
+}
+
+/** Fetch the HSK 2025 word index (GET /words/hsk). */
+export async function fetchHskWords(): Promise<HskWordsResponse> {
+  return fetchWithTimeout<HskWordsResponse>(
+    apiReadUrl('/words/hsk'),
+    ARTICLE_REQUEST_TIMEOUT_MS,
+  );
 }
 
 /** Generate translated title and summary for an article via LLM. Returns updated article. */

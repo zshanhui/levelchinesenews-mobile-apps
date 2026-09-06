@@ -4,12 +4,14 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { articleTopicDisplayLabel } from '../articleTopicLabels';
+import {
+  articleTopicDisplayLabel,
+  formatTopicChipLabel,
+} from '../articleTopicLabels';
 import { useTranslation } from '../i18n';
 import { NativeLanguage } from '../nativeLanguage';
 import { useNativeLanguage } from '../NativeLanguageContext';
@@ -78,16 +80,12 @@ export function TopicsList({ activeTopicKey, onTopicSelect }: TopicsListProps) {
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.grid}>
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.topicRow}>
           {row.map(([topic, tags]) => {
             const label = articleTopicDisplayLabel(topic, nativeLanguage);
+            const chipLabel = formatTopicChipLabel(label, nativeLanguage);
             return (
               <Pressable
                 key={topic}
@@ -116,14 +114,14 @@ export function TopicsList({ activeTopicKey, onTopicSelect }: TopicsListProps) {
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  {label}
+                  {chipLabel}
                 </Text>
               </Pressable>
             );
           })}
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -132,13 +130,9 @@ function createStyles(theme: Theme) {
     theme.background === darkTheme.background ? theme.error : theme.accent;
 
   return StyleSheet.create({
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
+    grid: {
       flexDirection: 'column',
       gap: TOPICS_GRID_GAP,
-      paddingBottom: 8,
       width: '100%',
     },
     topicRow: {

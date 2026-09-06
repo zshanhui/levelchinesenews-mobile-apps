@@ -11,6 +11,7 @@ export default function LearnLayout() {
       }}
     >
       <Stack.Screen name="sentence-examples" />
+      <Stack.Screen name="word-list" />
     </Stack>
   );
 }

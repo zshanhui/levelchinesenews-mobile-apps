@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -55,6 +55,7 @@ const SentenceExampleRow = memo(function SentenceExampleRow({
   arrowColor: string;
   styles: SentenceRowStyles;
 }) {
+  const { t } = useTranslation();
   const segments = useMemo(
     () => splitHighlightSegments(item.sentence_text, word),
     [item.sentence_text, word],
@@ -76,7 +77,7 @@ const SentenceExampleRow = memo(function SentenceExampleRow({
         })
       }
       accessibilityRole="button"
-      accessibilityHint="Opens the article at this sentence"
+      accessibilityHint={t('readArticleHint')}
     >
       <Text style={styles.sentenceText}>
         {segments.map((seg, i) =>
@@ -90,7 +91,7 @@ const SentenceExampleRow = memo(function SentenceExampleRow({
         )}
       </Text>
       <View style={styles.navHintRow}>
-        <Text style={styles.navHintText}>read article</Text>
+        <Text style={styles.navHintText}>{t('readArticle')}</Text>
         <Ionicons name="arrow-forward" size={18} color={arrowColor} />
       </View>
     </Pressable>
@@ -101,6 +102,8 @@ export default function SentenceExamplesScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
+  const { q: urlQuery } = useLocalSearchParams<{ q?: string }>();
+  const initialQuery = Array.isArray(urlQuery) ? urlQuery[0] : urlQuery;
 
   const [query, setQuery] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
@@ -163,6 +166,10 @@ export default function SentenceExamplesScreen() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (initialQuery) void runSearch(initialQuery);
+  }, [initialQuery, runSearch]);
 
   const loadMore = useCallback(async () => {
     if (!result || loading || loadingMore || !hasMore) return;

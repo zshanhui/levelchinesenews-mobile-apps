@@ -18,6 +18,8 @@ describe('parseStoredNativeLanguage', () => {
     expect(parseStoredNativeLanguage(NativeLanguage.RU)).toBe(NativeLanguage.RU);
     expect(parseStoredNativeLanguage(NativeLanguage.AR)).toBe(NativeLanguage.AR);
     expect(parseStoredNativeLanguage(NativeLanguage.ZH)).toBe(NativeLanguage.ZH);
+    expect(parseStoredNativeLanguage(NativeLanguage.DE)).toBe(NativeLanguage.DE);
+    expect(parseStoredNativeLanguage(NativeLanguage.JA)).toBe(NativeLanguage.JA);
   });
 
   it('maps legacy stored values to supported codes', () => {

@@ -33,6 +33,13 @@ export const lightTheme = {
   // Highlights (sentence/word selection)
   highlightOverlay: 'rgba(139, 26, 26, 0.06)',
   highlightBg: 'rgba(139, 26, 26, 0.12)',
+  /** Crop-mark brackets around the tapped word */
+  wordBracket: 'rgba(139, 26, 26, 0.5)',
+
+  /** Word bookmark/action icon (yellow on parchment) */
+  bookmarkGold: '#e6bc00',
+  /** Learned-word checkmark */
+  learnedGreen: '#2e7d32',
 } as const;
 
 /**
@@ -70,6 +77,13 @@ export const darkTheme = {
   // Highlights (sentence/word selection)
   highlightOverlay: 'rgba(0, 255, 136, 0.08)',
   highlightBg: 'rgba(0, 255, 136, 0.15)',
+  /** Crop-mark brackets around the tapped word */
+  wordBracket: 'rgba(255, 68, 68, 0.5)',
+
+  /** Word bookmark/action icon (yellow on the dark matrix palette) */
+  bookmarkGold: '#ffe44d',
+  /** Learned-word checkmark */
+  learnedGreen: '#00ff88',
 } as const;
 
 export type Theme = typeof lightTheme | typeof darkTheme;

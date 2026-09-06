@@ -6,22 +6,20 @@ const lcnDictTableName = 'lcndict';
 export const userSavedArticlesTableName = 'user_saved_articles';
 export const articleDetailCacheTableName = 'article_detail_cache';
 export const userProfileTableName = 'userprofile';
+export const userSavedWordsTableName = 'user_saved_words';
+export const userSavedWordExamplesTableName = 'user_saved_word_examples';
+
+/** Highest PRAGMA user_version this build applies. Additive only — never drop user tables. */
+export const LOCAL_SCHEMA_VERSION = 5;
 
 let _db: SQLite.SQLiteDatabase | null = null;
+let _opening: Promise<SQLite.SQLiteDatabase> | null = null;
 
 async function openFreshDatabase() {
-  _db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME);
-  await runMigrations(_db);
-  return _db;
-}
-
-async function isDatabaseConnectionHealthy(db: SQLite.SQLiteDatabase): Promise<boolean> {
-  try {
-    await db.getFirstAsync<{ ok: number }>('SELECT 1 AS ok');
-    return true;
-  } catch {
-    return false;
-  }
+  const db = await SQLite.openDatabaseAsync(LOCAL_DATABASE_NAME);
+  await runMigrations(db);
+  _db = db;
+  return db;
 }
 
 async function execWithReconnectRetry(
@@ -44,25 +42,24 @@ async function execWithReconnectRetry(
 }
 
 export async function getLocalDatabase() {
-  if (!_db) {
-    return openFreshDatabase();
-  }
+  if (_opening) return _opening;
+  if (_db) return _db;
 
-  const healthy = await isDatabaseConnectionHealthy(_db);
-  if (healthy) return _db;
-
-  try {
-    await _db.closeAsync();
-  } catch {
-    // noop: best-effort close before reopening
-  }
-  return openFreshDatabase();
+  _opening = openFreshDatabase().catch((err) => {
+    _db = null;
+    throw err;
+  }).finally(() => {
+    _opening = null;
+  });
+  return _opening;
 }
 
 export async function closeLocalDatabase() {
-  if (_db) {
-    await _db.closeAsync()
-    _db = null
+  const db = _db;
+  _db = null;
+  _opening = null;
+  if (db) {
+    await db.closeAsync();
   }
 }
 
@@ -94,11 +91,13 @@ export async function insertDictEntry(entry: DictEntry) {
   return id;
 }
 
-export async function getDictEntryByWord(chineseWord: string) {
-  // chineseWord is either simplified or traditional
+export async function getDictEntriesByWord(chineseWord: string): Promise<DictEntry[]> {
+  // chineseWord is either simplified or traditional. Returns ALL matching rows —
+  // polyphonic words (e.g. 行 hang2/xing2) have multiple CEDICT entries — ordered
+  // by rowid so the original dataset order is preserved.
   const db = await getLocalDatabase()
-  const result = await db.getFirstAsync<DictEntry>(`SELECT * FROM ${lcnDictTableName} WHERE simplified = ? OR traditional = ?`, [chineseWord, chineseWord])
-  return result
+  const result = await db.getAllAsync<DictEntry>(`SELECT * FROM ${lcnDictTableName} WHERE simplified = ? OR traditional = ? ORDER BY rowid`, [chineseWord, chineseWord])
+  return result ?? []
 }
 
 export async function dropLcnDictTable() {
@@ -110,7 +109,7 @@ export async function migrateLocalDatabaseIfNeeded(db: SQLite.SQLiteDatabase) {
     'PRAGMA user_version'
   );
   const currentDbVersion = result?.user_version ?? 0;
-  if (currentDbVersion >= 4) return;
+  if (currentDbVersion >= LOCAL_SCHEMA_VERSION) return;
   await runMigrations(db);
 }
 
@@ -164,6 +163,38 @@ export async function runMigrations(db: SQLite.SQLiteDatabase) {
     `, db);
     await db.execAsync('PRAGMA user_version = 4');
   }
+
+  // user_saved_words + examples: on-device study list (no backend).
+  if (current < 5) {
+    await execWithReconnectRetry(`
+      PRAGMA foreign_keys = ON;
+      CREATE TABLE IF NOT EXISTS ${userSavedWordsTableName} (
+        id TEXT PRIMARY KEY,
+        word TEXT NOT NULL UNIQUE,
+        pinyin TEXT,
+        status TEXT NOT NULL CHECK (status IN ('studying', 'learned')),
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_saved_words_status ON ${userSavedWordsTableName} (status);
+      CREATE INDEX IF NOT EXISTS idx_user_saved_words_created_at ON ${userSavedWordsTableName} (created_at DESC);
+      CREATE TABLE IF NOT EXISTS ${userSavedWordExamplesTableName} (
+        id TEXT PRIMARY KEY,
+        word_id TEXT NOT NULL REFERENCES ${userSavedWordsTableName}(id) ON DELETE CASCADE,
+        article_id TEXT NOT NULL,
+        pidx INTEGER NOT NULL,
+        sidx INTEGER NOT NULL,
+        widx INTEGER NOT NULL,
+        sentence_text TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        UNIQUE (article_id, pidx, sidx, widx)
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_saved_word_examples_word_id ON ${userSavedWordExamplesTableName} (word_id);
+    `, db);
+    await db.execAsync('PRAGMA user_version = 5');
+  }
+
+  await db.execAsync('PRAGMA foreign_keys = ON');
 }
 
 export async function ensureLcnDictTableExists(db: SQLite.SQLiteDatabase) {

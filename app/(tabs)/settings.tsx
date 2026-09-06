@@ -1,10 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { capitalizeFirstWord } from '../../lib/text-utils';
 import { useTranslation } from '../../lib/i18n';
 import {
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type {
   FontSizeLevel,
@@ -24,14 +24,34 @@ import { NativeLanguageSelector } from '../../lib/components/NativeLanguageSelec
 import { FF_LANGUAGE_SELECTOR } from '../../lib/feature-flags';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
-import { envConfig } from '../../lib/api';
-import { STORAGE_KEY_ARTICLES } from '../../lib/constants';
+import { fetchAndroidLatest } from '../../lib/api';
+import type { AndroidLatestResponse } from '../../lib/types';
+import { HSK_HIDE_LEVELS, useHskHide } from '../../lib/useHskHide';
+import { showErrorFeedback } from '../../lib/showErrorFeedback';
 
 const URL_ABOUT_PAGE = 'https://levelchinese.app/about';
 const URL_CONTACT_PAGE = 'https://levelchinese.app/contact';
+
+/** True when `latest` is a strictly newer dotted version than `installed` (e.g. 0.7.6 > 0.7.5). */
+export function isVersionBehind(installed: string, latest: string): boolean {
+  const parse = (v: string) =>
+    v
+      .trim()
+      .replace(/^v/i, '')
+      .split('.')
+      .map((part) => parseInt(part, 10) || 0);
+  const a = parse(installed);
+  const b = parse(latest);
+  const length = Math.max(a.length, b.length);
+  for (let i = 0; i < length; i++) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+    if (av !== bv) return av < bv;
+  }
+  return false;
+}
 import {
   getOrCreateInstallationId,
-  userSavedArticlesTableName,
 } from '../../lib/localDatabase';
 
 const LINE_SPACING_OPTIONS: {
@@ -50,30 +70,38 @@ export default function SettingsScreen() {
   const { theme, isDark, setDark } = useTheme();
   const { t } = useTranslation();
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'dev';
-  const shouldEnableDebugPanel = process.env.EXPO_PUBLIC_DEBUG === '1';
   const {
     showPinyin,
     setShowPinyin,
+    showWordHighlight,
+    setShowWordHighlight,
     lineSpacing,
     setLineSpacing,
     fontSize,
     setFontSize,
     fancyDisplayFontStyle,
+    articleContentFontStyle,
   } = useFont();
-
-  const [legacyMyArticlesKeyPresent, setLegacyMyArticlesKeyPresent] = useState<
-    boolean | null
-  >(null);
-  const [installationId, setInstallationId] = useState<string | null>(null);
-  const [showDebugPanel, setShowDebugPanel] = useState(!__DEV__);
-  const lastVersionTapAtRef = useRef(0);
+  const {
+    enabled: hideByHskEnabled,
+    maxLevel: hskHideMaxLevel,
+    setEnabled: setHideByHskEnabled,
+    setMaxLevel: setHskHideMaxLevel,
+  } = useHskHide();
+  const [hskHintVisible, setHskHintVisible] = useState(false);
+  const [hskSwitchOn, setHskSwitchOn] = useState(hideByHskEnabled);
 
   useEffect(() => {
-    if (!shouldEnableDebugPanel) return;
-    AsyncStorage.getItem(STORAGE_KEY_ARTICLES).then((raw) => {
-      setLegacyMyArticlesKeyPresent(raw != null && raw.length > 0);
-    });
-  }, [shouldEnableDebugPanel]);
+    setHskSwitchOn(hideByHskEnabled);
+  }, [hideByHskEnabled]);
+
+  const [installationId, setInstallationId] = useState<string | null>(null);
+  const [androidLatest, setAndroidLatest] = useState<AndroidLatestResponse | null>(
+    null,
+  );
+  const [updateCheckState, setUpdateCheckState] = useState<
+    'checking' | 'ready' | 'error'
+  >('checking');
 
   useEffect(() => {
     getOrCreateInstallationId()
@@ -83,14 +111,37 @@ export default function SettingsScreen() {
       });
   }, []);
 
-  const handleVersionPress = () => {
-    if (!shouldEnableDebugPanel || !__DEV__) return;
-
-    const now = Date.now();
-    if (now - lastVersionTapAtRef.current < 400) {
-      setShowDebugPanel((current) => !current);
+  const checkForAppUpdate = useCallback(async () => {
+    setUpdateCheckState('checking');
+    try {
+      const data = await fetchAndroidLatest();
+      setAndroidLatest(data);
+      setUpdateCheckState('ready');
+    } catch (err) {
+      console.warn('Failed to check for app updates:', err);
+      setUpdateCheckState('error');
     }
-    lastVersionTapAtRef.current = now;
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void checkForAppUpdate();
+    }, [checkForAppUpdate]),
+  );
+
+  const updateAvailable =
+    updateCheckState === 'ready' &&
+    androidLatest != null &&
+    isVersionBehind(appVersion, androidLatest.version);
+
+  const handleUpdatePress = () => {
+    if (updateCheckState === 'error') {
+      void checkForAppUpdate();
+      return;
+    }
+    if (updateAvailable && androidLatest) {
+      void Linking.openURL(androidLatest.apk_url);
+    }
   };
 
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -106,18 +157,6 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
             {capitalizeFirstWord(t('configurePreferences'))}
           </Text>
-        </View>
-
-        <View style={[styles.settingRow, styles.settingRowSpaced]}>
-          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
-            {t('darkMode')}
-          </Text>
-          <Switch
-            value={isDark}
-            onValueChange={setDark}
-            trackColor={{ false: theme.border, true: theme.accent + '66' }}
-            thumbColor={isDark ? theme.accent : theme.textMuted}
-          />
         </View>
 
         {FF_LANGUAGE_SELECTOR && <NativeLanguageSelector />}
@@ -152,6 +191,18 @@ export default function SettingsScreen() {
           </View>
         </Pressable>
 
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+            {t('darkMode')}
+          </Text>
+          <Switch
+            value={isDark}
+            onValueChange={setDark}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={isDark ? theme.accent : theme.textMuted}
+          />
+        </View>
+
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionHeaderText, fancyDisplayFontStyle]}>
             {capitalizeFirstWord(t('readerPreferences'))}
@@ -171,6 +222,89 @@ export default function SettingsScreen() {
             thumbColor={showPinyin ? theme.accent : theme.textMuted}
           />
         </View>
+
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+            {capitalizeFirstWord(t('wordBracketHighlight'))}
+          </Text>
+          <Switch
+            value={showWordHighlight}
+            onValueChange={setShowWordHighlight}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={showWordHighlight ? theme.accent : theme.textMuted}
+          />
+        </View>
+
+        <View style={[styles.settingRow, styles.settingRowSpaced]}>
+          <View style={styles.settingLabelRow}>
+            <Text style={[styles.settingLabel, fancyDisplayFontStyle]}>
+              {t('hidePinyinByHskLevel')}
+            </Text>
+            <Pressable
+              onPress={() => setHskHintVisible(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('hidePinyinByHskLevelHint')}
+              style={styles.settingHintButton}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color={theme.textMuted}
+              />
+            </Pressable>
+          </View>
+          <Switch
+            value={hskSwitchOn}
+            onValueChange={(on) => {
+              setHskSwitchOn(on);
+              void setHideByHskEnabled(on).then((ok) => {
+                if (on && !ok) {
+                  setHskSwitchOn(false);
+                  showErrorFeedback(t('hskWordListDownloadFailed'));
+                }
+              });
+            }}
+            trackColor={{ false: theme.border, true: theme.accent + '66' }}
+            thumbColor={hskSwitchOn ? theme.accent : theme.textMuted}
+          />
+        </View>
+
+        {hskSwitchOn ? (
+          <View style={styles.etchedSection}>
+            <View style={[styles.segmentedRow, styles.hskLevelRow]}>
+              {HSK_HIDE_LEVELS.map((level, index) => {
+                const selected =
+                  hskHideMaxLevel != null && level <= hskHideMaxLevel;
+                return (
+                  <Pressable
+                    key={level}
+                    onPress={() => {
+                      void setHskHideMaxLevel(level);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`HSK ${level}`}
+                    style={[
+                      styles.segmentButton,
+                      index === HSK_HIDE_LEVELS.length - 1 && styles.segmentButtonLast,
+                      selected && styles.segmentButtonSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentLabel,
+                        selected && styles.segmentLabelSelected,
+                      ]}
+                    >
+                      {level}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.etchedSection}>
           <Text style={[styles.sectionLabel, fancyDisplayFontStyle]}>
@@ -213,59 +347,44 @@ export default function SettingsScreen() {
             {capitalizeFirstWord(t('adjustFontSize'))}
           </Text>
           <View style={styles.segmentedRow}>
-            {FONT_SIZE_LEVELS.map((level, index) => (
-              <Pressable
-                key={level}
-                onPress={() => setFontSize(level)}
-                style={[
-                  styles.segmentButton,
-                  index === FONT_SIZE_LEVELS.length - 1 && styles.segmentButtonLast,
-                  fontSize === level && styles.segmentButtonSelected,
-                ]}
-              >
-                <Text
+            {FONT_SIZE_LEVELS.map((level, index) => {
+              const sizePx = ARTICLE_FONT_SIZE_MAP[level];
+              const selected = fontSize === level;
+              return (
+                <Pressable
+                  key={level}
+                  onPress={() => setFontSize(level)}
                   style={[
-                    styles.segmentLabel,
-                    fontSize === level && styles.segmentLabelSelected,
+                    styles.segmentButton,
+                    styles.fontSizeSegmentButton,
+                    index === FONT_SIZE_LEVELS.length - 1 && styles.segmentButtonLast,
+                    selected && styles.segmentButtonSelected,
                   ]}
                 >
-                  {ARTICLE_FONT_SIZE_MAP[level]}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[
+                      styles.segmentLabel,
+                      selected && styles.segmentLabelSelected,
+                    ]}
+                  >
+                    {sizePx}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.fontSizeSample,
+                      articleContentFontStyle,
+                      { fontSize: sizePx, lineHeight: sizePx + 2 },
+                      selected && styles.fontSizeSampleSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    阅读
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
-
-        {shouldEnableDebugPanel && showDebugPanel && (
-          <View style={styles.debugSection}>
-            <Text style={styles.debugSectionTitle}>
-              {t('debugEnvVars')}
-            </Text>
-            <Text
-              style={styles.debugBlock}
-              selectable
-            >
-              {[
-                `EXPO_PUBLIC_GLITCHTIP_DSN=${
-                  process.env.EXPO_PUBLIC_GLITCHTIP_DSN ? '(configured)' : '(not set)'
-                }`,
-                `EXPO_PUBLIC_API_URL=${envConfig.apiBaseUrl ?? '(not set)'}`,
-                `EXPO_PUBLIC_API_WRITE_URL=${envConfig.apiWriteBaseUrl ?? '(not set)'}`,
-                `EXPO_PUBLIC_TEMP_ADMIN_ACCESS_WRITE_KEY=${envConfig.tempAdminAccessWriteKey ?? '(not set)'}`,
-                `__DEV__=${__DEV__}`,
-                '',
-                `MY_ARTICLES_LIST=SQLite table ${userSavedArticlesTableName}`,
-                ...(legacyMyArticlesKeyPresent === null
-                  ? ['MY_ARTICLES_LEGACY_ASYNCSTORAGE=checking…']
-                  : legacyMyArticlesKeyPresent
-                    ? [
-                        `MY_ARTICLES_LEGACY_ASYNCSTORAGE=present (key ${STORAGE_KEY_ARTICLES}; open Create tab to migrate)`,
-                      ]
-                    : ['MY_ARTICLES_LEGACY_ASYNCSTORAGE=absent (migrated or never used)']),
-              ].join('\n')}
-            </Text>
-          </View>
-        )}
 
         <View style={styles.footerLinksRow}>
           <Pressable
@@ -279,6 +398,33 @@ export default function SettingsScreen() {
             <Text style={[styles.footerLinkText, fancyDisplayFontStyle]}>{t('aboutLink')}</Text>
           </Pressable>
           <Pressable
+            accessibilityRole="button"
+            disabled={
+              updateCheckState === 'checking' ||
+              (updateCheckState === 'ready' && !updateAvailable)
+            }
+            onPress={handleUpdatePress}
+            style={({ pressed }) => [
+              styles.footerLinkButton,
+              pressed && styles.footerLinkButtonPressed,
+              (updateCheckState === 'checking' ||
+                (updateCheckState === 'ready' && !updateAvailable)) &&
+                styles.footerLinkButtonDisabled,
+            ]}
+          >
+            <Text
+              style={[styles.footerLinkText, fancyDisplayFontStyle]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {updateCheckState === 'ready' && !updateAvailable
+                ? t('appUpdateNoUpdateNeeded')
+                : t('updateApp', {
+                    version: androidLatest?.version ?? '…',
+                  })}
+            </Text>
+          </Pressable>
+          <Pressable
             accessibilityRole="link"
             onPress={() => Linking.openURL(URL_CONTACT_PAGE)}
             style={({ pressed }) => [
@@ -290,16 +436,43 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={handleVersionPress}
-          style={({ pressed }) => [styles.versionButton, pressed && styles.versionButtonPressed]}
-        >
+        <View style={styles.versionButton}>
           <Text style={styles.versionText}>Version {appVersion}</Text>
           {installationId ? (
             <Text style={styles.versionSubtext}>{installationId}</Text>
           ) : null}
-        </Pressable>
+        </View>
       </ScrollView>
+      <Modal
+        visible={hskHintVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setHskHintVisible(false)}
+      >
+        <Pressable
+          style={styles.hintModalOverlay}
+          onPress={() => setHskHintVisible(false)}
+        >
+          <Pressable style={styles.hintModalCard} onPress={() => {}}>
+            <View style={styles.hintModalHeader}>
+              <Text style={[styles.hintModalTitle, fancyDisplayFontStyle]}>
+                {t('hidePinyinByHskLevel')}
+              </Text>
+              <Pressable
+                onPress={() => setHskHintVisible(false)}
+                hitSlop={8}
+                accessibilityRole="button"
+                style={styles.hintModalClose}
+              >
+                <Ionicons name="close" size={20} color={theme.textMuted} />
+              </Pressable>
+            </View>
+            <Text style={styles.hintModalBody}>
+              {t('hidePinyinByHskLevelHint')}
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -333,7 +506,7 @@ function createStyles(theme: Theme) {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 0,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: theme.surface,
     borderRadius: 10,
@@ -426,6 +599,16 @@ function createStyles(theme: Theme) {
     color: theme.text,
     flex: 1,
   },
+  settingLabelRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingRight: 8,
+  },
+  settingHintButton: {
+    padding: 2,
+  },
   settingDescription: {
     marginTop: 2,
     fontSize: 11,
@@ -440,6 +623,9 @@ function createStyles(theme: Theme) {
     borderColor: theme.border,
     backgroundColor: theme.surface,
   },
+  hskLevelRow: {
+    marginTop: 0,
+  },
   segmentButton: {
     flex: 1,
     paddingVertical: 4,
@@ -448,6 +634,10 @@ function createStyles(theme: Theme) {
     gap: 2,
     borderRightWidth: 1,
     borderRightColor: theme.border,
+  },
+  fontSizeSegmentButton: {
+    paddingVertical: 8,
+    overflow: 'hidden',
   },
   segmentButtonLast: {
     borderRightWidth: 0,
@@ -470,24 +660,11 @@ function createStyles(theme: Theme) {
   segmentNumbersSelected: {
     color: theme.accent,
   },
-  debugSection: {
-    marginTop: 24,
+  fontSizeSample: {
+    color: theme.text,
   },
-  debugSectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.textMuted,
-    marginBottom: 6,
-  },
-  debugBlock: {
-    fontSize: 11,
-    fontFamily: 'monospace',
-    color: theme.textMuted,
-    backgroundColor: theme.etchedBg,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.border,
+  fontSizeSampleSelected: {
+    color: theme.accent,
   },
   footerLinksRow: {
     flexDirection: 'row',
@@ -510,8 +687,11 @@ function createStyles(theme: Theme) {
     backgroundColor: theme.etchedBg,
   },
   footerLinkText: {
-    fontSize: 16,
+    fontSize: 14,
     color: theme.accent,
+  },
+  footerLinkButtonDisabled: {
+    opacity: 0.6,
   },
   versionText: {
     fontSize: 12,
@@ -528,8 +708,41 @@ function createStyles(theme: Theme) {
     marginTop: 24,
     marginBottom: 8,
   },
-  versionButtonPressed: {
-    opacity: 0.7,
+  hintModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  hintModalCard: {
+    backgroundColor: theme.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  hintModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 10,
+  },
+  hintModalTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.text,
+  },
+  hintModalClose: {
+    padding: 2,
+  },
+  hintModalBody: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: theme.textSecondary,
   },
   });
 }

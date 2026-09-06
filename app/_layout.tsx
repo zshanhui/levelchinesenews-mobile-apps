@@ -10,6 +10,7 @@ import { setMonitoringInstallationId } from '../lib/monitoring';
 import { NativeLanguageProvider } from '../lib/NativeLanguageContext';
 import { I18nSync } from '../lib/i18n/I18nSync';
 import { ThemeProvider, useTheme } from '../lib/ThemeContext';
+import { useRestoreArticleOnLaunch } from '../lib/useRestoreArticleOnLaunch';
 import { Stack, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -28,6 +29,7 @@ function WebUnsupportedScreen() {
 
 function RootContent() {
   const { isDark } = useTheme();
+  useRestoreArticleOnLaunch();
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -36,7 +38,7 @@ function RootContent() {
           <I18nSync />
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="article/[id]" />
+            <Stack.Screen name="article/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="settings" options={{ headerShown: false }} />
             <Stack.Screen name="learn" options={{ headerShown: false }} />
             <Stack.Screen name="dictionary-settings" />

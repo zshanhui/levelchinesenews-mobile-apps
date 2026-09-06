@@ -13,7 +13,8 @@ import { randomUUID } from "./uuid";
 
 export interface DictLookupMatch {
   lookupText: string;
-  entry: database.DictEntry;
+  /** All matching rows for this word — polyphonic words (行, 重, 得) have multiple entries. */
+  entries: database.DictEntry[];
 }
 
 export interface DictLookupResult {
@@ -21,15 +22,15 @@ export interface DictLookupResult {
   mode: 'exact' | 'greedy' | 'none';
 }
 
-export async function fetchDictEntryByWord(chineseWord: string) {
-  if (chineseWord === '' || !chineseWord) return null;
+export async function fetchDictEntriesByWord(chineseWord: string): Promise<database.DictEntry[]> {
+  if (chineseWord === '' || !chineseWord) return [];
   try {
-    const dictEntry = await database.getDictEntryByWord(chineseWord);
-    return dictEntry;
+    const dictEntries = await database.getDictEntriesByWord(chineseWord);
+    return dictEntries;
   } catch (err) {
     // TODO we can log this or offer the user to report as missing entry
     console.warn(`Dict lookup warning for "${chineseWord}":`, err);
-    return null;
+    return [];
   }
 }
 
@@ -42,11 +43,11 @@ async function greedyLongestMatchLookup(chineseWord: string): Promise<DictLookup
 
     for (let end = chineseWord.length; end > start; end -= 1) {
       const candidate = chineseWord.slice(start, end);
-      const entry = await fetchDictEntryByWord(candidate);
-      if (entry) {
+      const entries = await fetchDictEntriesByWord(candidate);
+      if (entries.length > 0) {
         matched = {
           lookupText: candidate,
-          entry,
+          entries,
         };
         break;
       }
@@ -69,13 +70,13 @@ export async function resolveDictLookup(chineseWord: string): Promise<DictLookup
     return { matches: [], mode: 'none' };
   }
 
-  const exactEntry = await fetchDictEntryByWord(normalizedWord);
-  if (exactEntry) {
+  const exactEntries = await fetchDictEntriesByWord(normalizedWord);
+  if (exactEntries.length > 0) {
     return {
       matches: [
         {
           lookupText: normalizedWord,
-          entry: exactEntry,
+          entries: exactEntries,
         },
       ],
       mode: 'exact',

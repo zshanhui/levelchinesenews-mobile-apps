@@ -17,16 +17,40 @@ import { useTheme } from '../ThemeContext';
 const NATIVE_LANGUAGE_OPTIONS: {
   value: NativeLanguage;
   labelKey: string;
+  noteKey?: string;
 }[] = [
   { value: NativeLanguage.EN, labelKey: 'langEnglish' },
-  { value: NativeLanguage.ZH, labelKey: 'langChinese' },
+  { value: NativeLanguage.ZH, labelKey: 'langChinese', noteKey: 'langChineseUiNote' },
   { value: NativeLanguage.AR, labelKey: 'langArabic' },
   { value: NativeLanguage.ID, labelKey: 'langIndonesian' },
   { value: NativeLanguage.VI, labelKey: 'langVietnamese' },
   { value: NativeLanguage.ES, labelKey: 'langSpanish' },
   { value: NativeLanguage.MS, labelKey: 'langMalay' },
   { value: NativeLanguage.RU, labelKey: 'langRussian' },
+  { value: NativeLanguage.DE, labelKey: 'langGerman' },
+  { value: NativeLanguage.JA, labelKey: 'langJapanese' },
 ];
+
+function LanguageOptionLabel({
+  name,
+  note,
+  style,
+  fontSize,
+}: {
+  name: string;
+  note?: string;
+  style: object;
+  fontSize: number;
+}) {
+  return (
+    <Text style={style}>
+      {name}
+      {note ? (
+        <Text style={{ fontSize: fontSize * 0.8 }}>{` ${note}`}</Text>
+      ) : null}
+    </Text>
+  );
+}
 
 export function NativeLanguageSelector() {
   const { theme } = useTheme();
@@ -44,7 +68,8 @@ export function NativeLanguageSelector() {
   const selectedOpt = NATIVE_LANGUAGE_OPTIONS.find(
     (o) => o.value === nativeLanguage,
   );
-  const selectedLabel = selectedOpt ? t(selectedOpt.labelKey) : t('select');
+  const selectedName = selectedOpt ? t(selectedOpt.labelKey) : t('select');
+  const selectedNote = selectedOpt?.noteKey ? t(selectedOpt.noteKey) : undefined;
 
   return (
     <>
@@ -56,9 +81,12 @@ export function NativeLanguageSelector() {
           style={styles.dropdown}
           onPress={() => setModalVisible(true)}
         >
-          <Text style={styles.dropdownLabel}>
-            {selectedLabel}
-          </Text>
+          <LanguageOptionLabel
+            name={selectedName}
+            note={selectedNote}
+            style={styles.dropdownLabel}
+            fontSize={15}
+          />
           <Text style={styles.dropdownChevron}>▼</Text>
         </Pressable>
       </View>
@@ -97,15 +125,16 @@ export function NativeLanguageSelector() {
                     nativeLanguage === opt.value && styles.modalOptionSelected,
                   ]}
                 >
-                  <Text
+                  <LanguageOptionLabel
+                    name={t(opt.labelKey)}
+                    note={opt.noteKey ? t(opt.noteKey) : undefined}
                     style={[
                       styles.modalOptionLabel,
                       nativeLanguage === opt.value &&
                         styles.modalOptionLabelSelected,
                     ]}
-                  >
-                    {t(opt.labelKey)}
-                  </Text>
+                    fontSize={16}
+                  />
                 </Pressable>
               ))}
             </ScrollView>

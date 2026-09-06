@@ -1,9 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { useHeaderHeight } from '@react-navigation/elements';
 import * as Linking from 'expo-linking';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../lib/i18n';
 import {
   Platform,
@@ -18,15 +18,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArticleContent } from '../../lib/components/ArticleContent';
 import { ArticleDetailHeader } from '../../lib/components/ArticleDetailHeader';
+import { ArticleTags } from '../../lib/components/ArticleTags';
 import { BottomMediaSourceLink } from '../../lib/components/BottomMediaSourceLink';
 import {
   BookmarkToast,
   type BookmarkToastState,
 } from '../../lib/components/BookmarkToast';
 import { ArticleSkeleton } from '../../lib/components/ArticleSkeleton';
-import { SentenceStudyPanel } from '../../lib/components/SentenceStudyPanel';
+import { isLatinOrNumericSegment } from '../../lib/components/ArticleSentenceRow';
+import { hasCjkIdeograph } from '../../lib/text-utils';
+import { WordDictionaryPanel } from '../../lib/components/WordDictionaryPanel';
 import { showErrorFeedback } from '../../lib/showErrorFeedback';
-import { parseSentenceKey } from '../../lib/sentenceKeys';
+import { parseSentenceKey, parseWordKey } from '../../lib/sentenceKeys';
 import {
   articleDetailToListItem,
   clearSentenceBookmark,
@@ -38,26 +41,36 @@ import {
   upsertSavedArticleWithSentenceBookmark,
 } from '../../lib/savedArticlesDb';
 import { EXTRA_BOTTOM_PADDING } from '../../lib/constants';
+import {
+  clearLastArticleRoute,
+  saveLastArticleRoute,
+} from '../../lib/lastArticleRoute';
+import { useLearnedWords } from '../../lib/useLearnedWords';
 import { useFont } from '../../lib/FontContext';
 import type { Theme } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useArticle } from '../../lib/useArticle';
 import { useArticleAudio } from '../../lib/useArticleAudio';
 import { useArticleTranslations } from '../../lib/useArticleTranslations';
+import { useStopwords } from '../../lib/useStopwords';
+import type { SavedWordOccurrence } from '../../lib/savedWordsDb';
+import type { ParsedParagraph } from '../../lib/types';
 
 const ARTICLE_REFRESH_MIN_OVERLAY_MS = 250;
+const ARTICLE_EXTRA_TOP_PADDING = 10;
+/** Second tap on the same learned segment within this window opens the dict panel. */
+const LEARNED_WORD_DOUBLE_TAP_MS = 400;
 
-/** Space below the transparent header before the article title and metadata. */
-const ARTICLE_SCROLL_TOP_EXTRA = 75;
-
-/** Extra inset below the header for skeleton (list load + pull-to-refresh). */
-const SKELETON_TOP_EXTRA = 20;
-
-/** Minimum comfortable tap target for transparent header icon buttons. */
-const HEADER_ICON_SIZE = 44;
-const HEADER_ICON_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
-/** Extra tappable margin on the screen edge for headerRight controls. */
-const HEADER_RIGHT_HIT_SLOP = { top: 8, bottom: 8, left: 12, right: 16 } as const;
+/** Floating settings button on the article reader (no nav bar). */
+const ARTICLE_FLOATING_BUTTON_SCALE = 0.6;
+const SETTINGS_BUTTON_SIZE = Math.round(44 * ARTICLE_FLOATING_BUTTON_SCALE);
+const SETTINGS_BUTTON_GLYPH_SIZE = Math.round(24 * ARTICLE_FLOATING_BUTTON_SCALE);
+const SETTINGS_BUTTON_HIT_SLOP = {
+  top: Math.round(8 * ARTICLE_FLOATING_BUTTON_SCALE),
+  bottom: Math.round(8 * ARTICLE_FLOATING_BUTTON_SCALE),
+  left: Math.round(12 * ARTICLE_FLOATING_BUTTON_SCALE),
+  right: Math.round(16 * ARTICLE_FLOATING_BUTTON_SCALE),
+} as const;
 
 type ArticleSkeletonLayerStyles = {
   refreshOverlay: ViewStyle;
@@ -67,12 +80,12 @@ type ArticleSkeletonLayerStyles = {
 /** Same layout for initial navigation load and pull-to-refresh overlay (absolute fill + inset). */
 function ArticleSkeletonLoadingLayer({
   styles,
-  headerHeight,
   accessibilityLabel,
+  paddingTop,
 }: {
   styles: ArticleSkeletonLayerStyles;
-  headerHeight: number;
   accessibilityLabel: string;
+  paddingTop: number;
 }) {
   return (
     <View
@@ -83,7 +96,7 @@ function ArticleSkeletonLoadingLayer({
       <View
         style={[
           styles.skeletonFrame,
-          { paddingTop: headerHeight + SKELETON_TOP_EXTRA },
+          { paddingTop },
         ]}
       >
         <ArticleSkeleton centerContent />
@@ -128,15 +141,13 @@ export default function ArticleDetailScreen() {
     mergeAudioFromPost,
   } = useArticleAudio(id, Boolean(article));
 
-  const navigation = useNavigation();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { fancyDisplayFontStyle } = useFont();
 
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const { bottom: bottomInset } = useSafeAreaInsets();
+  const { bottom: bottomInset, top: topInset } = useSafeAreaInsets();
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToastState | null>(
     null,
   );
@@ -153,20 +164,118 @@ export default function ArticleDetailScreen() {
   const [markReadFooterVisible, setMarkReadFooterVisible] = useState(false);
   const bookmarkedSentenceKeyRef = useRef<string | null>(null);
   bookmarkedSentenceKeyRef.current = bookmarkedSentenceKey;
+  const highlightedWordKeyRef = useRef<string | null>(null);
+  highlightedWordKeyRef.current = highlightedWordKey;
+  const selectedWordRef = useRef<{
+    word: string;
+    pinyin: string | null;
+  } | null>(null);
+  selectedWordRef.current = selectedWord;
+
+  const { isStopWord } = useStopwords();
+  const { isLearnedWord } = useLearnedWords();
+  const lastLearnedTapRef = useRef<{ wordKey: string; at: number } | null>(null);
+
+  const copyWordToClipboard = useCallback(
+    (word: string) => {
+      Clipboard.setStringAsync(word)
+        .then(() =>
+          setBookmarkToast((prev) => ({
+            message: t('copiedToClipboard'),
+            key: (prev?.key ?? 0) + 1,
+          })),
+        )
+        .catch(() => showErrorFeedback(t('copyWordFailed')));
+    },
+    [t],
+  );
 
   const onWordPress = useCallback(
     (word: string, pinyin: string | null, wordKey: string, sentenceKey: string) => {
+      if (
+        isStopWord(word) ||
+        !hasCjkIdeograph(word) ||
+        isLatinOrNumericSegment(word)
+      ) {
+        // Stop words (e.g. 的/了/在), English/Latin runs, and numbers don't open
+        // the dict popup and don't get highlighted themselves. English tokens
+        // are also non-tappable in the sentence row; this guards other callers.
+        lastLearnedTapRef.current = null;
+        setSelectedWord(null);
+        setHighlightedWordKey(null);
+        setHighlightedSentenceKey(sentenceKey);
+        return;
+      }
+      if (isLearnedWord(word)) {
+        const now = Date.now();
+        const last = lastLearnedTapRef.current;
+        const isDoubleTap =
+          last != null &&
+          last.wordKey === wordKey &&
+          now - last.at <= LEARNED_WORD_DOUBLE_TAP_MS;
+        lastLearnedTapRef.current = { wordKey, at: now };
+        if (!isDoubleTap) {
+          setSelectedWord(null);
+          setHighlightedWordKey(null);
+          setHighlightedSentenceKey(sentenceKey);
+          return;
+        }
+      } else {
+        lastLearnedTapRef.current = null;
+      }
+      if (
+        selectedWordRef.current != null &&
+        highlightedWordKeyRef.current === wordKey
+      ) {
+        // Re-tapping the already-focused word copies it to the clipboard.
+        copyWordToClipboard(word);
+        return;
+      }
       setSelectedWord({ word, pinyin });
       setHighlightedWordKey(wordKey);
       setHighlightedSentenceKey(sentenceKey);
     },
-    []
+    [isStopWord, isLearnedWord, copyWordToClipboard]
   );
 
+  const selectedOccurrence = useMemo((): SavedWordOccurrence | null => {
+    if (!selectedWord || !id || !highlightedWordKey) return null;
+    const loc = parseWordKey(highlightedWordKey);
+    if (!loc) return null;
+    const sentenceText = sentenceTextForKey(
+      article?.parsed_content,
+      highlightedSentenceKey ?? '',
+    );
+    if (!sentenceText) return null;
+    return {
+      word: selectedWord.word,
+      pinyin: selectedWord.pinyin,
+      articleId: id,
+      pidx: loc.pidx,
+      sidx: loc.sidx,
+      widx: loc.widx,
+      sentenceText,
+    };
+  }, [
+    selectedWord,
+    id,
+    highlightedWordKey,
+    highlightedSentenceKey,
+    article?.parsed_content,
+  ]);
+
+  const onStudyActionSuccess = useCallback((message: string) => {
+    setBookmarkToast((prev) => ({
+      message,
+      key: (prev?.key ?? 0) + 1,
+    }));
+  }, []);
+
   const onClosePanel = useCallback(() => {
+    // Dismissing the study panel (swipe or close) only closes the popup — the
+    // sentence stays highlighted/focused so the helper bar remains visible.
     setSelectedWord(null);
     setHighlightedWordKey(null);
-    setHighlightedSentenceKey(null);
   }, []);
 
   const onRefreshArticle = useCallback(async () => {
@@ -188,6 +297,12 @@ export default function ArticleDetailScreen() {
       const { word, wordKey, sentenceKey } = params;
       const key = Array.isArray(sentenceKey) ? sentenceKey[0] : sentenceKey;
       if (word && wordKey && key) {
+        if (!hasCjkIdeograph(word) || isLatinOrNumericSegment(word)) {
+          setSelectedWord(null);
+          setHighlightedWordKey(null);
+          setHighlightedSentenceKey(key);
+          return;
+        }
         setSelectedWord({ word, pinyin: null });
         setHighlightedWordKey(wordKey);
         setHighlightedSentenceKey(key);
@@ -200,6 +315,24 @@ export default function ArticleDetailScreen() {
     },
     []
   );
+
+  useEffect(() => {
+    if (!id) return;
+    void saveLastArticleRoute({
+      id,
+      word: selectedWord?.word,
+      wordKey: highlightedWordKey ?? undefined,
+      sentenceKey: highlightedSentenceKey ?? undefined,
+    });
+  }, [id, selectedWord, highlightedWordKey, highlightedSentenceKey]);
+
+  useEffect(() => {
+    return () => {
+      if (id) {
+        void clearLastArticleRoute(id);
+      }
+    };
+  }, [id]);
 
   useEffect(() => {
     setReadState(false);
@@ -319,50 +452,6 @@ export default function ArticleDetailScreen() {
     router.push('/settings');
   }, []);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: '',
-      headerTransparent: true,
-      headerShadowVisible: false,
-      headerStyle: { backgroundColor: 'transparent' },
-      headerTintColor: theme.text,
-      headerLeftContainerStyle: styles.headerSideContainer,
-      headerRightContainerStyle: styles.headerRightContainer,
-      headerLeft: () => (
-              <Pressable
-                onPress={() => router.back()}
-                hitSlop={HEADER_ICON_HIT_SLOP}
-                style={({ pressed }) => [
-                  styles.headerIconBackdrop,
-                  pressed && styles.headerIconBackdropPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t('back')}
-              >
-                <Ionicons
-                  name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-                  size={24}
-                  color={theme.accent}
-                />
-              </Pressable>
-            ),
-      headerRight: () => (
-        <Pressable
-          onPress={openSettings}
-          hitSlop={HEADER_RIGHT_HIT_SLOP}
-          style={({ pressed }) => [
-            styles.headerIconBackdrop,
-            pressed && styles.headerIconBackdropPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={t('openSettings')}
-        >
-          <Ionicons name="settings-outline" size={24} color={theme.accent} />
-        </Pressable>
-      ),
-    });
-  }, [navigation, openSettings, t, theme, styles]);
-
   const articleHeaderProps = useMemo(
     () =>
       article
@@ -379,20 +468,41 @@ export default function ArticleDetailScreen() {
     [article, id, usingCache],
   );
 
+  const showArticleTags = Boolean(article?.tags?.some((tag) => tag.trim()));
+
   return (
-    <>
+    <View style={styles.screenRoot}>
+      <View
+        style={[styles.floatingSettingsHost, { top: topInset + 4 }]}
+        pointerEvents="box-none"
+      >
+        <Pressable
+          onPress={openSettings}
+          hitSlop={SETTINGS_BUTTON_HIT_SLOP}
+          style={({ pressed }) => [
+            styles.settingsButtonBackdrop,
+            pressed && styles.settingsButtonBackdropPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={t('openSettings')}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={SETTINGS_BUTTON_GLYPH_SIZE}
+            color={theme.accent}
+          />
+        </Pressable>
+      </View>
       {loading && !article ? (
         <View style={styles.articleContainer}>
           <ArticleSkeletonLoadingLayer
             styles={styles}
-            headerHeight={headerHeight}
             accessibilityLabel={t('loading')}
+            paddingTop={topInset + ARTICLE_EXTRA_TOP_PADDING}
           />
         </View>
       ) : error && !article ? (
-        <View
-          style={[styles.center, { paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA }]}
-        >
+        <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.textMuted} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryButton} onPress={refetch}>
@@ -408,9 +518,19 @@ export default function ArticleDetailScreen() {
                 parsedContent={article.parsed_content}
                 listHeader={<ArticleDetailHeader {...articleHeaderProps} />}
                 listFooter={
-                  <>
+                  <View
+                    style={
+                      showArticleTags ? styles.articleTagsAndSource : undefined
+                    }
+                  >
+                    <ArticleTags tags={article.tags} />
                     {markReadFooterVisible ? (
-                      <View style={styles.articleBottomBar}>
+                      <View
+                        style={[
+                          styles.articleBottomBar,
+                          showArticleTags && styles.articleFooterAfterTags,
+                        ]}
+                      >
                         <View style={styles.bottomBarLeft}>
                           {article.source_url ? (
                             <BottomMediaSourceLink
@@ -477,20 +597,25 @@ export default function ArticleDetailScreen() {
                       </View>
                     ) : null}
                     {article.source_url && !markReadFooterVisible ? (
-                      <View style={styles.bottomMediaLinkStandalone}>
+                      <View
+                        style={[
+                          styles.bottomMediaLinkStandalone,
+                          showArticleTags && styles.articleFooterAfterTags,
+                        ]}
+                      >
                         <BottomMediaSourceLink
                           sourceUrl={article.source_url}
                           mediaSourceLabel={article.source}
                         />
                       </View>
                     ) : null}
-                  </>
+                  </View>
                 }
                 onLastSentenceBecameVisible={onLastSentenceBecameVisible}
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA + 16,
+                    paddingTop: topInset + 8 + ARTICLE_EXTRA_TOP_PADDING,
                     paddingHorizontal: 20,
                   },
                 ]}
@@ -523,7 +648,7 @@ export default function ArticleDetailScreen() {
                 contentContainerStyle={[
                   styles.scrollContent,
                   {
-                    paddingTop: headerHeight + ARTICLE_SCROLL_TOP_EXTRA,
+                    paddingTop: topInset + 16 + ARTICLE_EXTRA_TOP_PADDING,
                   },
                 ]}
                 showsVerticalScrollIndicator={false}
@@ -544,27 +669,43 @@ export default function ArticleDetailScreen() {
                   <Text style={styles.emptyContent}>
                     {t('noContentAvailable')}
                   </Text>
-                  {article.source_url ? (
-                    <View style={styles.bottomMediaLinkStandalone}>
-                      <BottomMediaSourceLink
-                        sourceUrl={article.source_url}
-                        mediaSourceLabel={article.source}
-                      />
-                    </View>
-                  ) : null}
+                  <View
+                    style={
+                      showArticleTags
+                        ? styles.articleTagsAndSourceEmpty
+                        : undefined
+                    }
+                  >
+                    <ArticleTags tags={article.tags} />
+                    {article.source_url ? (
+                      <View
+                        style={[
+                          styles.bottomMediaLinkStandalone,
+                          showArticleTags && styles.articleFooterAfterTags,
+                        ]}
+                      >
+                        <BottomMediaSourceLink
+                          sourceUrl={article.source_url}
+                          mediaSourceLabel={article.source}
+                        />
+                      </View>
+                    ) : null}
+                  </View>
                 </Pressable>
               </ScrollView>
             )}
           </View>
           {selectedWord && !refreshOverlayVisible ? (
             <View style={styles.studyPanelOverlay} pointerEvents="box-none">
-              <SentenceStudyPanel
+              <WordDictionaryPanel
                 word={selectedWord.word}
                 pinyin={selectedWord.pinyin}
                 articleId={id ?? ''}
                 highlightedWordKey={highlightedWordKey ?? ''}
                 highlightedSentenceKey={highlightedSentenceKey ?? ''}
                 bottomInset={bottomInset}
+                occurrence={selectedOccurrence}
+                onStudyActionSuccess={onStudyActionSuccess}
                 onRequestClose={onClosePanel}
               />
             </View>
@@ -572,18 +713,36 @@ export default function ArticleDetailScreen() {
           {refreshOverlayVisible ? (
             <ArticleSkeletonLoadingLayer
               styles={styles}
-              headerHeight={headerHeight}
               accessibilityLabel={t('loading')}
+              paddingTop={topInset + ARTICLE_EXTRA_TOP_PADDING}
             />
           ) : null}
         </View>
       ) : null}
-    </>
+    </View>
   );
+}
+
+function sentenceTextForKey(
+  parsed: ParsedParagraph[] | null | undefined,
+  sentenceKey: string,
+): string {
+  const indices = parseSentenceKey(sentenceKey);
+  if (!indices || !parsed) return '';
+  return parsed[indices.paragraphIndex]?.s?.[indices.sentenceIndex]?.f ?? '';
 }
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    position: 'relative',
+  },
+  floatingSettingsHost: {
+    position: 'absolute',
+    right: 8,
+    zIndex: 20,
+  },
   center: {
     flex: 1,
     backgroundColor: theme.background,
@@ -649,6 +808,17 @@ function createStyles(theme: Theme) {
     justifyContent: 'space-between',
     gap: 10,
   },
+  /** Same as `sentenceListTopSpacer` so tags sit midway to the source link. */
+  articleTagsAndSource: {
+    gap: 16,
+  },
+  articleTagsAndSourceEmpty: {
+    marginTop: 16,
+    gap: 16,
+  },
+  articleFooterAfterTags: {
+    marginTop: 0,
+  },
   bottomBarLeft: {
     flex: 1,
     minWidth: 0,
@@ -711,17 +881,10 @@ function createStyles(theme: Theme) {
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 3,
   },
-  headerSideContainer: {
-    paddingHorizontal: 4,
-  },
-  headerRightContainer: {
-    paddingRight: 8,
-    paddingLeft: 4,
-  },
-  headerIconBackdrop: {
-    width: HEADER_ICON_SIZE,
-    height: HEADER_ICON_SIZE,
-    borderRadius: HEADER_ICON_SIZE / 2,
+  settingsButtonBackdrop: {
+    width: SETTINGS_BUTTON_SIZE,
+    height: SETTINGS_BUTTON_SIZE,
+    borderRadius: SETTINGS_BUTTON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: `${theme.surfaceElevated}E8`,
@@ -740,7 +903,7 @@ function createStyles(theme: Theme) {
       default: {},
     }),
   },
-  headerIconBackdropPressed: {
+  settingsButtonBackdropPressed: {
     opacity: 0.88,
   },
   studyPanelOverlay: {

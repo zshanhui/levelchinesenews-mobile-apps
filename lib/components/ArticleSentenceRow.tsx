@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { NativeLanguage } from '../nativeLanguage';
+import { hasCjkIdeograph } from '../text-utils';
 import type { Theme } from '../theme';
 import type { WordSegment } from '../types';
 import { SentenceHelperBar } from './SentenceHelperBar';
@@ -39,11 +40,14 @@ export type ArticleSentenceRowStyles = {
   sentenceBookmarkButtonPressed: object;
   sentence: object;
   wordPressable: object;
-  /** No margin between segments — used when pinyin is hidden so text reads continuously. */
+  /** No margin between segments — used when pinyin is hidden, for stop words, and around
+   * punctuation so text reads continuously. */
   wordPressableTight: object;
   wordPressablePressed: object;
   wordBlock: object;
-  wordBlockHighlightBg: object;
+  wordBracketBase: object;
+  wordBracketTL: object;
+  wordBracketBR: object;
   pinyin: object;
   word: object;
 };
@@ -57,6 +61,8 @@ export type ArticleSentenceRowProps = {
   isSentenceBookmarkedHere: boolean;
   sentenceBookmarkEnabled: boolean;
   highlightedWordIndex: number | null;
+  /** When false the tapped word is tracked (study panel opens) but no brackets are drawn */
+  wordHighlightEnabled?: boolean;
   /** Line gap inside wrapped sentence (flex rowGap) */
   lineGap: number;
   /** Space below this sentence block (includes paragraph gap when last in paragraph) */
@@ -83,6 +89,12 @@ export type ArticleSentenceRowProps = {
   /** Learner target language — Google Translate link `tl=` */
   translationLang: NativeLanguage;
   showPinyin: boolean;
+  /** Stop words never show pinyin even when `showPinyin` is on */
+  stopwordsSet?: ReadonlySet<string> | null;
+  /** Learned words hide pinyin and tighten spacing, same as stop words */
+  learnedSet?: ReadonlySet<string> | null;
+  /** HSK words at or under the chosen hide-level, same treatment as learned words */
+  hskHideSet?: ReadonlySet<string> | null;
   fontSize: number;
   articleContentFontStyle: { fontFamily?: string };
   articleContentPinyinFontStyle: { fontFamily?: string };
@@ -152,14 +164,25 @@ export function createArticleSentenceRowStyles(theme: Theme, isDark: boolean) {
       alignItems: 'center',
       position: 'relative',
     },
-    wordBlockHighlightBg: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.highlightBg,
-      borderRadius: 4,
-      top: -1,
-      bottom: -1,
+    // Crop-mark selection brackets for the tapped word: thin L shapes at the top-left
+    // and bottom-right corners of the word block (pinyin + hanzi column).
+    wordBracketBase: {
+      position: 'absolute',
+      width: 7,
+      height: 7,
+      borderColor: theme.wordBracket,
+    },
+    wordBracketTL: {
+      top: -2,
       left: -2,
+      borderTopWidth: 1.5,
+      borderLeftWidth: 1.5,
+    },
+    wordBracketBR: {
+      bottom: -2,
       right: -2,
+      borderBottomWidth: 1.5,
+      borderRightWidth: 1.5,
     },
     pinyin: {
       fontSize: 11,
@@ -172,15 +195,65 @@ export function createArticleSentenceRowStyles(theme: Theme, isDark: boolean) {
   });
 }
 
+/** True when the segment is an opening mark (（《「『" etc. — Unicode Ps / Pi) — hugs the
+ * FOLLOWING word, so the mark itself gets no trailing margin.
+ */
+function isOpeningPunctuationSegment(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  return /^[\p{Ps}\p{Pi}]+$/u.test(text.trim());
+}
+
+function isPinyinHiddenSegment(
+  text: string,
+  stopwordsSet: ReadonlySet<string> | null | undefined,
+  learnedSet: ReadonlySet<string> | null | undefined,
+  hskHideSet?: ReadonlySet<string> | null,
+): boolean {
+  return (
+    (stopwordsSet?.has(text) ?? false) ||
+    (learnedSet?.has(text) ?? false) ||
+    (hskHideSet?.has(text) ?? false)
+  );
+}
+
+/** True when the segment is only punctuation/symbols (，。、%（）etc.) — rendered flush against
+ * the preceding word, with no inter-segment spacing before it.
+ */
+function isPunctuationSegment(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  return /^[\p{P}\p{S}]+$/u.test(text.trim());
+}
+
 /**
- * True when the segment should not open the study panel: whitespace, numbers, punctuation,
- * and tokens that are only Latin script (English / loanwords), including apostrophes and hyphens.
+ * True when the segment should not respond to taps at all: whitespace, punctuation,
+ * symbols, Latin/English runs, and numbers. The local dictionary is Chinese-only.
  */
 function isNonTappableSegment(text: string): boolean {
   if (!text || !text.trim()) return true;
+  return !hasCjkIdeograph(text);
+}
+
+/** Hanzi numerals that can appear inside mixed number tokens like 3万 / 20亿. */
+const CJK_NUMERAL_CHARS = '零〇一二三四五六七八九十百千万億亿兆兩两';
+
+/**
+ * True for tokens made of Latin letters and/or digits — English words and loanwords
+ * (don't, e-mail), plain numbers (42, 3,000, 1.5, full-width digits), and mixed
+ * alphanumeric tokens (iPhone16, COVID-19, 3万). Pure Latin/number tokens are also
+ * non-tappable (`isNonTappableSegment`). Mixed tokens like 3万 stay tappable for
+ * sentence focus but never open the word study panel.
+ */
+export function isLatinOrNumericSegment(text: string): boolean {
   const t = text.trim();
-  if (/^[\d０-９\s\p{P}\p{S}]+$/u.test(t)) return true;
-  return /^[\p{Script=Latin}]+(?:['’\-][\p{Script=Latin}]+)*$/u.test(t);
+  if (!t) return false;
+  // Must contain at least one Latin letter or digit (so pure hanzi numerals like
+  // 十二 remain dictionary words).
+  if (!/[\p{Script=Latin}\d０-９]/u.test(t)) return false;
+  const charset = new RegExp(
+    `^[\\p{Script=Latin}\\d０-９${CJK_NUMERAL_CHARS}]+(?:['’\\-.,，．·][\\p{Script=Latin}\\d０-９${CJK_NUMERAL_CHARS}]+)*$`,
+    'u',
+  );
+  return charset.test(t);
 }
 
 /** Noto Sans SC has taller line boxes than the system UI font; tighten the pinyin↔hanzi stack. */
@@ -242,7 +315,16 @@ const WordBlock = memo(function WordBlock({
   return (
     <View style={styles.wordBlock}>
       {highlighted ? (
-        <View style={styles.wordBlockHighlightBg} pointerEvents="none" />
+        <>
+          <View
+            style={[styles.wordBracketBase, styles.wordBracketTL]}
+            pointerEvents="none"
+          />
+          <View
+            style={[styles.wordBracketBase, styles.wordBracketBR]}
+            pointerEvents="none"
+          />
+        </>
       ) : null}
       {showPinyin && pinyin ? (
         <Text
@@ -258,7 +340,6 @@ const WordBlock = memo(function WordBlock({
       ) : null}
       <Text
         style={[styles.word, articleContentFontStyle, { fontSize }, notoStack.word]}
-        selectable={true}
       >
         {text}
       </Text>
@@ -398,6 +479,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
   isSentenceBookmarkedHere,
   sentenceBookmarkEnabled,
   highlightedWordIndex,
+  wordHighlightEnabled = true,
   lineGap,
   blockMarginBottom,
   onWordPress,
@@ -412,6 +494,9 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
   translateIconColor,
   sentenceCachedTranslation,
   showPinyin,
+  stopwordsSet = null,
+  learnedSet = null,
+  hskHideSet = null,
   fontSize,
   articleContentFontStyle,
   articleContentPinyinFontStyle,
@@ -487,10 +572,33 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
         {words.map((word, wordIndex) => {
           const wordKey = `${paragraphIndex}:${sentenceIndex}:${wordIndex}`;
           const tappable = !isNonTappableSegment(word.t);
-          const highlighted = highlightedWordIndex === wordIndex;
-          const wordPressableLayout = showPinyin
-            ? styles.wordPressable
-            : styles.wordPressableTight;
+          const highlighted = wordHighlightEnabled && highlightedWordIndex === wordIndex;
+          const nextWord = words[wordIndex + 1];
+          // Punctuation hugs its neighbor: drop THIS segment's trailing margin when the
+          // next segment is punctuation-only (comma, period, %, closing marks), or when this
+          // segment is an opening mark (（《「" — gap belongs after the following word).
+          const nextIsPunctuation = nextWord != null && isPunctuationSegment(nextWord.t);
+          const nextHidesPinyin =
+            nextWord != null &&
+            isPinyinHiddenSegment(nextWord.t, stopwordsSet, learnedSet, hskHideSet);
+          const isOpeningPunctuation = isOpeningPunctuationSegment(word.t);
+          const hidesPinyin = isPinyinHiddenSegment(
+            word.t,
+            stopwordsSet,
+            learnedSet,
+            hskHideSet,
+          );
+          // Stop words, learned words, and HSK-hidden words are fully gapless: they hug
+          // the following word (0 own margin) and the preceding word drops its margin too.
+          const wordPressableLayout =
+            showPinyin &&
+            !hidesPinyin &&
+            !nextHidesPinyin &&
+            !nextIsPunctuation &&
+            !isOpeningPunctuation
+              ? styles.wordPressable
+              : styles.wordPressableTight;
+          const showWordPinyin = showPinyin && !hidesPinyin;
           return tappable ? (
             <Pressable
               key={wordIndex}
@@ -503,7 +611,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
             >
               <WordBlock
                 segment={word}
-                showPinyin={showPinyin}
+                showPinyin={showWordPinyin}
                 highlighted={highlighted}
                 fontSize={fontSize}
                 articleContentFontStyle={articleContentFontStyle}
@@ -515,7 +623,7 @@ export const ArticleSentenceRow = memo(function ArticleSentenceRow({
             <View key={wordIndex} style={wordPressableLayout}>
               <WordBlock
                 segment={word}
-                showPinyin={showPinyin}
+                showPinyin={showWordPinyin}
                 highlighted={false}
                 fontSize={fontSize}
                 articleContentFontStyle={articleContentFontStyle}

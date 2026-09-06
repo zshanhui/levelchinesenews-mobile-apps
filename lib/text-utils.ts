@@ -8,6 +8,14 @@ export function sentenceFullText(sentence: { f: string }): string {
   return sentence.f;
 }
 
+/** CJK Unified Ideographs (Extension A + URO). Matches `isChineseWord`. */
+const CJK_IDEOGRAPH_RE = /[\u3400-\u9fff]/;
+
+/** True when `text` contains at least one CJK ideograph. */
+export function hasCjkIdeograph(text: string): boolean {
+  return CJK_IDEOGRAPH_RE.test(text);
+}
+
 /** True when `text` is non-empty and only CJK Unified Ideographs (no Latin, digits, or punctuation). */
 export function isChineseWord(text: string): boolean {
   const trimmed = text.trim();
