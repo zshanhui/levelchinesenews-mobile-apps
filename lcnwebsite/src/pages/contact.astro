@@ -57,15 +57,16 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
         class="contact-textarea"
         name="message"
         required={!!formAction}
-        minlength={formAction ? 20 : undefined}
-        title="Your message should be at least 20 characters"
+        title="Your message should be at least 20 words"
         rows={6}
-        placeholder="Your message (min. 20 characters)…"
+        placeholder="Your message (min. 20 words)…"
+        aria-describedby="contact-message-hint"
         disabled={!formAction}
       />
+      <p id="contact-message-hint" class="contact-hint">Your message should be at least 20 words</p>
 
       <button type="submit" class="button button-primary contact-submit" disabled={!formAction}>
-        Send message
+        Submit
       </button>
     </form>
 
@@ -91,6 +92,24 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
 
 <script is:inline>
   (function () {
+    var MIN_WORDS = 20;
+    var message = document.getElementById('contact-message');
+    if (message && !message.disabled && message.form) {
+      message.form.addEventListener('submit', function (event) {
+        var words = message.value.trim().split(/\s+/).filter(Boolean).length;
+        if (words < MIN_WORDS) {
+          message.setCustomValidity('Your message should be at least 20 words');
+          message.reportValidity();
+          event.preventDefault();
+          return;
+        }
+        message.setCustomValidity('');
+      });
+      message.addEventListener('input', function () {
+        message.setCustomValidity('');
+      });
+    }
+
     try {
       var q = new URLSearchParams(window.location.search);
       if (q.has('success')) {
@@ -193,6 +212,13 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
     line-height: 1.45;
   }
 
+  .contact-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
   .contact-input:focus,
   .contact-textarea:focus {
     outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
@@ -200,7 +226,7 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
   }
 
   .contact-submit {
-    align-self: flex-start;
+    align-self: flex-end;
     margin-top: 0.35rem;
   }
 
