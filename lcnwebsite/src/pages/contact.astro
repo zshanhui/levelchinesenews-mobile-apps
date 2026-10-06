@@ -1,10 +1,21 @@
 ---
+import { createHash } from 'node:crypto';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../config/site';
+
+// Must match contactFormToken() in bugfixagent/efw/src/contact-guard.ts:
+// sha256(`${workerOrigin}\n${mailFrom}`), and mailFrom must match MAIL_FROM.
+function contactFormToken(workerUrl: string, mailFrom: string): string {
+  const origin = new URL(workerUrl).origin;
+  const material = `${origin}\n${mailFrom.trim().toLowerCase()}`;
+  return createHash('sha256').update(material).digest('hex');
+}
 
 const title = 'Contact';
 const description = 'Send a message to the LevelChinese team.';
 const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
+const formToken = formAction ? contactFormToken(formAction, siteConfig.contactEmail) : '';
+const formReady = Boolean(formAction);
 ---
 
 <BaseLayout {title} {description}>
@@ -28,7 +39,7 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
       method="POST"
       enctype="application/x-www-form-urlencoded"
       action={formAction || undefined}
-      onsubmit={!formAction ? 'return false' : undefined}
+      onsubmit={!formReady ? 'return false' : undefined}
     >
       <input
         type="text"
@@ -38,6 +49,7 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
         aria-hidden="true"
         class="contact-honeypot"
       />
+      {formToken && <input type="hidden" name="contact_token" value={formToken} />}
 
       <label class="contact-label" for="contact-email">Email</label>
       <input
@@ -45,10 +57,10 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
         class="contact-input"
         type="email"
         name="email"
-        required={!!formAction}
+        required={formReady}
         autocomplete="email"
         placeholder="you@example.com"
-        disabled={!formAction}
+        disabled={!formReady}
       />
 
       <label class="contact-label" for="contact-message">Message</label>
@@ -56,16 +68,16 @@ const formAction = import.meta.env.PUBLIC_CONTACT_WORKER_URL?.trim() ?? '';
         id="contact-message"
         class="contact-textarea"
         name="message"
-        required={!!formAction}
+        required={formReady}
         title="Your message should be at least 20 words"
         rows={6}
         placeholder="Your message (min. 20 words)…"
         aria-describedby="contact-message-hint"
-        disabled={!formAction}
+        disabled={!formReady}
       />
       <p id="contact-message-hint" class="contact-hint">Your message should be at least 20 words</p>
 
-      <button type="submit" class="button button-primary contact-submit" disabled={!formAction}>
+      <button type="submit" class="button button-primary contact-submit" disabled={!formReady}>
         Submit
       </button>
     </form>
